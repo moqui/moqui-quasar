@@ -8,6 +8,7 @@
         <!-- qapps is a SPA wrapper around apps.xml just like vapps.xml -->
         <screen location="component://webroot/screen/webroot.xml">
             <subscreens-item name="qapps" menu-include="false" location="component://moqui-quasar/screen/qapps.xml"/>
+            <subscreens-item name="qstatic" menu-include="false" location="component://moqui-quasar/screen/qstatic.xml"/>
         </screen>
     </screen-facade>
 </moqui-conf>
