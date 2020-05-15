@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- No copyright or license for configuration file, details here are not considered a creative work. -->
+<moqui-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/moqui-conf-2.1.xsd">
+    <screen-facade>
+        <!-- qvt is a custom extension for Quasar & Vue JS component templates (extended HTML) -->
+        <screen-text-output type="qvt" mime-type="text/html" always-standalone="true"
+                macro-template-location="component://moqui-quasar/template/screen-macro/DefaultScreenMacros.qvt.ftl"/>
+        <!-- qapps is a SPA wrapper around apps.xml just like vapps.xml -->
+        <screen location="component://webroot/screen/webroot.xml">
+            <subscreens-item name="qapps" menu-include="false" location="component://moqui-quasar/screen/qapps.xml"/>
+        </screen>
+    </screen-facade>
+</moqui-conf>
