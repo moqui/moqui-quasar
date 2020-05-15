@@ -3,7 +3,7 @@
 /* TODO:
  - add fully client rendered version of form-list when it has data prep embedded
    - add form-list.rest-entity, rest-service (or just rest-call?), and maybe service-call/actions/etc
-   - now enabled with form-list.@server-static=vuet
+   - now enabled with form-list.@server-static=qvt
    - pagination
      - implement dynamic pagination header based on response headers
      - handle search parameters in some way other than $root.currentParameters so that page loads are not triggered on paginate
@@ -29,13 +29,13 @@
 
 
  - big new feature for client rendered screens
-   - on the server render to a Vue component object in JS file following pattern of MyAccountNav.js with define(), allow separate .vuet file
+   - on the server render to a Vue component object in JS file following pattern of MyAccountNav.js with define(), allow separate .qvt file
    - make these completely static, not dependent on any inline data, so they can be cached
    - separate request(s) to get data to populate
  - screen structure (Vue specific...)
    - use existing XML Screen with a new client-template and other elements?
    - screen should have extension .js.xml so existing code finds things like FindExample.js for FindExample.js.xml
-   - allow separate screen or static file with .vuet extension for template string
+   - allow separate screen or static file with .qvt extension for template string
    - client-template element with vue template (ie pseudo html with JS expressions)
    - client-template would still be simplified using Moqui library of Vue components
    - other elements for vue properties like data, methods, mounted/etc lifecycle, computed, watch, etc
@@ -230,7 +230,7 @@ moqui.loadComponent = function(urlInfo, callback, divId) {
         url += '.js';
         isJsPath = true;
     }
-    if (!isJsPath) url += '.vuet';
+    if (!isJsPath) url += '.qvt';
     if (extraPath && extraPath.length > 0) url += ('/' + extraPath);
     if (search && search.length > 0) url += ('?' + search);
 
@@ -252,7 +252,7 @@ moqui.loadComponent = function(urlInfo, callback, divId) {
                     if (isServerStatic) { moqui.componentCache.put(path, jsCompObj); }
                     callback(jsCompObj);
                 } else {
-                    var htmlUrl = (path.slice(-3) === '.js' ? path.slice(0, -3) : path) + '.vuet';
+                    var htmlUrl = (path.slice(-3) === '.js' ? path.slice(0, -3) : path) + '.qvt';
                     $.ajax({ type:"GET", url:htmlUrl, error:moqui.handleLoadError, success: function (htmlText) {
                         jsCompObj.template = htmlText;
                         if (isServerStatic) { moqui.componentCache.put(path, jsCompObj); }

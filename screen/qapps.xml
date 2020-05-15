@@ -14,6 +14,7 @@ along with this software (see the LICENSE.md file). If not, see
 -->
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-2.1.xsd"
         require-authentication="false" screen-theme-type-enum-id="STT_INTERNAL" default-menu-title="Applications" allow-extra-path="true">
+    <!-- TODO: change screen-theme-type-enum-id to STT_INTERNAL_QUASAR, add data for CSS (or just include here for now...) -->
     <!-- NOTE: require-authentication=false so no permission required but in pre-actions if no user logged in goes to login screen -->
 
     <pre-actions><script><![CDATA[
@@ -33,13 +34,16 @@ along with this software (see the LICENSE.md file). If not, see
         String instancePurpose = System.getProperty("instance_purpose")
         if (!instancePurpose || instancePurpose == 'production') {
             /* ========== Production Mode ========== */
-            footer_scripts.add('/js/CombinedVuet.min.js')
+            // Vue JS
+            footer_scripts.add('/libs/vue/vue.js') // TODO change to vue.min.js
+            // Webroot Quasar-Vue instance, in footer so runs after page loaded
+            footer_scripts.add('/qstatic/WebrootVue.qvt.js')
         } else {
             /* ========== Dev Mode ========== */
             // Vue JS
             footer_scripts.add('/libs/vue/vue.js')
-            // Webroot Vue instance, in footer so runs after page loaded
-            footer_scripts.add('/js/WebrootVue.js')
+            // Webroot Quasar-Vue instance, in footer so runs after page loaded
+            footer_scripts.add('/qstatic/WebrootVue.qvt.js')
         }
 
         // conditional QZ Tray scripts, only include if enabled
@@ -53,7 +57,7 @@ along with this software (see the LICENSE.md file). If not, see
     <widgets>
         <render-mode>
             <!-- for html just render the navbar (Vue page wrapper and nav component) -->
-            <text type="html" location="component://webroot/screen/includes/WebrootVue.vuet.ftl"/>
+            <text type="html" location="component://moqui-quasar/screen/includes/WebrootVue.qvt.ftl"/>
             <!-- not meant to be used for anything else, for all other render modes go directly through /apps -->
         </render-mode>
     </widgets>

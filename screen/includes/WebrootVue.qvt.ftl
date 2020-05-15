@@ -16,7 +16,7 @@ along with this software (see the LICENSE.md file). If not, see
     <input type="hidden" id="confAppHost" value="${ec.web.getHostName(true)}">
     <input type="hidden" id="confAppRootPath" value="${ec.web.servletContext.contextPath}">
     <input type="hidden" id="confBasePath" value="${ec.web.servletContext.contextPath}/apps">
-    <input type="hidden" id="confLinkBasePath" value="${ec.web.servletContext.contextPath}/vapps">
+    <input type="hidden" id="confLinkBasePath" value="${ec.web.servletContext.contextPath}/qapps">
     <input type="hidden" id="confUserId" value="${ec.user.userId!''}">
     <input type="hidden" id="confLocale" value="${ec.user.locale.toLanguageTag()}">
     <#assign navbarCompList = sri.getThemeValues("STRT_HEADER_NAVBAR_COMP")>
