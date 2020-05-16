@@ -1198,7 +1198,7 @@ moqui.webrootVue = new Vue({
     el: '#apps-root',
     data: { basePath:"", linkBasePath:"", currentPathList:[], extraPathList:[], activeSubscreens:[], currentParameters:{}, bodyParameters:null,
         navMenuList:[], navHistoryList:[], navPlugins:[], notifyHistoryList:[], lastNavTime:Date.now(), loading:0, currentLoadRequest:null, activeContainers:{},
-        moquiSessionToken:"", appHost:"", appRootPath:"", userId:"", locale:"en", notificationClient:null, qzVue:null },
+        moquiSessionToken:"", appHost:"", appRootPath:"", userId:"", locale:"en", notificationClient:null, qzVue:null, leftOpen:false },
     methods: {
         setUrl: function(url, bodyParameters) {
             // make sure any open modals are closed before setting current URL

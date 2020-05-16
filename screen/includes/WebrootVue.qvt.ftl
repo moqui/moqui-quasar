@@ -21,19 +21,21 @@ along with this software (see the LICENSE.md file). If not, see
     <input type="hidden" id="confLocale" value="${ec.user.locale.toLanguageTag()}">
     <#assign navbarCompList = sri.getThemeValues("STRT_HEADER_NAVBAR_COMP")>
     <#list navbarCompList! as navbarCompUrl><input type="hidden" class="confNavPluginUrl" value="${navbarCompUrl}"></#list>
-    <#if hideNav! != 'true'>
-    <div id="top">
-        <#--  navbar-fixed-top navbar-static-top -->
-        <q-bar class="bg-black text-white">
+
+    <q-layout view="hHh LpR fFf">
+
+        <q-header reveal bordered class="bg-black text-white"><q-toolbar>
+            <q-btn dense flat round icon="o_menu" @click="leftOpen = !leftOpen"></q-btn>
+
             <#assign headerLogoList = sri.getThemeValues("STRT_HEADER_LOGO")>
             <#if headerLogoList?has_content>
-                <m-link href="/apps"><q-avatar square>
+                <m-link href="/apps"><q-avatar square class="q-mx-md">
                     <img src="${sri.buildUrl(headerLogoList?first).getUrl()}" alt="Home">
                 </q-avatar></m-link>
             </#if>
             <#assign headerTitleList = sri.getThemeValues("STRT_HEADER_TITLE")>
             <#if headerTitleList?has_content>
-                <div class="text-weight-bold">${ec.resource.expand(headerTitleList?first, "")}</div>
+            <q-toolbar-title>${ec.resource.expand(headerTitleList?first, "")}</q-toolbar-title>
             </#if>
 
             <q-breadcrumbs active-color="white" style="font-size: 16px">
@@ -64,6 +66,7 @@ along with this software (see the LICENSE.md file). If not, see
                     </q-breadcrumbs-el>
                 </template>
                 <q-breadcrumbs-el v-if="navMenuList.length > 0">
+                    <#-- TODO for some reason this link doesn't work; also need to figure out how to make link text plain, not blue/purple and underlined -->
                     <m-link :href="getNavHref(navMenuList.length - 1)">{{navMenuList[navMenuList.length - 1].title}}</m-link>
                 </q-breadcrumbs-el>
             </q-breadcrumbs>
@@ -71,18 +74,37 @@ along with this software (see the LICENSE.md file). If not, see
             <q-space></q-space>
 
             <#-- TODO: add right side buttons/etc from below -->
-
             <#-- dark/light switch -->
-            <q-btn @click.prevent="switchDarkLight()" icon="o_invert_colors">
+            <q-btn flat dense @click.prevent="switchDarkLight()" icon="o_invert_colors" class="q-mr-xl">
                 <q-tooltip>${ec.l10n.localize("Switch Dark/Light")}</q-tooltip></q-btn>
-        </q-bar>
-
-
-        <div id="navbar-buttons" class="collapse navbar-collapse navbar-ex1-collapse">
             <#-- logout button -->
-            <a href="${sri.buildUrl("/Login/logout").url}" data-toggle="tooltip" data-original-title="${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}"
-                   onclick="return confirm('${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}?')"
-                   data-placement="bottom" class="btn btn-danger btn-sm navbar-btn navbar-right"><i class="glyphicon glyphicon-off"></i></a>
+            <#-- TODO: figure out why icon is showing to the left of the button -->
+            <q-btn flat dense icon="o_settings_power_new" type="a" href="${sri.buildUrl("/Login/logout").url}" onclick="return confirm('${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}?')">
+                <q-tooltip>${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}</q-tooltip></q-btn>
+        </q-toolbar></q-header>
+
+        <q-drawer v-model="leftOpen" side="left" overlay bordered>
+            <p>Nothing to see here... yet.</p>
+        </q-drawer>
+
+        <q-page-container class="q-ma-sm"><q-page>
+            <subscreens-active></subscreens-active>
+        </q-page></q-page-container>
+
+        <q-footer reveal bordered class="bg-grey-8 text-white">
+            <q-toolbar>
+                <#assign footerItemList = sri.getThemeValues("STRT_FOOTER_ITEM")>
+                <#list footerItemList! as footerItem>
+                    <#assign footerItemTemplate = footerItem?interpret>
+                    <@footerItemTemplate/>
+                </#list>
+            </q-toolbar>
+        </q-footer>
+
+    </q-layout>
+
+    <div id="top">
+        <div id="navbar-buttons" class="collapse navbar-collapse navbar-ex1-collapse">
             <#-- screen history menu -->
             <#-- get initial history from server? <#assign screenHistoryList = ec.web.getScreenHistory()><#list screenHistoryList as screenHistory><#if (screenHistory_index >= 25)><#break></#if>{url:pathWithParams, name:title}</#list> -->
             <div id="history-menu" class="nav navbar-right dropdown">
@@ -135,23 +157,6 @@ along with this software (see the LICENSE.md file). If not, see
             <div class="navbar-right" style="padding:10px 4px 6px 4px;" :class="{ hidden: loading < 1 }"><div class="spinner small"><div>&nbsp;</div></div></div>
         </div>
     </div>
-    </#if>
-
-    <div id="content"><div class="inner"><div class="container-fluid">
-        <subscreens-active></subscreens-active>
-    </div></div></div>
-
-    <#if hideNav! != 'true'>
-    <div id="footer" class="bg-dark">
-        <#assign footerItemList = sri.getThemeValues("STRT_FOOTER_ITEM")>
-        <div id="apps-footer-content">
-            <#list footerItemList! as footerItem>
-                <#assign footerItemTemplate = footerItem?interpret>
-                <@footerItemTemplate/>
-            </#list>
-        </div>
-    </div>
-    </#if>
 </div>
 
 <div id="screen-document-dialog" class="modal dynamic-dialog" aria-hidden="true" style="display: none;" tabindex="-1">
