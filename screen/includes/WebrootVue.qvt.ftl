@@ -22,44 +22,63 @@ along with this software (see the LICENSE.md file). If not, see
     <#assign navbarCompList = sri.getThemeValues("STRT_HEADER_NAVBAR_COMP")>
     <#list navbarCompList! as navbarCompUrl><input type="hidden" class="confNavPluginUrl" value="${navbarCompUrl}"></#list>
     <#if hideNav! != 'true'>
-    <div id="top"><nav class="navbar navbar-inverse navbar-fixed-top"><#--  navbar-fixed-top navbar-static-top --><div class="container-fluid">
-        <#-- Brand and toggle get grouped for better mobile display -->
-        <header class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-        <#assign headerLogoList = sri.getThemeValues("STRT_HEADER_LOGO")>
-        <#if headerLogoList?has_content><m-link href="/apps" class="navbar-brand"><img src="${sri.buildUrl(headerLogoList?first).getUrl()}" alt="Home"></m-link></#if>
-        <#assign headerTitleList = sri.getThemeValues("STRT_HEADER_TITLE")>
-        <#if headerTitleList?has_content><div class="navbar-brand">${ec.resource.expand(headerTitleList?first, "")}</div></#if>
-        </header>
-        <div id="navbar-buttons" class="collapse navbar-collapse navbar-ex1-collapse">
-            <ul id="dynamic-menus" class="nav navbar-nav">
-                <li v-for="(navMenuItem, menuIndex) in navMenuList" class="dropdown">
-                    <template v-if="menuIndex < (navMenuList.length - 1)">
-                        <m-link v-if="navMenuItem.hasTabMenu" :href="getNavHref(menuIndex)">{{navMenuItem.title}} <i class="glyphicon glyphicon-menu-right"></i></m-link>
+    <div id="top">
+        <#--  navbar-fixed-top navbar-static-top -->
+        <q-bar class="bg-black text-white">
+            <#assign headerLogoList = sri.getThemeValues("STRT_HEADER_LOGO")>
+            <#if headerLogoList?has_content>
+                <m-link href="/apps"><q-avatar square>
+                    <img src="${sri.buildUrl(headerLogoList?first).getUrl()}" alt="Home">
+                </q-avatar></m-link>
+            </#if>
+            <#assign headerTitleList = sri.getThemeValues("STRT_HEADER_TITLE")>
+            <#if headerTitleList?has_content>
+                <div class="text-weight-bold">${ec.resource.expand(headerTitleList?first, "")}</div>
+            </#if>
+
+            <q-breadcrumbs active-color="white" style="font-size: 16px">
+                <template v-slot:separator><q-icon size="1.5em" name="o_chevron_right" color="primary"></q-icon></template>
+
+                <template v-for="(navMenuItem, menuIndex) in navMenuList">
+                    <q-breadcrumbs-el v-if="menuIndex < (navMenuList.length - 1)">
+                        <m-link v-if="navMenuItem.hasTabMenu" :href="getNavHref(menuIndex)">{{navMenuItem.title}}</m-link>
                         <template v-else-if="navMenuItem.subscreens && navMenuItem.subscreens.length > 1">
-                            <#-- use chevron-right if has subscreens menu, thicker arrow to distinguish -->
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{navMenuItem.title}} <i class="glyphicon glyphicon-chevron-right"></i></a>
-                            <ul class="dropdown-menu">
-                                <li v-for="subscreen in navMenuItem.subscreens" :class="{active:subscreen.active}">
-                                    <m-link :href="subscreen.pathWithParams">
-                                        <template v-if="subscreen.image">
-                                            <i v-if="subscreen.imageType === 'icon'" :class="subscreen.image" style="padding-right: 4px;"></i>
-                                            <img v-else :src="subscreen.image" :alt="subscreen.title" width="18" style="padding-right: 4px;">
-                                        </template>
-                                        <i v-else class="glyphicon glyphicon-link" style="padding-right: 8px;"></i>
-                                        {{subscreen.title}}</m-link></li>
-                            </ul>
+                            <div class="cursor-pointer non-selectable">{{navMenuItem.title}}
+                                <q-menu><q-list dense style="min-width: 100px">
+                                    <q-item v-for="subscreen in navMenuItem.subscreens" :class="{'bg-primary':subscreen.active, 'text-white':subscreen.active}" clickable v-close-popup>
+                                        <q-item-section>
+                                            <m-link :href="subscreen.pathWithParams">
+                                                <template v-if="subscreen.image">
+                                                    <i v-if="subscreen.imageType === 'icon'" :class="subscreen.image" style="padding-right: 4px;"></i>
+                                                    <img v-else :src="subscreen.image" :alt="subscreen.title" width="18" style="padding-right: 4px;">
+                                                </template>
+                                                <i v-else class="glyphicon glyphicon-link" style="padding-right: 8px;"></i>
+                                                {{subscreen.title}}
+                                            </m-link></li>
+                                        </q-item-section>
+                                    </q-item>
+                                </q-list></q-menu>
+                            </div>
                         </template>
-                        <m-link v-else :href="getNavHref(menuIndex)">{{navMenuItem.title}} <i class="glyphicon glyphicon-menu-right"></i></m-link>
-                    </template>
-                </li>
-            </ul>
-            <template v-if="navMenuList.length > 0"><m-link class="navbar-text" :href="getNavHref(navMenuList.length - 1)">{{navMenuList[navMenuList.length - 1].title}}</m-link></template>
+                        <m-link v-else :href="getNavHref(menuIndex)">{{navMenuItem.title}}</m-link>
+                    </q-breadcrumbs-el>
+                </template>
+                <q-breadcrumbs-el v-if="navMenuList.length > 0">
+                    <m-link :href="getNavHref(navMenuList.length - 1)">{{navMenuList[navMenuList.length - 1].title}}</m-link>
+                </q-breadcrumbs-el>
+            </q-breadcrumbs>
+
+            <q-space></q-space>
+
+            <#-- TODO: add right side buttons/etc from below -->
+
+            <#-- dark/light switch -->
+            <q-btn @click.prevent="switchDarkLight()" icon="o_invert_colors">
+                <q-tooltip>${ec.l10n.localize("Switch Dark/Light")}</q-tooltip></q-btn>
+        </q-bar>
+
+
+        <div id="navbar-buttons" class="collapse navbar-collapse navbar-ex1-collapse">
             <#-- logout button -->
             <a href="${sri.buildUrl("/Login/logout").url}" data-toggle="tooltip" data-original-title="${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}"
                    onclick="return confirm('${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}?')"
@@ -95,9 +114,6 @@ along with this software (see the LICENSE.md file). If not, see
                     </li>
                 </ul>
             </div>
-            <#-- dark/light switch -->
-            <a href="#" @click.prevent="switchDarkLight()" data-toggle="tooltip" data-original-title="${ec.l10n.localize("Switch Dark/Light")}"
-                   data-placement="bottom" class="btn btn-default btn-sm navbar-btn navbar-right"><i class="glyphicon glyphicon-adjust"></i></a>
 
             <#-- QZ print options placeholder -->
             <component :is="qzVue" ref="qzVue"></component>
@@ -118,7 +134,7 @@ along with this software (see the LICENSE.md file). If not, see
             <#-- spinner, usually hidden -->
             <div class="navbar-right" style="padding:10px 4px 6px 4px;" :class="{ hidden: loading < 1 }"><div class="spinner small"><div>&nbsp;</div></div></div>
         </div>
-    </div></nav></div>
+    </div>
     </#if>
 
     <div id="content"><div class="inner"><div class="container-fluid">
@@ -152,3 +168,16 @@ along with this software (see the LICENSE.md file). If not, see
         </div>
     </div>
 </div>
+
+<script>
+    window.quasarConfig = {
+        brand: { // this will NOT work on IE 11
+            // primary: '#e46262',
+            // ... or all other brand colors
+        },
+        // notify: {...}, // default set of options for Notify Quasar plugin
+        // loading: {...}, // default set of options for Loading Quasar plugin
+        // loadingBar: { ... }, // settings for LoadingBar Quasar plugin
+        // ..and many more (check Installation card on each Quasar component/directive/plugin)
+    }
+</script>

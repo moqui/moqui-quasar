@@ -1202,7 +1202,7 @@ moqui.webrootVue = new Vue({
     methods: {
         setUrl: function(url, bodyParameters) {
             // make sure any open modals are closed before setting current URL
-            $('.modal.in').modal('hide');
+            // TODO replace if needed: $('.modal.in').modal('hide');
             // cancel current load if needed
             if (this.currentLoadRequest) {
                 console.log("Aborting current page load currentLinkUrl " + this.currentLinkUrl + " url " + url);
@@ -1318,10 +1318,10 @@ moqui.webrootVue = new Vue({
             this.notifyHistoryList = histList;
         },
         switchDarkLight: function() {
-            var jqBody = $("body"); jqBody.toggleClass("bg-dark"); jqBody.toggleClass("bg-light");
-            var currentStyle = jqBody.hasClass("bg-dark") ? "bg-dark" : "bg-light";
+            var jqBody = $("body"); jqBody.toggleClass("body--light"); jqBody.toggleClass("body--dark");
+            var currentStyle = jqBody.hasClass("body--dark") ? "body--dark" : "body--light";
             $.ajax({ type:'POST', url:(this.appRootPath + '/apps/setPreference'), error:moqui.handleAjaxError,
-                data:{ moquiSessionToken:this.moquiSessionToken, preferenceKey:'OUTER_STYLE', preferenceValue:currentStyle } });
+                data:{ moquiSessionToken:this.moquiSessionToken, preferenceKey:'OUTER_STYLE_QUASAR', preferenceValue:currentStyle } });
         },
         showScreenDocDialog: function(docIndex) {
             $("#screen-document-dialog").modal("show");
@@ -1451,10 +1451,11 @@ moqui.webrootVue = new Vue({
     },
     mounted: function() {
         var jqEl = $(this.$el);
-        jqEl.find('.navbar [data-toggle="tooltip"]').tooltip({ placement:'bottom', trigger:'hover' });
-        jqEl.find('#history-menu-link').tooltip({ placement:'bottom', trigger:'hover' });
-        jqEl.find('#notify-history-menu-link').tooltip({ placement:'bottom', trigger:'hover' });
-        jqEl.find('#document-menu-link').tooltip({ placement:'bottom', trigger:'hover' });
+        // TODO: tooltip replacement
+        // jqEl.find('.navbar [data-toggle="tooltip"]').tooltip({ placement:'bottom', trigger:'hover' });
+        // jqEl.find('#history-menu-link').tooltip({ placement:'bottom', trigger:'hover' });
+        // jqEl.find('#notify-history-menu-link').tooltip({ placement:'bottom', trigger:'hover' });
+        // jqEl.find('#document-menu-link').tooltip({ placement:'bottom', trigger:'hover' });
         // load the current screen
         this.setUrl(window.location.pathname + window.location.search);
         // init the NotificationClient and register 'displayNotify' as the default listener

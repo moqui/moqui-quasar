@@ -13,23 +13,31 @@ along with this software (see the LICENSE.md file). If not, see
 <http://creativecommons.org/publicdomain/zero/1.0/>.
 -->
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-2.1.xsd"
-        require-authentication="false" screen-theme-type-enum-id="STT_INTERNAL" default-menu-title="Applications" allow-extra-path="true">
-    <!-- TODO: change screen-theme-type-enum-id to STT_INTERNAL_QUASAR, add data for CSS (or just include here for now...) -->
+        require-authentication="false" screen-theme-type-enum-id="STT_INTERNAL_QUASAR" default-menu-title="Applications" allow-extra-path="true">
     <!-- NOTE: require-authentication=false so no permission required but in pre-actions if no user logged in goes to login screen -->
 
     <pre-actions><script><![CDATA[
         // if user not logged in save current path and params then redirect to Login
         if (!ec.user.userId) { ec.web.saveScreenLastInfo(null, null); sri.sendRedirectAndStopRender('/Login') }
 
-        // jQuery, Bootstrap, Twitter TypeAhead, Form Validation (jquery-validate), Date/Time (Moment, bootstrap-datetimepicker),
-        //      Drop-down (Select2, Selectivity), Notify/Growl (Bootstrap Notify), Inline Editable, Sortable Hierarchical List
-        // Moqui Library (3rd party lib workarounds, NotificationClient, etc)
-        html_scripts.add('/js/CombinedBase.min.js')
+        // TODO move stylesheets to the STT_INTERNAL_QUASAR theme (QuasarThemeData.xml), once stabilized
 
+        // TODO consider using material icons instead of font-awesome - ISSUE: there are many XML Screen files with 'fa-' references
+        html_stylesheets.add('https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons+Outlined')
+        html_stylesheets.add('/libs/font-awesome/css/font-awesome.min.css')
+        // from Quasar docs, not valid? html_stylesheets.add('https://use.fontawesome.com/releases/v5.0.13/css/all.cs')
+        html_stylesheets.add('https://cdn.jsdelivr.net/npm/quasar@1.11.2/dist/quasar.min.css')
+
+        html_scripts.add('/libs/moment.js/moment-with-locales.min.js')
+        // TODO: can we get away with not using jQuery?
+        html_scripts.add('/libs/jquery/jquery.min.js')
+        html_scripts.add('/js/MoquiLib.min.js')
+
+        // TODO: use jQuery + jquery-validate or build alternative to this
         // jquery-validate locale specific scripts
-        Map validateScriptsOut = ec.service.sync().name("webroot.LocaleServices.get#ValidateLocaleScripts").call()
-        if (validateScriptsOut.messagesLocation) html_scripts.add(validateScriptsOut.messagesLocation)
-        if (validateScriptsOut.methodsLocation) html_scripts.add(validateScriptsOut.methodsLocation)
+        // Map validateScriptsOut = ec.service.sync().name("webroot.LocaleServices.get#ValidateLocaleScripts").call()
+        // if (validateScriptsOut.messagesLocation) html_scripts.add(validateScriptsOut.messagesLocation)
+        // if (validateScriptsOut.methodsLocation) html_scripts.add(validateScriptsOut.methodsLocation)
 
         String instancePurpose = System.getProperty("instance_purpose")
         if (!instancePurpose || instancePurpose == 'production') {
@@ -42,6 +50,8 @@ along with this software (see the LICENSE.md file). If not, see
             /* ========== Dev Mode ========== */
             // Vue JS
             footer_scripts.add('/libs/vue/vue.js')
+            // Quasar
+            footer_scripts.add('https://cdn.jsdelivr.net/npm/quasar@1.11.2/dist/quasar.umd.min.js')
             // Webroot Quasar-Vue instance, in footer so runs after page loaded
             footer_scripts.add('/qstatic/WebrootVue.qvt.js')
         }
