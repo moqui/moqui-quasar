@@ -1344,6 +1344,13 @@ moqui.webrootVue = new Vue({
             if (this.appRootPath && this.appRootPath.length && path.indexOf(this.appRootPath) !== 0) path = this.appRootPath + path;
             if (path.indexOf(this.basePath) === 0) path = path.replace(this.basePath, this.linkBasePath);
             return path;
+        },
+        getQuasarColor: function (bootstrapColor) {
+            // Quasar colors (https://quasar.dev/style/color-palette): primary, secondary, accent, dark, positive, negative, info, warning
+            // success => positive, danger => negative
+            if (bootstrapColor === 'success') return 'positive';
+            if (bootstrapColor === 'danger') return 'negative';
+            return bootstrapColor;
         }
     },
     watch: {

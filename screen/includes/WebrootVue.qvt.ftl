@@ -25,7 +25,7 @@ along with this software (see the LICENSE.md file). If not, see
     <q-layout view="hHh LpR fFf">
 
         <q-header reveal bordered class="bg-black text-white"><q-toolbar>
-            <q-btn dense flat round icon="o_menu" @click="leftOpen = !leftOpen"></q-btn>
+            <q-btn dense flat icon="o_menu" @click="leftOpen = !leftOpen"></q-btn>
 
             <#assign headerLogoList = sri.getThemeValues("STRT_HEADER_LOGO")>
             <#if headerLogoList?has_content>
@@ -46,7 +46,7 @@ along with this software (see the LICENSE.md file). If not, see
                         <m-link v-if="navMenuItem.hasTabMenu" :href="getNavHref(menuIndex)">{{navMenuItem.title}}</m-link>
                         <template v-else-if="navMenuItem.subscreens && navMenuItem.subscreens.length > 1">
                             <div class="cursor-pointer non-selectable">{{navMenuItem.title}}
-                                <q-menu><q-list dense style="min-width: 100px">
+                                <q-menu><q-list dense style="min-width: 200px">
                                     <q-item v-for="subscreen in navMenuItem.subscreens" :class="{'bg-primary':subscreen.active, 'text-white':subscreen.active}" clickable v-close-popup>
                                         <q-item-section>
                                             <m-link :href="subscreen.pathWithParams">
@@ -73,7 +73,62 @@ along with this software (see the LICENSE.md file). If not, see
 
             <q-space></q-space>
 
-            <#-- TODO: add right side buttons/etc from below -->
+            <#-- spinner, usually hidden -->
+            <q-circular-progress indeterminate size="20px" color="light-blue" class="q-ma-xs" :class="{ hidden: loading < 1 }"></q-circular-progress>
+
+            <#-- QZ print options placeholder -->
+            <component :is="qzVue" ref="qzVue"></component>
+
+            <#-- screen documentation/help -->
+            <q-btn dense flat icon="o_help_outline" color="info" :class="{hidden:!documentMenuList.length}">
+                <q-tooltip>${ec.l10n.localize("Documentation")}</q-tooltip>
+                <q-menu><q-list style="min-width: 300px">
+                    <q-item v-for="screenDoc in documentMenuList"><q-item-section>
+                        <q-btn flat :label="screenDoc.title" @click.prevent="showScreenDocDialog(screenDoc.index)"></q-btn>
+                    </q-item-section></q-item>
+                </q-list></q-menu>
+            </q-btn>
+
+            <#-- nav plugins -->
+            <template v-for="navPlugin in navPlugins"><component :is="navPlugin"></component></template>
+
+            <#-- notify history -->
+            <q-btn dense flat icon="o_notifications">
+                <q-tooltip>${ec.l10n.localize("Notify History")}</q-tooltip>
+                <q-menu><q-list dense style="min-width: 300px">
+                    <q-item v-for="histItem in notifyHistoryList"><q-item-section>
+                        <#-- NOTE: don't use v-html for histItem.message, may contain input repeated back so need to encode for security (make sure scripts not run, etc) -->
+                        <q-banner dense rounded class="text-white" :class="'bg-' + getQuasarColor(histItem.type)">
+                            <strong>{{histItem.time}}</strong> <span>{{histItem.message}}</span>
+                        </q-banner>
+                    </q-item-section></q-item>
+                </q-list></q-menu>
+            </q-btn>
+
+            <#-- screen history menu -->
+            <#-- get initial history from server? <#assign screenHistoryList = ec.web.getScreenHistory()><#list screenHistoryList as screenHistory><#if (screenHistory_index >= 25)><#break></#if>{url:pathWithParams, name:title}</#list> -->
+            <q-btn dense flat icon="o_history">
+                <q-tooltip>${ec.l10n.localize("Screen History")}</q-tooltip>
+                <q-menu><q-list dense style="min-width: 300px">
+                    <q-item v-for="histItem in navHistoryList" clickable v-close-popup><q-item-section>
+                        <m-link :href="histItem.pathWithParams">
+                            <template v-if="histItem.image">
+                                <i v-if="histItem.imageType === 'icon'" :class="histItem.image" style="padding-right: 8px;"></i>
+                                <img v-else :src="histItem.image" :alt="histItem.title" width="18" style="padding-right: 4px;">
+                            </template>
+                            <i v-else class="glyphicon glyphicon-link" style="padding-right: 8px;"></i>
+                            {{histItem.title}}
+                        </m-link>
+                    </q-item-section></q-item>
+                </q-list></q-menu>
+            </q-btn>
+
+            <#-- screen history previous screen -->
+            <#-- disable this for now to save space, not commonly used and limited value vs browser back:
+            <a href="#" @click.prevent="goPreviousScreen()" data-toggle="tooltip" data-original-title="${ec.l10n.localize("Previous Screen")}"
+               data-placement="bottom" class="btn btn-default btn-sm navbar-btn navbar-right"><i class="glyphicon glyphicon-menu-left"></i></a>
+            -->
+
             <#-- dark/light switch -->
             <q-btn flat dense @click.prevent="switchDarkLight()" icon="o_invert_colors" class="q-mr-xl">
                 <q-tooltip>${ec.l10n.localize("Switch Dark/Light")}</q-tooltip></q-btn>
@@ -102,61 +157,6 @@ along with this software (see the LICENSE.md file). If not, see
         </q-footer>
 
     </q-layout>
-
-    <div id="top">
-        <div id="navbar-buttons" class="collapse navbar-collapse navbar-ex1-collapse">
-            <#-- screen history menu -->
-            <#-- get initial history from server? <#assign screenHistoryList = ec.web.getScreenHistory()><#list screenHistoryList as screenHistory><#if (screenHistory_index >= 25)><#break></#if>{url:pathWithParams, name:title}</#list> -->
-            <div id="history-menu" class="nav navbar-right dropdown">
-                <a id="history-menu-link" href="#" class="dropdown-toggle btn btn-default btn-sm navbar-btn" data-toggle="dropdown" title="${ec.l10n.localize("Screen History")}">
-                    <i class="glyphicon glyphicon-menu-hamburger"></i></a>
-                <ul class="dropdown-menu">
-                    <li v-for="histItem in navHistoryList"><m-link :href="histItem.pathWithParams">
-                        <template v-if="histItem.image">
-                            <i v-if="histItem.imageType === 'icon'" :class="histItem.image" style="padding-right: 8px;"></i>
-                            <img v-else :src="histItem.image" :alt="histItem.title" width="18" style="padding-right: 4px;">
-                        </template>
-                        <i v-else class="glyphicon glyphicon-link" style="padding-right: 8px;"></i>
-                        {{histItem.title}}</m-link></li>
-                </ul>
-            </div>
-            <#-- screen history previous screen -->
-            <#-- disable this for now to save space, not commonly used and limited value vs browser back:
-            <a href="#" @click.prevent="goPreviousScreen()" data-toggle="tooltip" data-original-title="${ec.l10n.localize("Previous Screen")}"
-               data-placement="bottom" class="btn btn-default btn-sm navbar-btn navbar-right"><i class="glyphicon glyphicon-menu-left"></i></a>
-            -->
-            <#-- notify history -->
-            <div id="notify-history-menu" class="nav navbar-right dropdown">
-                <a id="notify-history-menu-link" href="#" class="dropdown-toggle btn btn-default btn-sm navbar-btn" data-toggle="dropdown" title="${ec.l10n.localize("Notify History")}">
-                    <i class="glyphicon glyphicon-exclamation-sign"></i></a>
-                <ul class="dropdown-menu" @click.prevent="stopProp">
-                    <li v-for="histItem in notifyHistoryList">
-                        <#-- NOTE: don't use v-html for histItem.message, may contain input repeated back so need to encode for security (make sure scripts not run, etc) -->
-                        <div :class="'alert alert-' + histItem.type" @click.prevent="stopProp" role="alert"><strong>{{histItem.time}}</strong> <span>{{histItem.message}}</span></div>
-                    </li>
-                </ul>
-            </div>
-
-            <#-- QZ print options placeholder -->
-            <component :is="qzVue" ref="qzVue"></component>
-
-            <#-- nav plugins -->
-            <template v-for="navPlugin in navPlugins"><component :is="navPlugin"></component></template>
-
-            <#-- screen documentation/help -->
-            <div id="document-menu" class="nav navbar-right dropdown" :class="{hidden:!documentMenuList.length}">
-                <a id="document-menu-link" href="#" class="dropdown-toggle btn btn-info btn-sm navbar-btn" data-toggle="dropdown" title="Documentation">
-                    <i class="glyphicon glyphicon-question-sign"></i></a>
-                <ul class="dropdown-menu">
-                    <li v-for="screenDoc in documentMenuList">
-                        <a href="#" @click.prevent="showScreenDocDialog(screenDoc.index)">{{screenDoc.title}}</a></li>
-                </ul>
-            </div>
-
-            <#-- spinner, usually hidden -->
-            <div class="navbar-right" style="padding:10px 4px 6px 4px;" :class="{ hidden: loading < 1 }"><div class="spinner small"><div>&nbsp;</div></div></div>
-        </div>
-    </div>
 </div>
 
 <div id="screen-document-dialog" class="modal dynamic-dialog" aria-hidden="true" style="display: none;" tabindex="-1">
