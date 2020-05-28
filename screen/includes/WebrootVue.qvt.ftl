@@ -24,52 +24,45 @@ along with this software (see the LICENSE.md file). If not, see
 
     <q-layout view="hHh LpR fFf">
 
-        <q-header reveal bordered class="bg-black text-white"><q-toolbar>
+        <q-header reveal bordered class="bg-black text-white"><q-toolbar style="font-size:15px;">
             <q-btn dense flat icon="o_menu" @click="leftOpen = !leftOpen"></q-btn>
 
             <#assign headerLogoList = sri.getThemeValues("STRT_HEADER_LOGO")>
             <#if headerLogoList?has_content>
-                <m-link href="/apps"><q-avatar square class="q-mx-md">
-                    <img src="${sri.buildUrl(headerLogoList?first).getUrl()}" alt="Home">
-                </q-avatar></m-link>
+                <m-link href="/apps"><div class="q-mx-md q-mt-sm">
+                    <img src="${sri.buildUrl(headerLogoList?first).getUrl()}" alt="Home" height="32">
+                </div></m-link>
             </#if>
             <#assign headerTitleList = sri.getThemeValues("STRT_HEADER_TITLE")>
             <#if headerTitleList?has_content>
             <q-toolbar-title>${ec.resource.expand(headerTitleList?first, "")}</q-toolbar-title>
             </#if>
 
-            <q-breadcrumbs active-color="white" style="font-size: 16px">
-                <template v-slot:separator><q-icon size="1.5em" name="o_chevron_right" color="primary"></q-icon></template>
+            <#-- NOTE: tried using q-breadcrumbs but last item with q-breadcrumbs--last class makes never clickable! -->
+            <template v-for="(navMenuItem, menuIndex) in navMenuList"><template v-if="menuIndex < (navMenuList.length - 1)">
+                <m-link v-if="navMenuItem.hasTabMenu" :href="getNavHref(menuIndex)">{{navMenuItem.title}}</m-link>
+                <div v-else-if="navMenuItem.subscreens && navMenuItem.subscreens.length > 1" class="cursor-pointer">
+                    {{navMenuItem.title}}
+                    <q-menu anchor="bottom left" self="top left"><q-list dense style="min-width: 200px">
+                        <q-item v-for="subscreen in navMenuItem.subscreens" :class="{'bg-primary':subscreen.active, 'text-white':subscreen.active}" clickable v-close-popup>
+                            <q-item-section>
+                                <m-link :href="subscreen.pathWithParams">
+                                    <template v-if="subscreen.image">
+                                        <i v-if="subscreen.imageType === 'icon'" :class="subscreen.image" style="padding-right: 4px;"></i>
+                                        <img v-else :src="subscreen.image" :alt="subscreen.title" width="18" style="padding-right: 4px;">
+                                    </template>
+                                    <i v-else class="glyphicon glyphicon-link" style="padding-right: 8px;"></i>
+                                    {{subscreen.title}}
+                                </m-link></li>
+                            </q-item-section>
+                        </q-item>
+                    </q-list></q-menu>
+                </div>
+                <m-link v-else :href="getNavHref(menuIndex)">{{navMenuItem.title}}</m-link>
 
-                <template v-for="(navMenuItem, menuIndex) in navMenuList">
-                    <q-breadcrumbs-el v-if="menuIndex < (navMenuList.length - 1)">
-                        <m-link v-if="navMenuItem.hasTabMenu" :href="getNavHref(menuIndex)">{{navMenuItem.title}}</m-link>
-                        <template v-else-if="navMenuItem.subscreens && navMenuItem.subscreens.length > 1">
-                            <div class="cursor-pointer non-selectable">{{navMenuItem.title}}
-                                <q-menu><q-list dense style="min-width: 200px">
-                                    <q-item v-for="subscreen in navMenuItem.subscreens" :class="{'bg-primary':subscreen.active, 'text-white':subscreen.active}" clickable v-close-popup>
-                                        <q-item-section>
-                                            <m-link :href="subscreen.pathWithParams">
-                                                <template v-if="subscreen.image">
-                                                    <i v-if="subscreen.imageType === 'icon'" :class="subscreen.image" style="padding-right: 4px;"></i>
-                                                    <img v-else :src="subscreen.image" :alt="subscreen.title" width="18" style="padding-right: 4px;">
-                                                </template>
-                                                <i v-else class="glyphicon glyphicon-link" style="padding-right: 8px;"></i>
-                                                {{subscreen.title}}
-                                            </m-link></li>
-                                        </q-item-section>
-                                    </q-item>
-                                </q-list></q-menu>
-                            </div>
-                        </template>
-                        <m-link v-else :href="getNavHref(menuIndex)">{{navMenuItem.title}}</m-link>
-                    </q-breadcrumbs-el>
-                </template>
-                <q-breadcrumbs-el v-if="navMenuList.length > 0">
-                    <#-- TODO for some reason this link doesn't work; also need to figure out how to make link text plain, not blue/purple and underlined -->
-                    <m-link :href="getNavHref(navMenuList.length - 1)">{{navMenuList[navMenuList.length - 1].title}}</m-link>
-                </q-breadcrumbs-el>
-            </q-breadcrumbs>
+                <q-icon size="1.5em" name="o_chevron_right" color="grey"></q-icon>
+            </template></template>
+            <m-link v-if="navMenuList.length > 0" :href="getNavHref(navMenuList.length - 1)">{{navMenuList[navMenuList.length - 1].title}}</m-link>
 
             <q-space></q-space>
 

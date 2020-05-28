@@ -1,0 +1,7 @@
+/* This software is in the public domain under CC0 1.0 Universal plus a Grant of Patent License. */
+
+/* TODO: could use var(--q-color-primary) with overrides in many places, for now just inherit */
+a { color:var(--q-color-primary); text-decoration:none; }
+.q-menu a, .q-toolbar a { color:inherit; }
+
+form, fieldset { border:none; }

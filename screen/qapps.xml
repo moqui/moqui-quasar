@@ -21,6 +21,7 @@ along with this software (see the LICENSE.md file). If not, see
         if (!ec.user.userId) { ec.web.saveScreenLastInfo(null, null); sri.sendRedirectAndStopRender('/Login') }
 
         // TODO move stylesheets to the STT_INTERNAL_QUASAR theme (QuasarThemeData.xml), once stabilized
+        html_stylesheets.add('/qstatic/WebrootVue.qvt.css')
 
         // TODO consider using material icons instead of font-awesome - ISSUE: there are many XML Screen files with 'fa-' references
         html_stylesheets.add('https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons+Outlined')

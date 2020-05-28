@@ -1,49 +1,5 @@
 /* This software is in the public domain under CC0 1.0 Universal plus a Grant of Patent License. */
 
-/* TODO:
- - add fully client rendered version of form-list when it has data prep embedded
-   - add form-list.rest-entity, rest-service (or just rest-call?), and maybe service-call/actions/etc
-   - now enabled with form-list.@server-static=qvt
-   - pagination
-     - implement dynamic pagination header based on response headers
-     - handle search parameters in some way other than $root.currentParameters so that page loads are not triggered on paginate
-   - for display implement client side formatting based on display.@format; defaults for date/time, numbers, etc
-
- - authorization in separate requests issue
-   - implied screen authz (user has authz for child screen for not parent, so implied for parent); see moqui-runtime issue #71
-   - inherited REST authz (REST services used in screen and user has authz for screen)
- - client side localization using $root.locale string
-   - some sort of moqui.l10n object with entries for each locale, then entries for each string
-   - get translations on the fly from the server and cache locally?
-
- - going to minimal path causes menu reload; avoid? better to cache menus and do partial requests...
-
- - use vue-aware widgets or add vue component wrappers for scripts and widgets
- - remove as many inline m-script elements as possible...
-
- - anchor (a) only used for link if UrlInstance.isScreenUrl() is false which looks only at default-response for url-type=plain or
-   type=none; if a transition has conditional or error responses of different types it won't response properly
-   - consider changing loadComponent to pass a header telling ScreenRenderImpl that it is for a component
-   - in ScreenRenderImpl if we are sending back content handle some other way...
-   - in SRI if redirecting to screen send JSON obj with screenUrl or for non-screen redirectUrl
-
-
- - big new feature for client rendered screens
-   - on the server render to a Vue component object in JS file following pattern of MyAccountNav.js with define(), allow separate .qvt file
-   - make these completely static, not dependent on any inline data, so they can be cached
-   - separate request(s) to get data to populate
- - screen structure (Vue specific...)
-   - use existing XML Screen with a new client-template and other elements?
-   - screen should have extension .js.xml so existing code finds things like FindExample.js for FindExample.js.xml
-   - allow separate screen or static file with .qvt extension for template string
-   - client-template element with vue template (ie pseudo html with JS expressions)
-   - client-template would still be simplified using Moqui library of Vue components
-   - other elements for vue properties like data, methods, mounted/etc lifecycle, computed, watch, etc
-   - can these be compatible with other tools like Angular2, React, etc or need something higher level?
- - screen structure for any client library (Angular2, React, etc) possible?
-   - goal would be to use FTL macros to transform more detailed XML into library specific output
- */
-
 // simple stub for define if it doesn't exist (ie no require.js, etc); mimic pattern of require.js define()
 if (!window.define) window.define = function(name, deps, callback) {
     if (!moqui.isString(name)) { callback = deps; deps = name; name = null; }
@@ -284,7 +240,7 @@ moqui.EmptyComponent = Vue.extend({ template: '<div id="current-page-root"><div 
 /* ========== inline components ========== */
 Vue.component('m-link', {
     props: { href:{type:String,required:true}, loadId:String, confirmation:String },
-    template: '<a :href="linkHref" @click.prevent="go"><slot></slot></a>',
+    template: '<a :href="linkHref" @click.prevent="go" class="q-link"><slot></slot></a>',
     methods: { go: function(event) {
         if (event.button !== 0) { return; }
         if (this.confirmation && this.confirmation.length) { if (!window.confirm(this.confirmation)) { return; } }
@@ -300,6 +256,21 @@ Vue.component('m-link', {
     }},
     computed: { linkHref: function () { return this.$root.getLinkPath(this.href); } }
 });
+// NOTE: router-link simulates the Vue Router RouterLink component (somewhat, at least enough for Quasar to use with its various 'to' attributes on q-btn, etc)
+Vue.component('router-link', {
+    props: { to:{type:String,required:true} },
+    template: '<a :href="linkHref" @click.prevent="go"><slot></slot></a>',
+    methods: { go: function(event) {
+            if (event.button !== 0) { return; }
+            if (event.ctrlKey || event.metaKey) {
+                window.open(this.linkHref, "_blank");
+            } else {
+                this.$root.setUrl(this.linkHref);
+            }
+        }},
+    computed: { linkHref: function () { return this.$root.getLinkPath(this.to); } }
+});
+
 Vue.component('m-script', {
     props: { src:String, type:{type:String,'default':'text/javascript'} },
     template: '<div :type="type" style="display:none;"><slot></slot></div>',
@@ -1194,6 +1165,7 @@ Vue.component('subscreens-active', {
     }},
     mounted: function() { this.$root.addSubscreen(this); }
 });
+
 moqui.webrootVue = new Vue({
     el: '#apps-root',
     data: { basePath:"", linkBasePath:"", currentPathList:[], extraPathList:[], activeSubscreens:[], currentParameters:{}, bodyParameters:null,

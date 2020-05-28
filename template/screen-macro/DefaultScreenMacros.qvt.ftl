@@ -30,18 +30,18 @@ along with this software (see the LICENSE.md file). If not, see
 <#macro "subscreens-menu"><#if hideNav! != "true">
     <#if .node["@type"]! == "popup"><#-- NOTE: popup menus no longer handled here, how handled dynamically in navbar.html.ftl -->
     <#-- default to type=tab -->
-    <#else><subscreens-tabs/></#if>
+    <#else><subscreens-tabs></subscreens-tabs></#if>
 </#if></#macro>
-<#macro "subscreens-active"><subscreens-active/></#macro>
+<#macro "subscreens-active"><subscreens-active></subscreens-active></#macro>
 <#macro "subscreens-panel">
     <#if .node["@type"]! == "popup"><#-- NOTE: popup menus no longer handled here, how handled dynamically in navbar.html.ftl -->
-        <subscreens-active/>
+        <subscreens-active></subscreens-active>
     <#elseif .node["@type"]! == "stack"><h1>LATER stack type subscreens-panel not yet supported.</h1>
     <#elseif .node["@type"]! == "wizard"><h1>LATER wizard type subscreens-panel not yet supported.</h1>
     <#else><#-- default to type=tab -->
         <div<#if .node["@id"]?has_content> id="${.node["@id"]}-tabpanel"</#if>>
-            <subscreens-tabs/>
-            <subscreens-active/>
+            <subscreens-tabs></subscreens-tabs>
+            <subscreens-active></subscreens-active>
         </div>
     </#if>
 </#macro>
