@@ -12,6 +12,8 @@ along with this software (see the LICENSE.md file). If not, see
 <http://creativecommons.org/publicdomain/zero/1.0/>.
 -->
 
+<#macro getQuasarColor bootstrapColor><#if bootstrapColor == "success">positive<#elseif bootstrapColor == "danger">negative<#else>${bootstrapColor}</#if></#macro>
+
 <#macro @element><p>=== Doing nothing for element ${.node?node_name}, not yet implemented. ===</p></#macro>
 
 <#macro screen><#recurse></#macro>
@@ -133,7 +135,7 @@ ${sri.renderSection(.node["@name"])}
         <#assign title = ec.getResource().expand(.node["@title"], "")>
         <#if !title?has_content><#assign title = buttonText></#if>
         <#assign cdDivId><@nodeId .node/></#assign>
-        <container-dialog id="${cdDivId}" color="${ec.getResource().expand(.node["@type"]!"primary", "")}" width="${.node["@width"]!""}"
+        <container-dialog id="${cdDivId}" color="<@getQuasarColor ec.getResource().expand(.node["@type"]!"primary", "")/>" width="${.node["@width"]!""}"
                 button-text="${buttonText}" button-class="${ec.getResource().expand(.node["@button-style"]!"", "")}" title="${title}"<#if _openDialog! == cdDivId> :openDialog="true"</#if>>
             <#recurse>
         </container-dialog>
@@ -145,14 +147,14 @@ ${sri.renderSection(.node["@name"])}
     <dynamic-container id="${dcDivId}" url="${urlInstance.passThroughSpecialParameters().pathWithParams}"></dynamic-container>
 </#macro>
 <#macro "dynamic-dialog">
-    <#assign iconClass = "glyphicon glyphicon-share">
+    <#assign iconClass = "fa fa-share">
     <#if .node["@icon"]?has_content><#assign iconClass = .node["@icon"]></#if>
     <#if .node["@condition"]?has_content><#assign conditionResult = ec.getResource().condition(.node["@condition"], "")><#else><#assign conditionResult = true></#if>
     <#if conditionResult>
         <#assign buttonText = ec.getResource().expand(.node["@button-text"], "")>
         <#assign urlInstance = sri.makeUrlByType(.node["@transition"], "transition", .node, "true")>
         <#assign ddDivId><@nodeId .node/></#assign>
-        <dynamic-dialog id="${ddDivId}" url="${urlInstance.urlWithParams}" color="${ec.getResource().expand(.node["@type"]!"primary", "")}" width="${.node["@width"]!""}"
+        <dynamic-dialog id="${ddDivId}" url="${urlInstance.urlWithParams}" color="<@getQuasarColor ec.getResource().expand(.node["@type"]!"primary", "")/>" width="${.node["@width"]!""}"
                 button-text="${buttonText}" button-class="${ec.getResource().expand(.node["@button-style"]!"", "")}" title="${buttonText}"<#if _openDialog! == ddDivId> :openDialog="true"</#if>></dynamic-dialog>
         <#-- used to use afterFormText for dynamic-dialog inside another form, needed now?
         <#assign afterFormText>
@@ -258,25 +260,34 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                 <#t><#if linkNode["@target-window"]?has_content> target="${linkNode["@target-window"]}"</#if>
                 <#t><#if linkNode["@dynamic-load-id"]?has_content> load-id="${linkNode["@dynamic-load-id"]}"</#if>
                 <#t><#if confirmationMessage?has_content><#if linkElement == "m-link"> :confirmation="'${confirmationMessage?js_string}'"<#else> onclick="return confirm('${confirmationMessage?js_string}')"</#if></#if>
-                <#t> class="<#if linkNode["@link-type"]! != "anchor">btn btn-${linkNode["@btn-type"]!"primary"} btn-sm</#if><#if linkNode["@style"]?has_content> ${ec.getResource().expandNoL10n(linkNode["@style"], "")}</#if>"
-                <#t><#if linkNode["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(linkNode["@tooltip"], "")}"</#if>>
-                <#t><#if iconClass?has_content><i class="${iconClass}"></i> </#if><#rt>
+                <#-- non q-btn approach might simulate styles like old stuff, initial attempt failed though: <#if linkNode["@link-type"]! != "anchor">btn btn-${linkNode["@btn-type"]!"primary"} btn-sm</#if> -->
+                <#if linkNode["@link-type"]! != "anchor">
+                    <#t>>
+                    <q-btn dense outline no-caps color="<@getQuasarColor linkNode["@btn-type"]!"primary"/>"
+                        <#if linkNode["@style"]?has_content> class="${ec.getResource().expandNoL10n(linkNode["@style"], "")}"</#if>>
+                <#else>
+                    <#t> class="<#if linkNode["@style"]?has_content> ${ec.getResource().expandNoL10n(linkNode["@style"], "")}</#if>">
+                </#if>
+                <#t><#if linkNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(linkNode["@tooltip"], "")}</q-tooltip></#if>
+                <#t><#if iconClass?has_content><i class="${iconClass} q-icon<#if linkText?has_content> on-left</#if>"></i> </#if><#rt>
                 <#t><#if linkNode["image"]?has_content><#visit linkNode["image"][0]><#else>${linkText}</#if>
                 <#t><#if badgeMessage?has_content> <span class="badge">${badgeMessage}</span></#if>
-                <#t></${linkElement}>
+                <#if linkNode["@link-type"]! != "anchor"></q-btn></#if>
+            <#t></${linkElement}>
         <#else>
             <#if linkFormId?has_content>
-            <#rt><button type="submit" form="${linkFormId}" id="${linkFormId}_button" class="btn btn-${linkNode["@btn-type"]!"primary"} btn-sm<#if linkNode["@style"]?has_content> ${ec.getResource().expandNoL10n(linkNode["@style"], "")}</#if>"
-                    <#t><#if confirmationMessage?has_content> onclick="return confirm('${confirmationMessage?js_string}')"</#if>
-                    <#t><#if linkNode["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(linkNode["@tooltip"], "")}"</#if>>
-                <#t><#if iconClass?has_content><i class="${iconClass}"></i> </#if>
+            <#rt><q-btn dense outline no-caps type="submit" form="${linkFormId}" id="${linkFormId}_button" color="<@getQuasarColor linkNode["@btn-type"]!"primary"/>" <#if linkNode["@style"]?has_content>class="${ec.getResource().expandNoL10n(linkNode["@style"], "")}"</#if>
+                    <#t><#if confirmationMessage?has_content> onclick="return confirm('${confirmationMessage?js_string}')"</#if>>
+                    <#t><#if linkNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(linkNode["@tooltip"], "")}</q-tooltip></#if>
+                <#t><#if iconClass?has_content><i class="${iconClass} q-icon<#if linkText?has_content> on-left</#if>"></i> </#if>
                 <#if linkNode["image"]?has_content>
                     <#t><img src="${sri.makeUrlByType(imageNode["@url"],imageNode["@url-type"]!"content",null,"true")}"<#if imageNode["@alt"]?has_content> alt="${imageNode["@alt"]}"</#if>/>
                 <#else>
                     <#t>${linkText}
                 </#if>
-            <#t><#if badgeMessage?has_content> <span class="badge">${badgeMessage}</span></#if>
-            <#t></button>
+                <#-- TODO: button badges somehow? -->
+                <#t><#if badgeMessage?has_content> <span class="badge">${badgeMessage}</span></#if>
+            <#t></q-btn>
             </#if>
         </#if>
     </#if>
@@ -298,10 +309,14 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                     <#assign iconClass = linkNode["@icon"]!>
                     <#if !iconClass?has_content && linkNode["@text"]?has_content><#assign iconClass = sri.getThemeIconClass(linkNode["@text"])!></#if>
                     <#assign badgeMessage = ec.getResource().expand(linkNode["@badge"]!, "")/>
-                    <#rt><button type="submit" class="<#if linkNode["@link-type"]! == "hidden-form-link">button-plain<#else>btn btn-${linkNode["@btn-type"]!"primary"} btn-sm</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>"
-                        <#t><#if confirmationMessage?has_content> onclick="return confirm('${confirmationMessage?js_string}')"</#if>
-                        <#t><#if linkNode["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(linkNode["@tooltip"], "")}"</#if>>
-                        <#t><#if iconClass?has_content><i class="${iconClass}"></i> </#if>${linkText}<#if badgeMessage?has_content> <span class="badge">${badgeMessage}</span></#if></button>
+                    <#-- TODO: button-plain class replacement to make q-btn like plain text somehow -->
+                    <#rt><q-btn dense outline no-caps type="submit" color="<@getQuasarColor linkNode["@btn-type"]!"primary"/>" class="<#if linkNode["@link-type"]! == "hidden-form-link">button-plain</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>"
+                            <#t><#if confirmationMessage?has_content> onclick="return confirm('${confirmationMessage?js_string}')"</#if>>
+                        <#t><#if linkNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(linkNode["@tooltip"], "")}</q-tooltip></#if>
+                        <#t><#if iconClass?has_content><i class="${iconClass} q-icon<#if linkText?has_content> on-left</#if>"></i> </#if>${linkText}
+                        <#-- TODO: button badges somehow? -->
+                        <#t><#if badgeMessage?has_content> <span class="badge">${badgeMessage}</span></#if>
+                    <#t></q-btn>
                 </#if>
             </#if>
         </${linkFormType}>
@@ -944,8 +959,8 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                     </div>
                 </#if>
             </#if>
-            <#if isSavedFinds || isHeaderDialog><button id="${headerFormDialogId}_button" type="button" data-toggle="modal" data-target="#${headerFormDialogId}" data-original-title="${headerFormButtonText}" data-placement="bottom" class="btn btn-default"><i class="glyphicon glyphicon-share"></i> ${headerFormButtonText}</button></#if>
-            <#if isSelectColumns><button id="${selectColumnsDialogId}_button" type="button" data-toggle="modal" data-target="#${selectColumnsDialogId}" data-original-title="${ec.getL10n().localize("Columns")}" data-placement="bottom" class="btn btn-default"><i class="glyphicon glyphicon-share"></i> ${ec.getL10n().localize("Columns")}</button></#if>
+            <#if isSavedFinds || isHeaderDialog><button id="${headerFormDialogId}_button" type="button" data-toggle="modal" data-target="#${headerFormDialogId}" data-original-title="${headerFormButtonText}" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> ${headerFormButtonText}</button></#if>
+            <#if isSelectColumns><button id="${selectColumnsDialogId}_button" type="button" data-toggle="modal" data-target="#${selectColumnsDialogId}" data-original-title="${ec.getL10n().localize("Columns")}" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> ${ec.getL10n().localize("Columns")}</button></#if>
 
             <#if formNode["@show-csv-button"]! == "true">
                 <#assign csvLinkUrl = sri.getScreenUrlInstance().cloneUrlInstance().addParameter("renderMode", "csv")
@@ -959,11 +974,11 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
             </#if>
             <#if formNode["@show-text-button"]! == "true">
                 <#assign showTextDialogId = formId + "_TextDialog">
-                <button id="${showTextDialogId}_button" type="button" data-toggle="modal" data-target="#${showTextDialogId}" data-original-title="${ec.getL10n().localize("Text")}" data-placement="bottom" class="btn btn-default"><i class="glyphicon glyphicon-share"></i> ${ec.getL10n().localize("Text")}</button>
+                <button id="${showTextDialogId}_button" type="button" data-toggle="modal" data-target="#${showTextDialogId}" data-original-title="${ec.getL10n().localize("Text")}" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> ${ec.getL10n().localize("Text")}</button>
             </#if>
             <#if formNode["@show-pdf-button"]! == "true">
                 <#assign showPdfDialogId = formId + "_PdfDialog">
-                <button id="${showPdfDialogId}_button" type="button" data-toggle="modal" data-target="#${showPdfDialogId}" data-original-title="${ec.getL10n().localize("PDF")}" data-placement="bottom" class="btn btn-default"><i class="glyphicon glyphicon-share"></i> ${ec.getL10n().localize("PDF")}</button>
+                <button id="${showPdfDialogId}_button" type="button" data-toggle="modal" data-target="#${showPdfDialogId}" data-original-title="${ec.getL10n().localize("PDF")}" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> ${ec.getL10n().localize("PDF")}</button>
             </#if>
 
             <#if isPaginated>
@@ -1404,8 +1419,8 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
             <#if ascActive><#assign ascOrderByUrlInfo = descOrderByUrlInfo></#if>
             <#if descActive><#assign descOrderByUrlInfo = ascOrderByUrlInfo></#if>
             <span class="form-order-by">
-                <m-link href="${ascOrderByUrlInfo.pathWithParams}"<#if ascActive> class="active"</#if>><i class="glyphicon glyphicon-triangle-top"></i></m-link>
-                <m-link href="${descOrderByUrlInfo.pathWithParams}"<#if descActive> class="active"</#if>><i class="glyphicon glyphicon-triangle-bottom"></i></m-link>
+                <m-link href="${ascOrderByUrlInfo.pathWithParams}"<#if ascActive> class="active"</#if>><i class="fa fa-caret-up"></i></m-link>
+                <m-link href="${descOrderByUrlInfo.pathWithParams}"<#if descActive> class="active"</#if>><i class="fa fa-caret-down"></i></m-link>
             </span>
         </#if>
     <#t></div>

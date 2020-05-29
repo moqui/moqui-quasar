@@ -51,7 +51,7 @@ along with this software (see the LICENSE.md file). If not, see
                                         <i v-if="subscreen.imageType === 'icon'" :class="subscreen.image" style="padding-right: 4px;"></i>
                                         <img v-else :src="subscreen.image" :alt="subscreen.title" width="18" style="padding-right: 4px;">
                                     </template>
-                                    <i v-else class="glyphicon glyphicon-link" style="padding-right: 8px;"></i>
+                                    <i v-else class="fa fa-link" style="padding-right: 8px;"></i>
                                     {{subscreen.title}}
                                 </m-link></li>
                             </q-item-section>
@@ -109,7 +109,7 @@ along with this software (see the LICENSE.md file). If not, see
                                 <i v-if="histItem.imageType === 'icon'" :class="histItem.image" style="padding-right: 8px;"></i>
                                 <img v-else :src="histItem.image" :alt="histItem.title" width="18" style="padding-right: 4px;">
                             </template>
-                            <i v-else class="glyphicon glyphicon-link" style="padding-right: 8px;"></i>
+                            <i v-else class="fa fa-link" style="padding-right: 8px;"></i>
                             {{histItem.title}}
                         </m-link>
                     </q-item-section></q-item>

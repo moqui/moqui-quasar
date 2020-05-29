@@ -83,16 +83,16 @@ moqui.notifyMessages = function(messages, errors, validationErrors) {
                 var messageItem = messages[mi];
                 if (moqui.isPlainObject(messageItem)) {
                     var msgType = messageItem.type; if (!msgType || !msgType.length) msgType = 'info';
-                    $.notify(new moqui.NotifyOptions(messageItem.message, null, msgType, null), $.extend({}, moqui.notifyOptsInfo, { type:msgType }));
+                    // TODO $.notify(new moqui.NotifyOptions(messageItem.message, null, msgType, null), $.extend({}, moqui.notifyOptsInfo, { type:msgType }));
                     moqui.webrootVue.addNotify(messageItem.message, msgType);
                 } else {
-                    $.notify(new moqui.NotifyOptions(messageItem, null, 'info', null), moqui.notifyOptsInfo);
+                    // TODO $.notify(new moqui.NotifyOptions(messageItem, null, 'info', null), moqui.notifyOptsInfo);
                     moqui.webrootVue.addNotify(messageItem, 'info');
                 }
                 notified = true;
             }
         } else {
-            $.notify(new moqui.NotifyOptions(messages, null, 'info', null), moqui.notifyOptsInfo);
+            // TODO $.notify(new moqui.NotifyOptions(messages, null, 'info', null), moqui.notifyOptsInfo);
             moqui.webrootVue.addNotify(messages, 'info');
             notified = true;
         }
@@ -100,12 +100,12 @@ moqui.notifyMessages = function(messages, errors, validationErrors) {
     if (errors) {
         if (moqui.isArray(errors)) {
             for (var ei=0; ei < errors.length; ei++) {
-                $.notify(new moqui.NotifyOptions(errors[ei], null, 'info', null), moqui.notifyOptsError);
+                // TODO $.notify(new moqui.NotifyOptions(errors[ei], null, 'info', null), moqui.notifyOptsError);
                 moqui.webrootVue.addNotify(errors[ei], 'danger');
                 notified = true;
             }
         } else {
-            $.notify(new moqui.NotifyOptions(errors, null, 'info', null), moqui.notifyOptsError);
+            // TODO $.notify(new moqui.NotifyOptions(errors, null, 'info', null), moqui.notifyOptsError);
             moqui.webrootVue.addNotify(errors, 'danger');
             notified = true;
         }
@@ -123,9 +123,8 @@ moqui.notifyValidationError = function(valError) {
         message = valError.message;
         if (valError.fieldPretty && valError.fieldPretty.length) message = message + " (for field " + valError.fieldPretty + ")";
     }
-    $.notify(new moqui.NotifyOptions(message, null, 'info', null), moqui.notifyOptsError);
+    // TODO $.notify(new moqui.NotifyOptions(message, null, 'info', null), moqui.notifyOptsError);
     moqui.webrootVue.addNotify(message, 'danger');
-
 };
 moqui.handleAjaxError = function(jqXHR, textStatus, errorThrown) {
     var resp = jqXHR.responseText;
@@ -141,9 +140,11 @@ moqui.handleAjaxError = function(jqXHR, textStatus, errorThrown) {
     if (jqXHR.status === 401) {
         if (moqui.webrootVue) { window.location.href = moqui.webrootVue.currentLinkUrl; } else { window.location.reload(true); }
     } else if (jqXHR.status === 0) { if (errorThrown.indexOf('abort') < 0) { var msg = 'Could not connect to server';
-        $.notify(new moqui.NotifyOptions(msg, null, 'danger', null), moqui.notifyOptsError); moqui.webrootVue.addNotify(msg, 'danger'); }
+        // TODO $.notify(new moqui.NotifyOptions(msg, null, 'danger', null), moqui.notifyOptsError);
+        moqui.webrootVue.addNotify(msg, 'danger'); }
     } else if (!notified) { var errMsg = 'Error: ' + errorThrown + ' (' + textStatus + ')';
-        $.notify(new moqui.NotifyOptions(errMsg, null, 'danger', null), moqui.notifyOptsError); moqui.webrootVue.addNotify(errMsg, 'danger');
+        // TODO $.notify(new moqui.NotifyOptions(errMsg, null, 'danger', null), moqui.notifyOptsError);
+        moqui.webrootVue.addNotify(errMsg, 'danger');
     }
 };
 
@@ -329,7 +330,7 @@ Vue.component('container-dialog', {
     data: function() { return { isShown:false }},
     template:
     '<span>' +
-        '<q-btn dense outline no-caps icon="o_open_in_new" :label="buttonText" :color="$root.getQuasarColor(color)" :class="buttonClass" @click="isShown = true"></q-btn>' +
+        '<q-btn dense outline no-caps icon="o_open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
         '<q-dialog v-model="isShown" :id="id"><q-card :style="{\'min-width\':((width||200)+\'px\')}">' +
             '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
                 '<q-btn icon="o_close" flat round dense v-close-popup></q-btn></q-card-section>' +
@@ -362,7 +363,7 @@ Vue.component('dynamic-dialog', {
     data: function() { return { curComponent:moqui.EmptyComponent, curUrl:"", isShown:false} },
     template:
     '<span>' +
-        '<q-btn dense outline no-caps icon="o_open_in_new" :label="buttonText" :color="$root.getQuasarColor(color)" :class="buttonClass" @click="isShown = true"></q-btn>' +
+        '<q-btn dense outline no-caps icon="o_open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
         '<q-dialog v-model="isShown" :id="id"><q-card :style="{\'min-width\':((width||200)+\'px\')}">' +
             '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
                 '<q-btn icon="o_close" flat round dense v-close-popup></q-btn></q-card-section>' +
@@ -432,7 +433,7 @@ Vue.component('tree-item', {
     template:
     '<li :id="model.id">' +
         '<i v-if="isFolder" @click="toggle" class="glyphicon" :class="{\'glyphicon-chevron-right\':!open, \'glyphicon-chevron-down\':open}"></i>' +
-        '<i v-else class="glyphicon glyphicon-unchecked"></i>' +
+        '<i v-else class="fa fa-square-o"></i>' +
         ' <span @click="setSelected">' +
             '<m-link v-if="model.a_attr" :href="model.a_attr.urlText" :load-id="model.a_attr.loadId" :class="{\'text-success\':selected}">{{model.text}}</m-link>' +
             '<span v-if="!model.a_attr" :class="{\'text-success\':selected}">{{model.text}}</span>' +
@@ -492,7 +493,7 @@ Vue.component('m-form', {
     methods: {
         submitForm: function submitForm() {
             var jqEl = $(this.$el);
-            if (this.noValidate || jqEl.valid()) {
+            if (this.noValidate || true) { // TODO: replace jqEl.valid()
                 // get button pressed value and disable ASAP to avoid double submit
                 var btnName = null, btnValue = null;
                 var $btn = $(this.buttonClicked || document.activeElement);
@@ -551,10 +552,10 @@ Vue.component('m-form', {
             if (subMsg && subMsg.length) {
                 var responseText = resp; // this is set for backward compatibility in case message relies on responseText as in old JS
                 var message = eval('"' + subMsg + '"');
-                $.notify(new moqui.NotifyOptions(message, null, 'success', null), moqui.notifyOpts);
+                // TODO $.notify(new moqui.NotifyOptions(message, null, 'success', null), moqui.notifyOpts);
                 moqui.webrootVue.addNotify(message, 'success');
             } else if (!notified) {
-                $.notify(new moqui.NotifyOptions("Submit successful", null, 'success', null), moqui.notifyOpts);
+                // TODO $.notify(new moqui.NotifyOptions("Submit successful", null, 'success', null), moqui.notifyOpts);
             }
         },
         fieldChange: function (evt) {
@@ -621,7 +622,7 @@ Vue.component('form-link', {
     methods: {
         submitForm: function() {
             var jqEl = $(this.$el);
-            if (this.noValidate || jqEl.valid()) {
+            if (this.noValidate || true) { // TODO: replace jqEl.valid()
                 // get button pressed value and disable ASAP to avoid double submit
                 var btnName = null, btnValue = null;
                 var $btn = $(document.activeElement);
@@ -691,16 +692,16 @@ Vue.component('form-paginate', {
     template:
     '<ul v-if="paginate" class="pagination">' +
         '<template v-if="paginate.pageIndex > 0">' +
-            '<li><a href="#" @click.prevent="setIndex(0)"><i class="glyphicon glyphicon-fast-backward"></i></a></li>' +
-            '<li><a href="#" @click.prevent="setIndex(paginate.pageIndex-1)"><i class="glyphicon glyphicon-backward"></i></a></li></template>' +
-        '<template v-else><li><span><i class="glyphicon glyphicon-fast-backward"></i></span></li><li><span><i class="glyphicon glyphicon-backward"></i></span></li></template>' +
+            '<li><a href="#" @click.prevent="setIndex(0)"><i class="fa fa-fast-backward"></i></a></li>' +
+            '<li><a href="#" @click.prevent="setIndex(paginate.pageIndex-1)"><i class="fa fa-backward"></i></a></li></template>' +
+        '<template v-else><li><span><i class="fa fa-fast-backward"></i></span></li><li><span><i class="fa fa-backward"></i></span></li></template>' +
         '<li v-for="prevIndex in prevArray"><a href="#" @click.prevent="setIndex(prevIndex)">{{prevIndex+1}}</a></li>' +
         '<li><span>Page {{paginate.pageIndex+1}} of {{paginate.pageMaxIndex+1}} ({{paginate.pageRangeLow}} - {{paginate.pageRangeHigh}} of {{paginate.count}})</span></li>' +
         '<li v-for="nextIndex in nextArray"><a href="#" @click.prevent="setIndex(nextIndex)">{{nextIndex+1}}</a></li>' +
         '<template v-if="paginate.pageIndex < paginate.pageMaxIndex">' +
-            '<li><a href="#" @click.prevent="setIndex(paginate.pageIndex+1)"><i class="glyphicon glyphicon-forward"></i></a></li>' +
-            '<li><a href="#" @click.prevent="setIndex(paginate.pageMaxIndex)"><i class="glyphicon glyphicon-fast-forward"></i></a></li></template>' +
-        '<template v-else><li><span><i class="glyphicon glyphicon-forward"></i></span></li><li><span><i class="glyphicon glyphicon-fast-forward"></i></span></li></template>' +
+            '<li><a href="#" @click.prevent="setIndex(paginate.pageIndex+1)"><i class="fa fa-forward"></i></a></li>' +
+            '<li><a href="#" @click.prevent="setIndex(paginate.pageMaxIndex)"><i class="fa fa-fast-forward"></i></a></li></template>' +
+        '<template v-else><li><span><i class="fa fa-forward"></i></span></li><li><span><i class="fa fa-fast-forward"></i></span></li></template>' +
     '</ul>',
     computed: {
         prevArray: function() {
@@ -766,13 +767,13 @@ Vue.component('form-list', {
             '<slot name="headerForm"  :search="searchObj"></slot></form-link>' +
         '<div class="table-scroll-wrapper"><table class="table table-striped table-hover table-condensed" :id="idVal+\'_table\'"><thead>' +
             '<tr class="form-list-nav-row"><th :colspan="columns?columns:\'100\'"><nav class="form-list-nav">' +
-                '<button v-if="savedFinds || headerDialog" :id="idVal+\'_hdialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_hdialog\'" data-original-title="Find Options" data-placement="bottom" class="btn btn-default"><i class="glyphicon glyphicon-share"></i> Find Options</button>' +
-                '<button v-if="selectColumns" :id="idVal+\'_SelColsDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_SelColsDialog\'" data-original-title="Columns" data-placement="bottom" class="btn btn-default"><i class="glyphicon glyphicon-share"></i> Columns</button>' +
+                '<button v-if="savedFinds || headerDialog" :id="idVal+\'_hdialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_hdialog\'" data-original-title="Find Options" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> Find Options</button>' +
+                '<button v-if="selectColumns" :id="idVal+\'_SelColsDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_SelColsDialog\'" data-original-title="Columns" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> Columns</button>' +
                 '<form-paginate :paginate="paginate" :form-list="this"></form-paginate>' +
                 '<form-go-page :id-val="idVal" :form-list="this"></form-go-page>' +
                 '<a v-if="csvButton" :href="csvUrl" class="btn btn-default">CSV</a>' +
-                '<button v-if="textButton" :id="idVal+\'_TextDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_TextDialog\'" data-original-title="Text" data-placement="bottom" class="btn btn-default"><i class="glyphicon glyphicon-share"></i> Text</button>' +
-                '<button v-if="pdfButton" :id="idVal+\'_PdfDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_PdfDialog\'" data-original-title="PDF" data-placement="bottom" class="btn btn-default"><i class="glyphicon glyphicon-share"></i> PDF</button>' +
+                '<button v-if="textButton" :id="idVal+\'_TextDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_TextDialog\'" data-original-title="Text" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> Text</button>' +
+                '<button v-if="pdfButton" :id="idVal+\'_PdfDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_PdfDialog\'" data-original-title="PDF" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> PDF</button>' +
                 '<slot name="nav"></slot>' +
             '</nav></th></tr>' +
             '<slot name="header" :search="searchObj"></slot>' +
@@ -828,11 +829,11 @@ Vue.component('date-time', {
     template:
     '<div v-if="type==\'time\'" class="input-group time" :id="id">' +
         '<input type="text" class="form-control" :pattern="timePattern" :id="id?(id+\'_itime\'):\'\'" :name="name" :value="value" :size="sizeVal" :form="form">' +
-        '<span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>' +
+        '<span class="input-group-addon"><span class="fa fa-clock-o"></span></span>' +
     '</div>' +
     '<div v-else class="input-group date" :id="id">' +
         '<input ref="dateInput" @focus="focusDate" @blur="blurDate" type="text" class="form-control" :id="id?(id+\'_idate\'):\'\'" :name="name" :value="value" :size="sizeVal" :form="form" :required="required == \'required\' ? true : false">' +
-        '<span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>' +
+        '<span class="input-group-addon"><span class="fa fa-calendar"></span></span>' +
     '</div>',
     methods: {
         focusDate: function() {
@@ -920,12 +921,12 @@ Vue.component('date-period', {
     template:
     '<div v-if="fromThruMode"><date-time :name="name+\'_from\'" :id="id+\'_from\'" :form="form" :type="fromThruType" :value="fromDate"/> - ' +
         '<date-time :name="name+\'_thru\'" :id="id+\'_thru\'" :form="form" :type="fromThruType" :value="thruDate"/>' +
-        ' <i @click="toggleMode" class="glyphicon glyphicon-resize-vertical"></i></div>' +
+        ' <i @click="toggleMode" class="fa fa-arrows-v"></i></div>' +
     '<div v-else class="date-period" :id="id">' +
         '<drop-down :name="name+\'_poffset\'" :options="dateOffsets" :value="offset" :allow-empty="allowEmpty" :form="form"></drop-down> ' +
         '<drop-down :name="name+\'_period\'" :options="datePeriods" :value="period" :allow-empty="allowEmpty" :form="form"></drop-down> ' +
         '<date-time :name="name+\'_pdate\'" :id="id+\'_pdate\'" :form="form" type="date" :value="date"/>' +
-        ' <i @click="toggleMode" class="glyphicon glyphicon-resize-horizontal"></i></div>',
+        ' <i @click="toggleMode" class="fa fa-arrows-h"></i></div>',
     methods: { toggleMode: function() { this.fromThruMode = !this.fromThruMode; } },
     beforeMount: function() { if (((this.fromDate && this.fromDate.length) || (this.thruDate && this.thruDate.length))) this.fromThruMode = true; }
 });

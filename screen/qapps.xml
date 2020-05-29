@@ -21,13 +21,14 @@ along with this software (see the LICENSE.md file). If not, see
         if (!ec.user.userId) { ec.web.saveScreenLastInfo(null, null); sri.sendRedirectAndStopRender('/Login') }
 
         // TODO move stylesheets to the STT_INTERNAL_QUASAR theme (QuasarThemeData.xml), once stabilized
-        html_stylesheets.add('/qstatic/WebrootVue.qvt.css')
 
         // TODO consider using material icons instead of font-awesome - ISSUE: there are many XML Screen files with 'fa-' references
         html_stylesheets.add('https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons+Outlined')
         html_stylesheets.add('/libs/font-awesome/css/font-awesome.min.css')
         // from Quasar docs, not valid? html_stylesheets.add('https://use.fontawesome.com/releases/v5.0.13/css/all.cs')
         html_stylesheets.add('https://cdn.jsdelivr.net/npm/quasar@1.11.2/dist/quasar.min.css')
+        // load last to override
+        html_stylesheets.add('/qstatic/WebrootVue.qvt.css')
 
         html_scripts.add('/libs/moment.js/moment-with-locales.min.js')
         // TODO: can we get away with not using jQuery?
