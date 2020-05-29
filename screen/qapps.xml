@@ -24,7 +24,7 @@ along with this software (see the LICENSE.md file). If not, see
 
         // TODO consider using material icons instead of font-awesome - ISSUE: there are many XML Screen files with 'fa-' references
         //  AND material icons requires very different syntax with <i class="material-icons-outlined">invert_colors</i> (2 parts) unlike fa with <i class="fa fa-shopping-cart"></i> (1 part)
-        html_stylesheets.add('https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons+Outlined')
+        html_stylesheets.add('https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons')
         // NOTE: using FA 4.7.0 with 'fa' class, for FA 5+ must change all to 'fas' class
         html_stylesheets.add('/libs/font-awesome/css/font-awesome.min.css')
         // from Quasar docs, not valid? html_stylesheets.add('https://use.fontawesome.com/releases/v5.0.13/css/all.cs')

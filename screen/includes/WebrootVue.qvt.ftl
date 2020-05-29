@@ -26,7 +26,7 @@ along with this software (see the LICENSE.md file). If not, see
     <q-layout view="hHh LpR fFf">
 
         <q-header reveal bordered class="bg-black text-white" id="top"><q-toolbar style="font-size:15px;">
-            <q-btn dense flat icon="o_menu" @click="leftOpen = !leftOpen"></q-btn>
+            <q-btn dense flat icon="menu" @click="leftOpen = !leftOpen"></q-btn>
 
             <#assign headerLogoList = sri.getThemeValues("STRT_HEADER_LOGO")>
             <#if headerLogoList?has_content>
@@ -61,7 +61,7 @@ along with this software (see the LICENSE.md file). If not, see
                 </div>
                 <m-link v-else :href="getNavHref(menuIndex)">{{navMenuItem.title}}</m-link>
 
-                <q-icon size="1.5em" name="o_chevron_right" color="grey"></q-icon>
+                <q-icon size="1.5em" name="chevron_right" color="grey"></q-icon>
             </template></template>
             <m-link v-if="navMenuList.length > 0" :href="getNavHref(navMenuList.length - 1)">{{navMenuList[navMenuList.length - 1].title}}</m-link>
 
@@ -74,7 +74,7 @@ along with this software (see the LICENSE.md file). If not, see
             <component :is="qzVue" ref="qzVue"></component>
 
             <#-- screen documentation/help -->
-            <q-btn dense flat icon="o_help_outline" color="info" :class="{hidden:!documentMenuList.length}">
+            <q-btn dense flat icon="help_outline" color="info" :class="{hidden:!documentMenuList.length}">
                 <q-tooltip>${ec.l10n.localize("Documentation")}</q-tooltip>
                 <q-menu><q-list style="min-width: 300px">
                     <q-item v-for="screenDoc in documentMenuList"><q-item-section>
@@ -87,7 +87,7 @@ along with this software (see the LICENSE.md file). If not, see
             <template v-for="navPlugin in navPlugins"><component :is="navPlugin"></component></template>
 
             <#-- notify history -->
-            <q-btn dense flat icon="o_notifications">
+            <q-btn dense flat icon="notifications">
                 <q-tooltip>${ec.l10n.localize("Notify History")}</q-tooltip>
                 <q-menu><q-list dense style="min-width: 300px">
                     <q-item v-for="histItem in notifyHistoryList"><q-item-section>
@@ -101,7 +101,7 @@ along with this software (see the LICENSE.md file). If not, see
 
             <#-- screen history menu -->
             <#-- get initial history from server? <#assign screenHistoryList = ec.web.getScreenHistory()><#list screenHistoryList as screenHistory><#if (screenHistory_index >= 25)><#break></#if>{url:pathWithParams, name:title}</#list> -->
-            <q-btn dense flat icon="o_history">
+            <q-btn dense flat icon="history">
                 <q-tooltip>${ec.l10n.localize("Screen History")}</q-tooltip>
                 <q-menu><q-list dense style="min-width: 300px">
                     <q-item v-for="histItem in navHistoryList" clickable v-close-popup><q-item-section>
@@ -124,10 +124,10 @@ along with this software (see the LICENSE.md file). If not, see
             -->
 
             <#-- dark/light switch -->
-            <q-btn flat dense @click.prevent="switchDarkLight()" icon="o_invert_colors">
+            <q-btn flat dense @click.prevent="switchDarkLight()" icon="invert_colors">
                 <q-tooltip>${ec.l10n.localize("Switch Dark/Light")}</q-tooltip></q-btn>
             <#-- logout button -->
-            <q-btn flat dense icon="o_settings_power" color="negative" type="a" href="${sri.buildUrl("/Login/logout").url}"
+            <q-btn flat dense icon="settings_power" color="negative" type="a" href="${sri.buildUrl("/Login/logout").url}"
                    onclick="return confirm('${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}?')">
                 <q-tooltip>${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}</q-tooltip></q-btn>
         </q-toolbar></q-header>
@@ -140,7 +140,7 @@ along with this software (see the LICENSE.md file). If not, see
             <subscreens-active></subscreens-active>
         </q-page></q-page-container>
 
-        <q-footer reveal bordered class="bg-grey-9 text-white row q-pa-xs">
+        <q-footer reveal bordered class="bg-grey-9 text-white row q-pa-xs" id="footer">
             <#assign footerItemList = sri.getThemeValues("STRT_FOOTER_ITEM")>
             <#list footerItemList! as footerItem>
                 <#assign footerItemTemplate = footerItem?interpret>
@@ -172,7 +172,7 @@ along with this software (see the LICENSE.md file). If not, see
             // primary: '#e46262',
             // ... or all other brand colors
         },
-        // notify: {...}, // default set of options for Notify Quasar plugin
+        notify: { progress:true, closeBtn:'X', position:'top-right' }, // default set of options for Notify Quasar plugin
         // loading: {...}, // default set of options for Loading Quasar plugin
         // loadingBar: { ... }, // settings for LoadingBar Quasar plugin
         // ..and many more (check Installation card on each Quasar component/directive/plugin)

@@ -69,12 +69,9 @@ moqui.retryInlineScript = function(src, count) {
 };
 
 /* ========== notify and error handling ========== */
-moqui.notifyOpts = { delay:1500, timer:500, offset:{x:20,y:60}, placement:{from:'top',align:'right'}, z_index:1100, type:'success',
-    animate:{ enter:'animated fadeInDown', exit:'' } }; // no animate on exit: animated fadeOutUp
-moqui.notifyOptsInfo = { delay:5000, timer:500, offset:{x:20,y:60}, placement:{from:'top',align:'right'}, z_index:1100, type:'info',
-    animate:{ enter:'animated fadeInDown', exit:'' } }; // no animate on exit: animated fadeOutUp
-moqui.notifyOptsError = { delay:15000, timer:500, offset:{x:20,y:60}, placement:{from:'top',align:'right'}, z_index:1100, type:'danger',
-    animate:{ enter:'animated fadeInDown', exit:'' } }; // no animate on exit: animated fadeOutUp
+moqui.notifyOpts = { timeout:1500, type:'positive' };
+moqui.notifyOptsInfo = { timeout:5000, type:'info' };
+moqui.notifyOptsError = { timeout:15000, type:'negative' };
 moqui.notifyMessages = function(messages, errors, validationErrors) {
     var notified = false;
     if (messages) {
@@ -82,17 +79,18 @@ moqui.notifyMessages = function(messages, errors, validationErrors) {
             for (var mi=0; mi < messages.length; mi++) {
                 var messageItem = messages[mi];
                 if (moqui.isPlainObject(messageItem)) {
-                    var msgType = messageItem.type; if (!msgType || !msgType.length) msgType = 'info';
-                    // TODO $.notify(new moqui.NotifyOptions(messageItem.message, null, msgType, null), $.extend({}, moqui.notifyOptsInfo, { type:msgType }));
+                    var msgType = moqui.getQuasarColor(messageItem.type);
+                    if (!msgType || !msgType.length) msgType = 'info';
+                    moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsInfo, { type:msgType, message:messageItem.message }));
                     moqui.webrootVue.addNotify(messageItem.message, msgType);
                 } else {
-                    // TODO $.notify(new moqui.NotifyOptions(messageItem, null, 'info', null), moqui.notifyOptsInfo);
+                    moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsInfo, { message:messageItem }));
                     moqui.webrootVue.addNotify(messageItem, 'info');
                 }
                 notified = true;
             }
         } else {
-            // TODO $.notify(new moqui.NotifyOptions(messages, null, 'info', null), moqui.notifyOptsInfo);
+            moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsInfo, { message:messageItem }));
             moqui.webrootVue.addNotify(messages, 'info');
             notified = true;
         }
@@ -100,13 +98,13 @@ moqui.notifyMessages = function(messages, errors, validationErrors) {
     if (errors) {
         if (moqui.isArray(errors)) {
             for (var ei=0; ei < errors.length; ei++) {
-                // TODO $.notify(new moqui.NotifyOptions(errors[ei], null, 'info', null), moqui.notifyOptsError);
-                moqui.webrootVue.addNotify(errors[ei], 'danger');
+                moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsError, { message:errors[ei] }));
+                moqui.webrootVue.addNotify(errors[ei], 'negative');
                 notified = true;
             }
         } else {
-            // TODO $.notify(new moqui.NotifyOptions(errors, null, 'info', null), moqui.notifyOptsError);
-            moqui.webrootVue.addNotify(errors, 'danger');
+            moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsError, { message:errors }));
+            moqui.webrootVue.addNotify(errors, 'negative');
             notified = true;
         }
     }
@@ -123,8 +121,8 @@ moqui.notifyValidationError = function(valError) {
         message = valError.message;
         if (valError.fieldPretty && valError.fieldPretty.length) message = message + " (for field " + valError.fieldPretty + ")";
     }
-    // TODO $.notify(new moqui.NotifyOptions(message, null, 'info', null), moqui.notifyOptsError);
-    moqui.webrootVue.addNotify(message, 'danger');
+    moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsError, { message:message }));
+    moqui.webrootVue.addNotify(message, 'negative');
 };
 moqui.handleAjaxError = function(jqXHR, textStatus, errorThrown) {
     var resp = jqXHR.responseText;
@@ -140,11 +138,11 @@ moqui.handleAjaxError = function(jqXHR, textStatus, errorThrown) {
     if (jqXHR.status === 401) {
         if (moqui.webrootVue) { window.location.href = moqui.webrootVue.currentLinkUrl; } else { window.location.reload(true); }
     } else if (jqXHR.status === 0) { if (errorThrown.indexOf('abort') < 0) { var msg = 'Could not connect to server';
-        // TODO $.notify(new moqui.NotifyOptions(msg, null, 'danger', null), moqui.notifyOptsError);
-        moqui.webrootVue.addNotify(msg, 'danger'); }
+        moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsError, { message:msg }));
+        moqui.webrootVue.addNotify(msg, 'negative'); }
     } else if (!notified) { var errMsg = 'Error: ' + errorThrown + ' (' + textStatus + ')';
-        // TODO $.notify(new moqui.NotifyOptions(errMsg, null, 'danger', null), moqui.notifyOptsError);
-        moqui.webrootVue.addNotify(errMsg, 'danger');
+        moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsError, { message:errMsg }));
+        moqui.webrootVue.addNotify(errMsg, 'negative');
     }
 };
 
@@ -330,10 +328,10 @@ Vue.component('container-dialog', {
     data: function() { return { isShown:false }},
     template:
     '<span>' +
-        '<q-btn dense outline no-caps icon="o_open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
-        '<q-dialog v-model="isShown" :id="id"><q-card :style="{\'min-width\':((width||200)+\'px\')}">' +
+        '<q-btn dense outline no-caps icon="open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
+        '<q-dialog v-model="isShown" :id="id"><q-card flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
             '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
-                '<q-btn icon="o_close" flat round dense v-close-popup></q-btn></q-card-section>' +
+                '<q-btn icon="close" flat round dense v-close-popup></q-btn></q-card-section>' +
             '<q-card-section><slot></slot></q-card-section>' +
         '</q-card></q-dialog>' +
     '</span>',
@@ -363,10 +361,10 @@ Vue.component('dynamic-dialog', {
     data: function() { return { curComponent:moqui.EmptyComponent, curUrl:"", isShown:false} },
     template:
     '<span>' +
-        '<q-btn dense outline no-caps icon="o_open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
-        '<q-dialog v-model="isShown" :id="id"><q-card :style="{\'min-width\':((width||200)+\'px\')}">' +
+        '<q-btn dense outline no-caps icon="open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
+        '<q-dialog v-model="isShown" :id="id"><q-card flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
             '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
-                '<q-btn icon="o_close" flat round dense v-close-popup></q-btn></q-card-section>' +
+                '<q-btn icon="close" flat round dense v-close-popup></q-btn></q-card-section>' +
             '<q-card-section><component :is="curComponent"></component></q-card-section>' +
         '</q-card></q-dialog>' +
     '</span>',
@@ -552,10 +550,10 @@ Vue.component('m-form', {
             if (subMsg && subMsg.length) {
                 var responseText = resp; // this is set for backward compatibility in case message relies on responseText as in old JS
                 var message = eval('"' + subMsg + '"');
-                // TODO $.notify(new moqui.NotifyOptions(message, null, 'success', null), moqui.notifyOpts);
+                moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOpts, { message:message }));
                 moqui.webrootVue.addNotify(message, 'success');
             } else if (!notified) {
-                // TODO $.notify(new moqui.NotifyOptions("Submit successful", null, 'success', null), moqui.notifyOpts);
+                moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOpts, { message:"Submit successful" }));
             }
         },
         fieldChange: function (evt) {
