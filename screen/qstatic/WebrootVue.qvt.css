@@ -6,7 +6,11 @@ a { color:var(--q-color-primary); text-decoration:none; }
 
 form, fieldset { border:none; display:inline-block; }
 
+.q-card { background:transparent; }
 .q-card__actions h5 { font-size: 1rem; display:inline-block; margin-block-start:0; margin-block-end:0; }
+
+.body--dark .q-menu { background-color:black; }
+.body--dark img.invertible { -webkit-filter: invert(90%); filter: invert(90%); }
 
 .q-btn--dense .q-btn__wrapper { padding: 0.285em 0.57em; }
 .q-btn .q-icon, .q-btn .q-spinner { font-size: 20px; } /* was 1.715em ~= 24px */

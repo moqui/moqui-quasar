@@ -49,7 +49,7 @@ along with this software (see the LICENSE.md file). If not, see
                                 <m-link :href="subscreen.pathWithParams">
                                     <template v-if="subscreen.image">
                                         <i v-if="subscreen.imageType === 'icon'" :class="subscreen.image" style="padding-right: 4px;"></i>
-                                        <img v-else :src="subscreen.image" :alt="subscreen.title" width="18" style="padding-right: 4px;">
+                                        <img v-else :src="subscreen.image" :alt="subscreen.title" width="18" class="invertible" style="padding-right: 4px;">
                                     </template>
                                     <i v-else class="fa fa-link" style="padding-right: 8px;"></i>
                                     {{subscreen.title}}
@@ -77,7 +77,7 @@ along with this software (see the LICENSE.md file). If not, see
                 <q-tooltip>${ec.l10n.localize("Documentation")}</q-tooltip>
                 <q-menu><q-list style="min-width: 300px">
                     <q-item v-for="screenDoc in documentMenuList"><q-item-section>
-                        <q-btn flat :label="screenDoc.title" @click.prevent="showScreenDocDialog(screenDoc.index)"></q-btn>
+                        <q-btn flat no-caps :label="screenDoc.title" @click.prevent="showScreenDocDialog(screenDoc.index)"></q-btn>
                     </q-item-section></q-item>
                 </q-list></q-menu>
             </q-btn>
