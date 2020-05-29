@@ -124,11 +124,11 @@ along with this software (see the LICENSE.md file). If not, see
             -->
 
             <#-- dark/light switch -->
-            <q-btn flat dense @click.prevent="switchDarkLight()" icon="o_invert_colors" class="q-mr-xl">
+            <q-btn flat dense @click.prevent="switchDarkLight()" icon="o_invert_colors">
                 <q-tooltip>${ec.l10n.localize("Switch Dark/Light")}</q-tooltip></q-btn>
             <#-- logout button -->
-            <#-- TODO: figure out why icon is showing to the left of the button -->
-            <q-btn flat dense icon="o_settings_power_new" type="a" href="${sri.buildUrl("/Login/logout").url}" onclick="return confirm('${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}?')">
+            <q-btn flat dense icon="o_settings_power" color="negative" type="a" href="${sri.buildUrl("/Login/logout").url}"
+                   onclick="return confirm('${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}?')">
                 <q-tooltip>${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}</q-tooltip></q-btn>
         </q-toolbar></q-header>
 
