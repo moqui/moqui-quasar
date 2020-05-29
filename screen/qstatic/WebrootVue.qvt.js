@@ -1437,6 +1437,14 @@ moqui.webrootVue = new Vue({
         this.basePath = $("#confBasePath").val(); this.linkBasePath = $("#confLinkBasePath").val();
         this.userId = $("#confUserId").val();
         this.locale = $("#confLocale").val(); if (moqui.localeMap[this.locale]) this.locale = moqui.localeMap[this.locale];
+
+        var confOuterStyle = $("#confOuterStyle").val();
+        if (confOuterStyle) {
+            var jqBody = $("body");
+            var currentStyle = jqBody.hasClass("body--dark") ? "body--dark" : "body--light";
+            if (currentStyle !== confOuterStyle) { jqBody.removeClass(currentStyle); jqBody.addClass(confOuterStyle); }
+        }
+
         this.notificationClient = new moqui.NotificationClient((location.protocol === 'https:' ? 'wss://' : 'ws://') + this.appHost + this.appRootPath + "/notws");
 
         var navPluginUrlList = [];
@@ -1449,9 +1457,6 @@ moqui.webrootVue = new Vue({
         this.setUrl(window.location.pathname + window.location.search);
         // init the NotificationClient and register 'displayNotify' as the default listener
         this.notificationClient.registerListener("ALL");
-
-        $("#screen-document-dialog").on("hidden.bs.modal", function () { var jqEl = $("#screen-document-dialog-body");
-                jqEl.empty(); jqEl.append('<div class="spinner"><div>Loading…</div></div>'); });
 
         // request Notification permission on load if not already granted or denied
         if (window.Notification && Notification.permission !== "granted" && Notification.permission !== "denied") {
