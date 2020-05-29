@@ -30,6 +30,14 @@ moqui.searchToObj = function(search) {
 Vue.filter('decodeHtml', moqui.htmlDecode);
 Vue.filter('format', moqui.format);
 
+moqui.getQuasarColor = function(bootstrapColor) {
+    // Quasar colors (https://quasar.dev/style/color-palette): primary, secondary, accent, dark, positive, negative, info, warning
+    // success => positive, danger => negative
+    if (bootstrapColor === 'success') return 'positive';
+    if (bootstrapColor === 'danger') return 'negative';
+    return bootstrapColor;
+}
+
 /* ========== script and stylesheet handling methods ========== */
 moqui.loadScript = function(src) {
     // make sure the script isn't loaded
@@ -298,47 +306,43 @@ Vue.component('m-stylesheet', {
 Vue.component('container-box', {
     props: { type:{type:String,'default':'default'}, title:String, initialOpen:{type:Boolean,'default':true} },
     data: function() { return { isBodyOpen:this.initialOpen }},
+    // TODO: handle type, somehow, with text color and Bootstrap to Quasar mapping
     template:
-    '<div :class="\'panel panel-\' + type">' +
-        '<div class="panel-heading" @click.self="toggleBody">' +
-            '<h5 v-if="title && title.length" @click="toggleBody">' +
-                '<i :class="[isBodyOpen?\'glyphicon glyphicon-chevron-down\':\'glyphicon glyphicon-chevron-right\']"/> ' +
-                '{{title}}</h5>' +
+    '<q-card flat bordered class="q-ma-sm">' +
+        '<q-card-actions @click.self="toggleBody">' +
+            '<h5 v-if="title && title.length" @click="toggleBody">{{title}}</h5>' +
             '<slot name="header"></slot>' +
-            '<div class="panel-toolbar"><slot name="toolbar"></slot></div></div>' +
-        '<div class="panel-collapse collapse" :class="{in:isBodyOpen}"><slot></slot></div>' +
-    '</div>',
+            '<q-space></q-space>' +
+            '<slot name="toolbar"></slot>' +
+        '</q-card-actions>' +
+        '<q-card-section :class="{in:isBodyOpen}"><slot></slot></q-card-section>' +
+    '</q-card>',
     methods: { toggleBody: function() { this.isBodyOpen = !this.isBodyOpen; } }
 });
 Vue.component('box-body', {
     props: { height:String },
     data: function() { return this.height ? { dialogStyle:{'max-height':this.height+'px', 'overflow-y':'auto'}} : {dialogStyle:{}}},
-    template: '<div class="panel-body" :style="dialogStyle"><slot></slot></div>'
+    template: '<div class="q-pa-xs" :style="dialogStyle"><slot></slot></div>'
 });
 Vue.component('container-dialog', {
-    props: { id:{type:String,required:true}, title:String, width:{type:String,'default':'760'}, openDialog:{type:Boolean,'default':false} },
-    data: function() {
-        var viewportWidth = $(window).width();
-        return { isHidden:true, dialogStyle:{width:(this.width < viewportWidth ? this.width : viewportWidth) + 'px'}}},
+    props: { id:{type:String}, color:String, buttonText:String, buttonClass:String, title:String, width:{type:String}, openDialog:{type:Boolean,'default':false} },
+    data: function() { return { isShown:false }},
     template:
-    '<div :id="id" class="modal dynamic-dialog" aria-hidden="true" style="display:none;" tabindex="-1">' +
-        '<div class="modal-dialog" :style="dialogStyle"><div class="modal-content">' +
-            '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
-                '<h4 class="modal-title">{{title}}</h4></div>' +
-            '<div class="modal-body"><slot></slot></div>' +
-        '</div></div>' +
-    '</div>',
-    methods: { hide: function() { $(this.$el).modal('hide'); } },
-    mounted: function() {
-        var jqEl = $(this.$el); var vm = this;
-        jqEl.on("hidden.bs.modal", function() { vm.isHidden = true; });
-        jqEl.on("shown.bs.modal", function() { vm.isHidden = false;
-            jqEl.find(":not(.noResetSelect2)>select:not(.noResetSelect2)").select2({ });
-            var defFocus = jqEl.find(".default-focus");
-            if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
-        });
-        if (this.openDialog) { jqEl.modal('show'); }
-    }
+    '<span>' +
+        '<q-btn dense outline no-caps icon="o_open_in_new" :label="buttonText" :color="$root.getQuasarColor(color)" :class="buttonClass" @click="isShown = true"></q-btn>' +
+        '<q-dialog v-model="isShown" :id="id"><q-card :style="{\'min-width\':((width||200)+\'px\')}">' +
+            '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
+                '<q-btn icon="o_close" flat round dense v-close-popup></q-btn></q-card-section>' +
+            '<q-card-section><slot></slot></q-card-section>' +
+        '</q-card></q-dialog>' +
+    '</span>',
+    methods: { hide: function() { this.isShown = false; } },
+    watch: { isShown: function(newShown) {
+        var jqEl = $(this.$el);
+        var defFocus = jqEl.find(".default-focus");
+        if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
+    } },
+    mounted: function() { if (this.openDialog) { this.isShown = true; } }
 });
 Vue.component('dynamic-container', {
     props: { id:{type:String,required:true}, url:{type:String} },
@@ -353,51 +357,60 @@ Vue.component('dynamic-container', {
     mounted: function() { this.$root.addContainer(this.id, this); this.curUrl = this.url; }
 });
 Vue.component('dynamic-dialog', {
-    props: { id:{type:String,required:true}, url:{type:String,required:true}, title:String, width:{type:String,'default':'760'},
+    props: { id:{type:String}, url:{type:String,required:true}, color:String, buttonText:String, buttonClass:String, title:String, width:{type:String},
         openDialog:{type:Boolean,'default':false}, dynamicParams:{type:Object,'default':null} },
-    data: function() {
-        var viewportWidth = $(window).width();
-        return { curComponent:moqui.EmptyComponent, curUrl:"", isHidden:true, dialogStyle:{width:(this.width < viewportWidth ? this.width : viewportWidth) + 'px'}}},
+    data: function() { return { curComponent:moqui.EmptyComponent, curUrl:"", isShown:false} },
     template:
-    '<div :id="id" class="modal dynamic-dialog" aria-hidden="true" style="display: none;" tabindex="-1">' +
-        '<div class="modal-dialog" :style="dialogStyle"><div class="modal-content">' +
-            '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
-                '<h4 class="modal-title">{{title}}</h4></div>' +
-            '<div class="modal-body"><component :is="curComponent"></component></div>' +
-        '</div></div>' +
-    '</div>',
+    '<span>' +
+        '<q-btn dense outline no-caps icon="o_open_in_new" :label="buttonText" :color="$root.getQuasarColor(color)" :class="buttonClass" @click="isShown = true"></q-btn>' +
+        '<q-dialog v-model="isShown" :id="id"><q-card :style="{\'min-width\':((width||200)+\'px\')}">' +
+            '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
+                '<q-btn icon="o_close" flat round dense v-close-popup></q-btn></q-card-section>' +
+            '<q-card-section><component :is="curComponent"></component></q-card-section>' +
+        '</q-card></q-dialog>' +
+    '</span>',
     methods: {
-        reload: function() { if (!this.isHidden) { var jqEl = $(this.$el); jqEl.modal('hide'); jqEl.modal('show'); }},
-        load: function(url) { this.curUrl = url; }, hide: function() { $(this.$el).modal('hide'); }
+        reload: function() { if (this.isShown) { this.isShown = false; this.isShown = true; }}, // TODO: needs delay? needed at all?
+        load: function(url) { this.curUrl = url; },
+        hide: function() { this.isShown = false; }
     },
-    watch: { curUrl: function (newUrl) {
-        if (!newUrl || newUrl.length === 0) { this.curComponent = moqui.EmptyComponent; return; }
-        var vm = this;
-        if (moqui.isPlainObject(this.dynamicParams)) {
-            var dpStr = '';
-            $.each(this.dynamicParams, function (key, value) {
-                var dynVal = $("#" + value).val();
-                if (dynVal && dynVal.length) dpStr = dpStr + (dpStr.length > 0 ? '&' : '') + key + '=' + dynVal;
-            });
-            if (dpStr.length) newUrl = newUrl + (newUrl.indexOf("?") > 0 ? '&' : '?') + dpStr;
-        }
-        moqui.loadComponent(newUrl, function(comp) {
-            comp.mounted = function() {
-                var jqEl = $(vm.$el);
-                jqEl.find(":not(.noResetSelect2)>select:not(.noResetSelect2)").select2({ });
+    watch: {
+        curUrl: function (newUrl) {
+            if (!newUrl || newUrl.length === 0) { this.curComponent = moqui.EmptyComponent; return; }
+            var vm = this;
+            if (moqui.isPlainObject(this.dynamicParams)) {
+                var dpStr = '';
+                $.each(this.dynamicParams, function (key, value) {
+                    var dynVal = $("#" + value).val();
+                    if (dynVal && dynVal.length) dpStr = dpStr + (dpStr.length > 0 ? '&' : '') + key + '=' + dynVal;
+                });
+                if (dpStr.length) newUrl = newUrl + (newUrl.indexOf("?") > 0 ? '&' : '?') + dpStr;
+            }
+            moqui.loadComponent(newUrl, function(comp) {
+                comp.mounted = function() {
+                    var jqEl = $(vm.$el);
+                    var defFocus = jqEl.find(".default-focus");
+                    // console.log(defFocus);
+                    if (defFocus.length) { defFocus.focus(); } else { jqEl.find('form :input:visible:first').focus(); }
+                };
+                vm.curComponent = comp;
+            }, this.id);
+        },
+        isShown: function(newShown) {
+            var jqEl = $(this.$el);
+            if (newShown) {
+                this.curUrl = this.url;
+                // TODO: need delay, wait until embedded component in place?
                 var defFocus = jqEl.find(".default-focus");
-                // console.log(defFocus);
-                if (defFocus.length) { defFocus.focus(); } else { jqEl.find('form :input:visible:first').focus(); }
-            };
-            vm.curComponent = comp;
-        }, this.id);
-    }},
+                if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
+            } else {
+                this.curUrl = "";
+            }
+        }
+    },
     mounted: function() {
-        this.$root.addContainer(this.id, this); var jqEl = $(this.$el); var vm = this;
-        jqEl.on("show.bs.modal", function() { vm.curUrl = vm.url; });
-        jqEl.on("hidden.bs.modal", function() { vm.isHidden = true; vm.curUrl = ""; });
-        jqEl.on("shown.bs.modal", function() { vm.isHidden = false; });
-        if (this.openDialog) { jqEl.modal('show'); }
+        this.$root.addContainer(this.id, this);
+        if (this.openDialog) { this.isShown = true; }
     }
 });
 Vue.component('tree-top', {
@@ -557,7 +570,7 @@ Vue.component('m-form', {
                     changed = targetDom.checked !== targetDom.defaultChecked; }
                 else { changed = targetDom.value !== targetDom.defaultValue; }
             } else if (targetDom.nodeName === "SELECT") {
-                // TODO: doesn't seem to work with select2, always shows changed; defaultSelected may not work as set by JS
+                /* TODO
                 if (targetDom.multiple) {
                     var optLen = targetDom.options.length;
                     for (var i = 0; i < optLen; i++) {
@@ -567,6 +580,7 @@ Vue.component('m-form', {
                 } else {
                     changed = !targetDom.options[targetDom.selectedIndex].defaultSelected;
                 }
+                 */
             }
             // console.log("changed? " + changed + " node " + targetDom.nodeName + " type " + targetEl.attr("type") + " " + targetEl.attr("name") + " to " + targetDom.value + " default " + targetDom.defaultValue);
             // console.log(targetDom.defaultValue);
@@ -586,11 +600,11 @@ Vue.component('m-form', {
     mounted: function() {
         var vm = this;
         var jqEl = $(this.$el);
-        if (!this.noValidate) jqEl.validate({ errorClass: 'help-block', errorElement: 'span',
+        /* TODO if (!this.noValidate) jqEl.validate({ errorClass: 'help-block', errorElement: 'span',
             highlight: function(element, errorClass, validClass) { $(element).parents('.form-group').removeClass('has-success').addClass('has-error'); },
             unhighlight: function(element, errorClass, validClass) { $(element).parents('.form-group').removeClass('has-error').addClass('has-success'); }
-        });
-        jqEl.find('[data-toggle="tooltip"]').tooltip({placement:'auto top'});
+        });*/
+        // TODO jqEl.find('[data-toggle="tooltip"]').tooltip({placement:'auto top'});
         if (this.focusField && this.focusField.length > 0) jqEl.find('[name^="' + this.focusField + '"]').addClass('default-focus').focus();
         // watch changed fields
         jqEl.find(':input').on('change', this.fieldChange);
@@ -663,11 +677,11 @@ Vue.component('form-link', {
     },
     mounted: function() {
         var jqEl = $(this.$el);
-        if (!this.noValidate) jqEl.validate({ errorClass: 'help-block', errorElement: 'span',
+        /* TODO if (!this.noValidate) jqEl.validate({ errorClass: 'help-block', errorElement: 'span',
             highlight: function(element, errorClass, validClass) { $(element).parents('.form-group').removeClass('has-success').addClass('has-error'); },
             unhighlight: function(element, errorClass, validClass) { $(element).parents('.form-group').removeClass('has-error').addClass('has-success'); }
-        });
-        jqEl.find('[data-toggle="tooltip"]').tooltip({placement:'auto top'});
+        });*/
+        // TODO jqEl.find('[data-toggle="tooltip"]').tooltip({placement:'auto top'});
         if (this.focusField && this.focusField.length > 0) jqEl.find('[name=' + this.focusField + ']').addClass('default-focus').focus();
     }
 });
@@ -856,6 +870,7 @@ Vue.component('date-time', {
         var format = this.formatVal;
         var jqEl = $(this.$el);
         if (this.type === "time") {
+            /* TODO
             jqEl.datetimepicker({toolbarPlacement:'top', debug:false, showClose:true, showClear:true, showTodayButton:true, useStrict:true,
                 defaultDate:(value && value.length ? moment(value,this.formatVal) : null), format:format,
                 extraFormats:this.extraFormatsVal, stepping:this.minuteStep, locale:this.$root.locale,
@@ -867,9 +882,11 @@ Vue.component('date-time', {
             jqEl.on("dp.change", function() { jqEl.val(jqEl.find("input").first().val()); jqEl.trigger("change"); vm.$emit('input', this.value); })
 
             jqEl.val(jqEl.find("input").first().val());
+             */
 
-            if (this.tooltip && this.tooltip.length) jqEl.tooltip({ title: this.tooltip, placement: "auto" });
+            // TODO if (this.tooltip && this.tooltip.length) jqEl.tooltip({ title: this.tooltip, placement: "auto" });
         } else {
+            /* TODO
             jqEl.datetimepicker({toolbarPlacement:'top', debug:false, showClose:true, showClear:true, showTodayButton:true, useStrict:true,
                 defaultDate:(value && value.length ? moment(value,this.formatVal) : null), format:format,
                 extraFormats:this.extraFormatsVal, stepping:this.minuteStep, locale:this.$root.locale,
@@ -883,11 +900,12 @@ Vue.component('date-time', {
             jqEl.on("dp.change", function() { jqEl.val(jqEl.find("input").first().val()); jqEl.trigger("change"); vm.$emit('input', this.value); })
 
             jqEl.val(jqEl.find("input").first().val());
+             */
 
-            if (this.tooltip && this.tooltip.length) jqEl.tooltip({ title: this.tooltip, placement: "auto" });
+            // TODO if (this.tooltip && this.tooltip.length) jqEl.tooltip({ title: this.tooltip, placement: "auto" });
         }
-        if (format === "YYYY-MM-DD") { jqEl.find('input').inputmask("yyyy-mm-dd", { clearIncomplete:false, clearMaskOnLostFocus:true, showMaskOnFocus:true, showMaskOnHover:false, removeMaskOnSubmit:false }); }
-        if (format === "YYYY-MM-DD HH:mm") { jqEl.find('input').inputmask("yyyy-mm-dd hh:mm", { clearIncomplete:false, clearMaskOnLostFocus:true, showMaskOnFocus:true, showMaskOnHover:false, removeMaskOnSubmit:false }); }
+        // TODO if (format === "YYYY-MM-DD") { jqEl.find('input').inputmask("yyyy-mm-dd", { clearIncomplete:false, clearMaskOnLostFocus:true, showMaskOnFocus:true, showMaskOnHover:false, removeMaskOnSubmit:false }); }
+        // TODO if (format === "YYYY-MM-DD HH:mm") { jqEl.find('input').inputmask("yyyy-mm-dd hh:mm", { clearIncomplete:false, clearMaskOnLostFocus:true, showMaskOnFocus:true, showMaskOnHover:false, removeMaskOnSubmit:false }); }
     }
 });
 moqui.dateOffsets = [{id:'0',text:'This'},{id:'-1',text:'Last'},{id:'1',text:'Next'},
@@ -991,8 +1009,8 @@ Vue.component('drop-down', {
             jqEl.addClass("noResetSelect2"); // so doesn't get reset on container dialog load
         }
         this.s2Opts = opts;
-        jqEl.select2(opts).on('change', function () { vm.$emit('input', this.value); });
-        if (this.tooltip && this.tooltip.length) jqEl.next().tooltip({ title: function() { return $(this).prev().attr("data-title"); }, placement: "auto" });
+        // TODO jqEl.select2(opts).on('change', function () { vm.$emit('input', this.value); });
+        // TODO if (this.tooltip && this.tooltip.length) jqEl.next().tooltip({ title: function() { return $(this).prev().attr("data-title"); }, placement: "auto" });
 
         // needed? was a hack for something, but interferes with closeOnSelect:false for multiple: .on('select2:select', function () { jqEl.select2('open').select2('close'); });
         // needed? caused some issues: .on('change', function () { vm.$emit('input', vm.curVal); })
@@ -1009,7 +1027,7 @@ Vue.component('drop-down', {
             }
         }
     },
-    computed: { curVal: { get: function() { return $(this.$el).select2().val(); },
+    computed: { curVal: { get: function() { return ""; /* TODO $(this.$el).select2().val(); */ },
         set: function(value) { $(this.$el).val(value).trigger('change'); /* console.log('set ' + $(this.$el).attr('name') + ' to ' + this.curVal); */ } } },
     watch: {
         value: function(value) { this.curVal = value; },
@@ -1018,11 +1036,13 @@ Vue.component('drop-down', {
             var jqEl = $(this.$el); var vm = this;
             var wasFocused = jqEl.next().hasClass('select2-container--focus');
             // save the lastVal if there is one to remember what was selected even if new options don't have it, just in case options change again
+            /* TODO
             var saveVal = jqEl.select2().val(); if (saveVal && saveVal.length > 1) this.lastVal = saveVal;
             jqEl.select2('destroy'); jqEl.empty();
             this.s2Opts.data = options;
             jqEl.select2(this.s2Opts).on('change', function () { vm.$emit('input', this.value); });
-            if (this.tooltip && this.tooltip.length) jqEl.next().tooltip({ title: function() { return $(this).prev().attr("data-title"); }, placement: "auto" });
+             */
+            // TODO if (this.tooltip && this.tooltip.length) jqEl.next().tooltip({ title: function() { return $(this).prev().attr("data-title"); }, placement: "auto" });
             if (wasFocused) jqEl.focus();
             setTimeout(function() {
                 var setVal = vm.lastVal; if (!setVal || setVal.length < 2) { setVal = vm.value; }
@@ -1037,7 +1057,7 @@ Vue.component('drop-down', {
             }, 50);
         }
     },
-    destroyed: function() { $(this.$el).off().select2('destroy'); }
+    destroyed: function() { /* $(this.$el).off().select2('destroy'); */ }
 });
 Vue.component('text-autocomplete', {
     props: { id:{type:String,required:true}, name:{type:String,required:true}, value:String, valueText:String,
@@ -1317,13 +1337,7 @@ moqui.webrootVue = new Vue({
             if (path.indexOf(this.basePath) === 0) path = path.replace(this.basePath, this.linkBasePath);
             return path;
         },
-        getQuasarColor: function (bootstrapColor) {
-            // Quasar colors (https://quasar.dev/style/color-palette): primary, secondary, accent, dark, positive, negative, info, warning
-            // success => positive, danger => negative
-            if (bootstrapColor === 'success') return 'positive';
-            if (bootstrapColor === 'danger') return 'negative';
-            return bootstrapColor;
-        }
+        getQuasarColor: function(bootstrapColor) { return moqui.getQuasarColor(bootstrapColor); }
     },
     watch: {
         navMenuList: function(newList) { if (newList.length > 0) {
@@ -1430,11 +1444,6 @@ moqui.webrootVue = new Vue({
     },
     mounted: function() {
         var jqEl = $(this.$el);
-        // TODO: tooltip replacement
-        // jqEl.find('.navbar [data-toggle="tooltip"]').tooltip({ placement:'bottom', trigger:'hover' });
-        // jqEl.find('#history-menu-link').tooltip({ placement:'bottom', trigger:'hover' });
-        // jqEl.find('#notify-history-menu-link').tooltip({ placement:'bottom', trigger:'hover' });
-        // jqEl.find('#document-menu-link').tooltip({ placement:'bottom', trigger:'hover' });
         // load the current screen
         this.setUrl(window.location.pathname + window.location.search);
         // init the NotificationClient and register 'displayNotify' as the default listener

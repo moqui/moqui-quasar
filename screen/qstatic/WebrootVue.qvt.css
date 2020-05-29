@@ -4,4 +4,6 @@
 a { color:var(--q-color-primary); text-decoration:none; }
 .q-menu a, .q-toolbar a { color:inherit; }
 
-form, fieldset { border:none; }
+form, fieldset { border:none; display:inline-block; }
+
+.q-card__actions h5 { font-size: 1rem; display:inline-block; margin-block-start:0; margin-block-end:0; }
