@@ -140,14 +140,12 @@ along with this software (see the LICENSE.md file). If not, see
             <subscreens-active></subscreens-active>
         </q-page></q-page-container>
 
-        <q-footer reveal bordered class="bg-grey-8 text-white">
-            <q-toolbar>
-                <#assign footerItemList = sri.getThemeValues("STRT_FOOTER_ITEM")>
-                <#list footerItemList! as footerItem>
-                    <#assign footerItemTemplate = footerItem?interpret>
-                    <@footerItemTemplate/>
-                </#list>
-            </q-toolbar>
+        <q-footer reveal bordered class="bg-grey-9 text-white row q-pa-xs">
+            <#assign footerItemList = sri.getThemeValues("STRT_FOOTER_ITEM")>
+            <#list footerItemList! as footerItem>
+                <#assign footerItemTemplate = footerItem?interpret>
+                <@footerItemTemplate/>
+            </#list>
         </q-footer>
 
     </q-layout>
