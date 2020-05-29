@@ -25,7 +25,7 @@ along with this software (see the LICENSE.md file). If not, see
 
     <q-layout view="hHh LpR fFf">
 
-        <q-header reveal bordered class="bg-black text-white"><q-toolbar style="font-size:15px;">
+        <q-header reveal bordered class="bg-black text-white" id="top"><q-toolbar style="font-size:15px;">
             <q-btn dense flat icon="o_menu" @click="leftOpen = !leftOpen"></q-btn>
 
             <#assign headerLogoList = sri.getThemeValues("STRT_HEADER_LOGO")>
