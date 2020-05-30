@@ -329,23 +329,21 @@ Vue.component('container-dialog', {
     template:
     '<span>' +
         '<q-btn dense outline no-caps icon="open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
-        '<q-dialog v-model="isShown" :id="id"><q-card flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
+        '<q-dialog v-model="isShown" :id="id" v-on:show="focusFirst()"><q-card flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
             '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
                 '<q-btn icon="close" flat round dense v-close-popup></q-btn></q-card-section>' +
             '<q-card-section ref="dialogBody"><slot></slot></q-card-section>' +
         '</q-card></q-dialog>' +
     '</span>',
-    methods: { hide: function() { this.isShown = false; } },
-    watch: { isShown: function(newShown) {
-        if (newShown) {
-            var vm = this;
-            this.$nextTick(function () {
-                var jqEl = $(vm.$refs.dialogBody.$el);
-                var defFocus = jqEl.find(".default-focus");
-                if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
-            });
+    methods: {
+        hide: function() { this.isShown = false; },
+        focusFirst: function() {
+            var jqEl = $(this.$refs.dialogBody.$el);
+            var defFocus = jqEl.find(".default-focus");
+            if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
         }
-    } },
+    },
+    watch: { isShown: function(newShown) { } },
     mounted: function() { if (this.openDialog) { this.isShown = true; } }
 });
 Vue.component('dynamic-container', {
@@ -379,7 +377,7 @@ Vue.component('dynamic-dialog', {
         hide: function() { this.isShown = false; }
     },
     watch: {
-        curUrl: function (newUrl) {
+        curUrl: function(newUrl) {
             if (!newUrl || newUrl.length === 0) { this.curComponent = moqui.EmptyComponent; return; }
             var vm = this;
             if (moqui.isPlainObject(this.dynamicParams)) {
@@ -489,53 +487,65 @@ Vue.component('m-form', {
     props: { action:{type:String,required:true}, method:{type:String,'default':'POST'},
         submitMessage:String, submitReloadId:String, submitHideId:String, focusField:String, noValidate:Boolean },
     data: function() { return { fields:{}, fieldsChanged:{}, buttonClicked:null }},
-    template: '<q-form @submit.prevent="submitForm"><slot></slot></q-form>',
+    template: '<q-form ref="qForm" @submit.prevent="submitForm"><slot></slot></q-form>',
     methods: {
-        submitForm: function submitForm() {
-            var jqEl = $(this.$el);
-            if (this.noValidate || true) { // TODO: replace jqEl.valid()
-                // get button pressed value and disable ASAP to avoid double submit
-                var btnName = null, btnValue = null;
-                var $btn = $(this.buttonClicked || document.activeElement);
-                if ($btn.length && jqEl.has($btn) && $btn.is('button[type="submit"], input[type="submit"], input[type="image"]')) {
-                    if ($btn.is('[name]')) { btnName = $btn.attr('name'); btnValue = $btn.val(); }
-                    $btn.prop('disabled', true);
-                    setTimeout(function() { $btn.prop('disabled', false); }, 3000);
-                }
-                var formData = new FormData(this.$el);
-                formData.append('moquiSessionToken', this.$root.moquiSessionToken);
-                $.each(this.fields, function (key, value) { formData.append(key, value); });
-                if (btnName) { formData.append(btnName, btnValue); }
-
-                // console.info('m-form parameters ' + JSON.stringify(formData));
-                // for (var key of formData.keys()) { console.log('m-form key ' + key + ' val ' + JSON.stringify(formData.get(key))); }
-                this.$root.loading++;
-                $.ajax({ type:this.method, url:(this.$root.appRootPath + this.action), data:formData, contentType:false, processData:false,
-                    headers:{Accept:'application/json'}, error:moqui.handleLoadError, success:this.handleResponse });
-            } else if (!this.noValidate) {
-                // For convenience, attempt to focus the first invalid element.
-                // Begin by finding the first invalid input
-                var invEle = jqEl.find('div.has-error input, div.has-error select, div.has-error textarea').first();
-                if (invEle.length) {
-                    // If the element is inside a collapsed panel, attempt to open it.
-                    // Find parent (if it exists) with class .panel-collapse.collapse (works for accordion and regular panels)
-                    var nearestPanel = invEle.parents('div.panel-collapse.collapse').last();
-                    if (nearestPanel.length) {
-                        // Only bother if the panel is not currently open
-                        if (!nearestPanel.hasClass('in')) {
-                            // From there find sibling with class panel-heading
-                            var panelHeader = nearestPanel.prevAll('div.panel-heading').last();
-                            if (panelHeader.length) {
-                                // Here is where accordion and regular panels diverge.
-                                var panelLink = panelHeader.find('a[data-toggle="collapse"]').first();
-                                if (panelLink.length) panelLink.click();
-                                else panelHeader.click();
-                                setTimeout(function() { invEle.focus(); }, 250);
+        submitForm: function() {
+            if (this.noValidate) {
+                this.submitGo();
+            } else {
+                var jqEl = $(this.$el);
+                var vm = this;
+                this.$refs.qForm.validate().then(function(success) {
+                    if (success) {
+                        vm.submitGo();
+                    } else {
+                        // For convenience, attempt to focus the first invalid element.
+                        // Begin by finding the first invalid input
+                        var invEle = jqEl.find('div.has-error input, div.has-error select, div.has-error textarea').first();
+                        if (invEle.length) {
+                            // TODO remove this or change to handle Quasar flavor of accordian/panel
+                            // If the element is inside a collapsed panel, attempt to open it.
+                            // Find parent (if it exists) with class .panel-collapse.collapse (works for accordion and regular panels)
+                            var nearestPanel = invEle.parents('div.panel-collapse.collapse').last();
+                            if (nearestPanel.length) {
+                                // Only bother if the panel is not currently open
+                                if (!nearestPanel.hasClass('in')) {
+                                    // From there find sibling with class panel-heading
+                                    var panelHeader = nearestPanel.prevAll('div.panel-heading').last();
+                                    if (panelHeader.length) {
+                                        // Here is where accordion and regular panels diverge.
+                                        var panelLink = panelHeader.find('a[data-toggle="collapse"]').first();
+                                        if (panelLink.length) panelLink.click();
+                                        else panelHeader.click();
+                                        setTimeout(function() { invEle.focus(); }, 250);
+                                    } else invEle.focus();
+                                } else invEle.focus();
                             } else invEle.focus();
-                        } else invEle.focus();
-                    } else invEle.focus();
-                }
+                        }
+                    }
+                })
             }
+        },
+        submitGo: function() {
+            var jqEl = $(this.$el);
+            // get button pressed value and disable ASAP to avoid double submit
+            var btnName = null, btnValue = null;
+            var $btn = $(this.buttonClicked || document.activeElement);
+            if ($btn.length && jqEl.has($btn) && $btn.is('button[type="submit"], input[type="submit"], input[type="image"]')) {
+                if ($btn.is('[name]')) { btnName = $btn.attr('name'); btnValue = $btn.val(); }
+                $btn.prop('disabled', true);
+                setTimeout(function() { $btn.prop('disabled', false); }, 3000);
+            }
+            var formData = new FormData(this.$refs.qForm.$el);
+            formData.append('moquiSessionToken', this.$root.moquiSessionToken);
+            $.each(this.fields, function (key, value) { formData.append(key, value); });
+            if (btnName) { formData.append(btnName, btnValue); }
+
+            // console.info('m-form parameters ' + JSON.stringify(formData));
+            // for (var key of formData.keys()) { console.log('m-form key ' + key + ' val ' + JSON.stringify(formData.get(key))); }
+            this.$root.loading++;
+            $.ajax({ type:this.method, url:(this.$root.appRootPath + this.action), data:formData, contentType:false, processData:false,
+                headers:{Accept:'application/json'}, error:moqui.handleLoadError, success:this.handleResponse });
         },
         handleResponse: function(resp) {
             this.$root.loading--;
@@ -618,57 +628,70 @@ Vue.component('m-form', {
 Vue.component('form-link', {
     props: { action:{type:String,required:true}, focusField:String, noValidate:Boolean, bodyParameterNames:Array },
     data: function() { return { fields:{} }},
-    template: '<q-form @submit.prevent="submitForm"><slot :clearForm="clearForm"></slot></q-form>',
+    template: '<q-form ref="qForm" @submit.prevent="submitForm"><slot :clearForm="clearForm"></slot></q-form>',
     methods: {
         submitForm: function() {
-            var jqEl = $(this.$el);
-            if (this.noValidate || true) { // TODO: replace jqEl.valid()
-                // get button pressed value and disable ASAP to avoid double submit
-                var btnName = null, btnValue = null;
-                var $btn = $(document.activeElement);
-                if ($btn.length && jqEl.has($btn) && $btn.is('button[type="submit"], input[type="submit"], input[type="image"]')) {
-                    if ($btn.is('[name]')) { btnName = $btn.attr('name'); btnValue = $btn.val(); }
-                    $btn.prop('disabled', true);
-                    setTimeout(function() { $btn.prop('disabled', false); }, 3000);
-                }
-                var parmList = jqEl.serializeArray();
-                $.each(this.fields, function (key, value) { parmList.push({name:key, value:value}); });
-                var extraList = [];
-                var plainKeyList = [];
-                var parmStr = "";
-                var bodyParameters = null;
-                for (var pi=0; pi<parmList.length; pi++) {
-                    var parm = parmList[pi]; var key = parm.name; var value = parm.value;
-                    if (value.trim().length === 0 || key === "moquiSessionToken" || key === "moquiFormName" || key.indexOf('[]') > 0) continue;
-                    if (key.indexOf("_op") > 0 || key.indexOf("_not") > 0 || key.indexOf("_ic") > 0) {
-                        extraList.push(parm);
+            if (this.noValidate) {
+                this.submitGo();
+            } else {
+                var vm = this;
+                this.$refs.qForm.validate().then(function(success) {
+                    if (success) {
+                        vm.submitGo();
                     } else {
-                        plainKeyList.push(key);
-                        if (this.bodyParameterNames && this.bodyParameterNames.indexOf(key) >= 0) {
-                            if (!bodyParameters) bodyParameters = {};
-                            bodyParameters[key] = value;
-                        } else {
-                            if (parmStr.length > 0) { parmStr += '&'; }
-                            parmStr += (encodeURIComponent(key) + '=' + encodeURIComponent(value));
-                        }
+                        // oh no, user has filled in at least one invalid value
                     }
-                }
-                for (var ei=0; ei<extraList.length; ei++) {
-                    var eparm = extraList[ei]; var keyName = eparm.name.substring(0, eparm.name.indexOf('_'));
-                    if (plainKeyList.indexOf(keyName) >= 0) {
-                        if (parmStr.length > 0) { parmStr += '&'; }
-                        parmStr += (encodeURIComponent(eparm.name) + '=' + encodeURIComponent(eparm.value));
-                    }
-                }
-                if (btnName && btnValue && btnValue.trim().length) {
-                    if (parmStr.length > 0) { parmStr += '&'; }
-                    parmStr += (encodeURIComponent(btnName) + '=' + encodeURIComponent(btnValue));
-                }
-                var url = this.action;
-                if (url.indexOf('?') > 0) { url = url + '&' + parmStr; } else { url = url + '?' + parmStr; }
-                // console.log("form-link url " + url + " bodyParameters " + JSON.stringify(bodyParameters));
-                this.$root.setUrl(url, bodyParameters);
+                })
             }
+        },
+        submitGo: function() {
+            // get button pressed value and disable ASAP to avoid double submit
+            var btnName = null, btnValue = null;
+            var $btn = $(document.activeElement);
+            if ($btn.length && jqEl.has($btn) && $btn.is('button[type="submit"], input[type="submit"], input[type="image"]')) {
+                if ($btn.is('[name]')) { btnName = $btn.attr('name'); btnValue = $btn.val(); }
+                $btn.prop('disabled', true);
+                setTimeout(function() { $btn.prop('disabled', false); }, 3000);
+            }
+
+            var parmList = $(this.$refs.qForm.$el).serializeArray();
+            $.each(this.fields, function (key, value) { parmList.push({name:key, value:value}); });
+            var extraList = [];
+            var plainKeyList = [];
+            var parmStr = "";
+            var bodyParameters = null;
+            for (var pi=0; pi<parmList.length; pi++) {
+                var parm = parmList[pi]; var key = parm.name; var value = parm.value;
+                if (value.trim().length === 0 || key === "moquiSessionToken" || key === "moquiFormName" || key.indexOf('[]') > 0) continue;
+                if (key.indexOf("_op") > 0 || key.indexOf("_not") > 0 || key.indexOf("_ic") > 0) {
+                    extraList.push(parm);
+                } else {
+                    plainKeyList.push(key);
+                    if (this.bodyParameterNames && this.bodyParameterNames.indexOf(key) >= 0) {
+                        if (!bodyParameters) bodyParameters = {};
+                        bodyParameters[key] = value;
+                    } else {
+                        if (parmStr.length > 0) { parmStr += '&'; }
+                        parmStr += (encodeURIComponent(key) + '=' + encodeURIComponent(value));
+                    }
+                }
+            }
+            for (var ei=0; ei<extraList.length; ei++) {
+                var eparm = extraList[ei]; var keyName = eparm.name.substring(0, eparm.name.indexOf('_'));
+                if (plainKeyList.indexOf(keyName) >= 0) {
+                    if (parmStr.length > 0) { parmStr += '&'; }
+                    parmStr += (encodeURIComponent(eparm.name) + '=' + encodeURIComponent(eparm.value));
+                }
+            }
+            if (btnName && btnValue && btnValue.trim().length) {
+                if (parmStr.length > 0) { parmStr += '&'; }
+                parmStr += (encodeURIComponent(btnName) + '=' + encodeURIComponent(btnValue));
+            }
+            var url = this.action;
+            if (url.indexOf('?') > 0) { url = url + '&' + parmStr; } else { url = url + '?' + parmStr; }
+            // console.log("form-link url " + url + " bodyParameters " + JSON.stringify(bodyParameters));
+            this.$root.setUrl(url, bodyParameters);
+
         },
         clearForm: function() {
             var jqEl = $(this.$el);
@@ -931,51 +954,61 @@ Vue.component('date-period', {
     beforeMount: function() { if (((this.fromDate && this.fromDate.length) || (this.thruDate && this.thruDate.length))) this.fromThruMode = true; }
 });
 Vue.component('drop-down', {
-    props: { options:Array, value:[Array,String], combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
+    props: { options:{type:Array,'default':[]}, value:[Array,String], combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
         serverSearch:{type:Boolean,'default':false}, serverDelay:{type:Number,'default':300}, serverMinLength:{type:Number,'default':1},
-        optionsParameters:Object, labelField:String, valueField:String, dependsOn:Object, dependsOptional:Boolean,
-        optionsLoadInit:Boolean, form:String, tooltip:String, label:String },
-    data: function() { return { curData:null, lastVal:null, curVal:this.value } },
+        optionsParameters:Object, labelField:{type:String,'default':'label'}, valueField:{type:String,'default':'value'},
+        dependsOn:Object, dependsOptional:Boolean, optionsLoadInit:Boolean, form:String, tooltip:String, label:String, name:String, id:String },
+    data: function() { return { curData:null, lastVal:null, curVal:this.value, loading:false, fields:this.$parent.fields } },
     template:
-        '<q-select dense options-dense use-input fill-input hide-selected input-debounce="20" @filter="filterFn" :clearable="allowEmpty"' +
-                ' :multiple="multiple" :use-chips="multiple" :form="form" stack-label :label="label" v-model="curVal" :options="curData">' +
+        '<q-select ref="qSelect" dense options-dense use-input fill-input hide-selected :name="name" :id="id" :form="form"' +
+                ' input-debounce="500" @filter="filterFn" :clearable="allowEmpty"' +
+                ' :multiple="multiple" :use-chips="multiple" :emit-value="true" :map-options="true"' +
+                ' stack-label :label="label" :loading="loading" v-model="curVal" :options="curData">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
             '<template v-slot:no-option><q-item><q-item-section class="text-grey">No results</q-item-section></q-item></template>' +
         '<slot></slot></q-select>',
     methods: {
-        filterFn: function(val, update, abort) {
-            var vm = this;
-            update(function() {
-                if (vm.options && vm.options.length) {
-                    const needle = val.toLowerCase();
-                    vm.curData = vm.options.filter(function(v) { return v.label && v.label.toLowerCase().indexOf(needle) > -1; });
-                } else if (this.serverSearch) {
-                    if (val.length < this.serverMinLength) { abort(); return; }
-                    this.populateFromUrl({term:val})
-                } else {
-                    abort();
-                }
-            })
+        filterFn: function(val, doneFn, abortFn) {
+            if (this.options && this.options.length) {
+                var vm = this;
+                doneFn(function() {
+                    var needle = val.toLowerCase();
+                    vm.curData = vm.options.filter(function (v) {
+                        return v.label && v.label.toLowerCase().indexOf(needle) > -1;
+                    });
+                });
+            } else if (this.optionsUrl && this.optionsUrl.length) {
+                console.log("filterFn calling populateFromUrl" + val);
+                if (val.length < this.serverMinLength) { abortFn(); return; }
+                this.populateFromUrl({term:val}, doneFn, abortFn);
+            } else {
+                console.error("drop-down " + this.name + " has no options and is no options-url");
+                abortFn();
+            }
         },
         processOptionList: function(list, page, term) {
             var newData = [];
-            var labelField = this.labelField; if (!labelField) { labelField = "label"; }
-            var valueField = this.valueField; if (!valueField) { valueField = "value"; }
+            var labelField = this.labelField;
+            var valueField = this.valueField;
             $.each(list, function(idx, curObj) {
                 var valueVal = curObj[valueField];
                 var labelVal = curObj[labelField];
-                newData.push({ value:valueVal||labelVal, label:labelVal||valueVal })
+                newData.push({ value:valueVal||labelVal, label:labelVal||valueVal });
             });
             return newData;
         },
         serverData: function(params) {
             var hasAllParms = true;
-            var dependsOnMap = this.dependsOn; var parmMap = this.optionsParameters;
+            var dependsOnMap = this.dependsOn;
+            var parmMap = this.optionsParameters;
             var reqData = { moquiSessionToken: this.$root.moquiSessionToken };
             for (var parmName in parmMap) { if (parmMap.hasOwnProperty(parmName)) reqData[parmName] = parmMap[parmName]; }
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
-                var doValue = $('#' + dependsOnMap[doParm]).val();
-                if (!doValue || doValue === "\u00a0") { hasAllParms = false; } else { reqData[doParm] = doValue; }
+                var doParmJqEl = $('#' + dependsOnMap[doParm]);
+                var doValue = doParmJqEl.val();
+                if (!doValue) doValue = doParmJqEl.find('select').val();
+                // TODO: support other ways of getting values for other form fields like by 'fields' Object from m-form and form-link
+                if (!doValue) { hasAllParms = false; } else { reqData[doParm] = doValue; }
             }}
             if (params) { reqData.term = params.term || ''; reqData.pageIndex = (params.page || 1) - 1; }
             else if (this.serverSearch) { reqData.term = ''; reqData.pageIndex = 0; }
@@ -992,15 +1025,33 @@ Vue.component('drop-down', {
                     pagination: { more: (data.count ? (params.page * pageSize) < data.count : false) } };
             }
         },
-        populateFromUrl: function(params) {
-            if (!this.optionsUrl || this.optionsUrl.length === 0) return;
+        populateFromUrl: function(params, doneFn, abortFn) {
             var reqData = this.serverData(params);
-            if (!reqData.hasAllParms && !this.dependsOptional) { this.curData = null; return; }
+            console.log("populateFromUrl 1 " + this.optionsUrl + " reqData.hasAllParms " + reqData.hasAllParms + " dependsOptional " + this.dependsOptional);
+            console.log(reqData);
+            if (!this.optionsUrl || !this.optionsUrl.length) { console.warn("In drop-down tried to populateFromUrl but no optionsUrl"); if (abortFn) abortFn(); return; }
+            if (!reqData.hasAllParms && !this.dependsOptional) { console.warn("In drop-down tried to populateFromUrl but not hasAllParms and not dependsOptional"); this.curData = []; if (abortFn) abortFn(); return; }
             var vm = this;
+            this.loading = true;
             $.ajax({ type:"POST", url:this.optionsUrl, data:reqData, dataType:"json", headers:{Accept:'application/json'},
-                error:moqui.handleAjaxError, success: function(data) {
+                error:function(jqXHR, textStatus, errorThrown) {
+                    vm.loading = false;
+                    if (abortFn) abortFn();
+                    moqui.handleAjaxError(jqXHR, textStatus, errorThrown);
+                },
+                success: function(data) {
                     var list = moqui.isArray(data) ? data : data.options;
-                    if (list) { vm.curData = vm.processOptionList(list, null, (params ? params.term : null)); }
+                    var procList = vm.processOptionList(list, null, (params ? params.term : null));
+                    if (list) {
+                        if (doneFn) {
+                            doneFn(function() { vm.curData = procList; })
+                        } else {
+                            vm.curData = procList;
+                            vm.$refs.qSelect.refresh();
+                            vm.$refs.qSelect.updateInputValue();
+                        }
+                    }
+                    vm.loading = false;
                 }});
         }
     },
@@ -1014,7 +1065,14 @@ Vue.component('drop-down', {
         if (this.optionsUrl && this.optionsUrl.length > 0) {
             var dependsOnMap = this.dependsOn;
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
-                $('#' + dependsOnMap[doParm]).on('change', function() { vm.populateFromUrl({term:this.curVal}); }); }}
+                var doJqEl = $('#' + dependsOnMap[doParm]);
+                var doSelectJqEl = doJqEl.find("select");
+                if (doSelectJqEl && doSelectJqEl.length) {
+                    doSelectJqEl.on('input-value', function() { vm.populateFromUrl({term:this.curVal}); });
+                } else {
+                    doJqEl.on('change', function() { vm.populateFromUrl({term:this.curVal}); });
+                }
+            } }
             // do initial populate if not a serverSearch or for serverSearch if we have an initial value do the search so we don't display the ID
             if (this.optionsLoadInit) {
                 if (!this.serverSearch) { this.populateFromUrl(); }
@@ -1029,11 +1087,11 @@ Vue.component('drop-down', {
             var jqEl = $(this.$el);
             var vm = this;
             // save the lastVal if there is one to remember what was selected even if new options don't have it, just in case options change again
-            if (this.curVal && this.curVal.length > 1) this.lastVal = this.curVal;
+            if (this.curVal && this.curVal.length) this.lastVal = this.curVal;
 
             setTimeout(function() {
                 var setVal = vm.lastVal;
-                if (!setVal || setVal.length < 1) { setVal = vm.curVal; }
+                if (!setVal || !setVal.length) { setVal = vm.curVal; }
                 if (setVal) {
                     var isInList = false;
                     var setValIsArray = moqui.isArray(setVal);
