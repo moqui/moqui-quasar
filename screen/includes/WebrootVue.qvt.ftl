@@ -174,7 +174,7 @@ along with this software (see the LICENSE.md file). If not, see
         },
         notify: { progress:true, closeBtn:'X', position:'top-right' }, // default set of options for Notify Quasar plugin
         // loading: {...}, // default set of options for Loading Quasar plugin
-        // loadingBar: { ... }, // settings for LoadingBar Quasar plugin
+        loadingBar: { color:'primary' }, // settings for LoadingBar Quasar plugin
         // ..and many more (check Installation card on each Quasar component/directive/plugin)
     }
 </script>

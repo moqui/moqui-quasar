@@ -332,14 +332,19 @@ Vue.component('container-dialog', {
         '<q-dialog v-model="isShown" :id="id"><q-card flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
             '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
                 '<q-btn icon="close" flat round dense v-close-popup></q-btn></q-card-section>' +
-            '<q-card-section><slot></slot></q-card-section>' +
+            '<q-card-section ref="dialogBody"><slot></slot></q-card-section>' +
         '</q-card></q-dialog>' +
     '</span>',
     methods: { hide: function() { this.isShown = false; } },
     watch: { isShown: function(newShown) {
-        var jqEl = $(this.$el);
-        var defFocus = jqEl.find(".default-focus");
-        if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
+        if (newShown) {
+            var vm = this;
+            this.$nextTick(function () {
+                var jqEl = $(vm.$refs.dialogBody.$el);
+                var defFocus = jqEl.find(".default-focus");
+                if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
+            });
+        }
     } },
     mounted: function() { if (this.openDialog) { this.isShown = true; } }
 });
@@ -365,7 +370,7 @@ Vue.component('dynamic-dialog', {
         '<q-dialog v-model="isShown" :id="id"><q-card flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
             '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
                 '<q-btn icon="close" flat round dense v-close-popup></q-btn></q-card-section>' +
-            '<q-card-section><component :is="curComponent"></component></q-card-section>' +
+            '<q-card-section ref="dialogBody"><component :is="curComponent"></component></q-card-section>' +
         '</q-card></q-dialog>' +
     '</span>',
     methods: {
@@ -387,21 +392,18 @@ Vue.component('dynamic-dialog', {
             }
             moqui.loadComponent(newUrl, function(comp) {
                 comp.mounted = function() {
-                    var jqEl = $(vm.$el);
-                    var defFocus = jqEl.find(".default-focus");
-                    // console.log(defFocus);
-                    if (defFocus.length) { defFocus.focus(); } else { jqEl.find('form :input:visible:first').focus(); }
+                    this.$nextTick(function () {
+                        var jqEl = $(vm.$refs.dialogBody.$el);
+                        var defFocus = jqEl.find(".default-focus");
+                        if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
+                    });
                 };
                 vm.curComponent = comp;
             }, this.id);
         },
         isShown: function(newShown) {
-            var jqEl = $(this.$el);
             if (newShown) {
                 this.curUrl = this.url;
-                // TODO: need delay, wait until embedded component in place?
-                var defFocus = jqEl.find(".default-focus");
-                if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
             } else {
                 this.curUrl = "";
             }
@@ -487,7 +489,7 @@ Vue.component('m-form', {
     props: { action:{type:String,required:true}, method:{type:String,'default':'POST'},
         submitMessage:String, submitReloadId:String, submitHideId:String, focusField:String, noValidate:Boolean },
     data: function() { return { fields:{}, fieldsChanged:{}, buttonClicked:null }},
-    template: '<form @submit.prevent="submitForm"><slot></slot></form>',
+    template: '<q-form @submit.prevent="submitForm"><slot></slot></q-form>',
     methods: {
         submitForm: function submitForm() {
             var jqEl = $(this.$el);
@@ -616,7 +618,7 @@ Vue.component('m-form', {
 Vue.component('form-link', {
     props: { action:{type:String,required:true}, focusField:String, noValidate:Boolean, bodyParameterNames:Array },
     data: function() { return { fields:{} }},
-    template: '<form @submit.prevent="submitForm"><slot :clearForm="clearForm"></slot></form>',
+    template: '<q-form @submit.prevent="submitForm"><slot :clearForm="clearForm"></slot></q-form>',
     methods: {
         submitForm: function() {
             var jqEl = $(this.$el);
@@ -746,7 +748,7 @@ Vue.component('form-list', {
             action:String, multi:Boolean, skipForm:Boolean, skipHeader:Boolean, headerForm:Boolean, headerDialog:Boolean,
             savedFinds:Boolean, selectColumns:Boolean, allButton:Boolean, csvButton:Boolean, textButton:Boolean, pdfButton:Boolean,
             columns:[String,Number] },
-    data: function() { return { rowList:[], paginate:null, searchObj:null, moqui:moqui } },
+    data: function() { return { rowList:[], fields:{}, paginate:null, searchObj:null, moqui:moqui } },
     // slots (props): headerForm (search), header (search), nav (), rowForm (fields), row (fields)
     // TODO: QuickSavedFind drop-down
     // TODO: change find options form to update searchObj and run fetchRows instead of changing main page and reloading
@@ -1066,7 +1068,7 @@ Vue.component('text-autocomplete', {
         showValue:Boolean, useActual:Boolean, skipInitial:Boolean },
     data: function () { return { delayTimeout:null } },
     template:
-    '<span><input ref="acinput" :id="acId" :name="acName" :type="type" :value="valueText" :size="size" :maxlength="maxlength" :disabled="disabled"' +
+    '<span><q-input dense ref="acinput" :id="acId" :name="acName" :type="type" :value="valueText" :size="size" :maxlength="maxlength" :disabled="disabled"' +
         ' :class="allClasses" :data-vv-validation="validationClasses" :required="required" :pattern="pattern"' +
         ' :data-toggle="tooltipToggle" :title="tooltip" autocomplete="off" :form="form">' +
         '<input ref="hidden" :id="id" type="hidden" :name="name" :value="value" :form="form">' +
