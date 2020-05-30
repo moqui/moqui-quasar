@@ -931,22 +931,40 @@ Vue.component('date-period', {
     beforeMount: function() { if (((this.fromDate && this.fromDate.length) || (this.thruDate && this.thruDate.length))) this.fromThruMode = true; }
 });
 Vue.component('drop-down', {
-    props: { options:Array, value:[Array,String], combo:Boolean, allowEmpty:Boolean, multiple:String, optionsUrl:String,
+    props: { options:Array, value:[Array,String], combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
         serverSearch:{type:Boolean,'default':false}, serverDelay:{type:Number,'default':300}, serverMinLength:{type:Number,'default':1},
         optionsParameters:Object, labelField:String, valueField:String, dependsOn:Object, dependsOptional:Boolean,
-        optionsLoadInit:Boolean, form:String, tooltip:String },
-    data: function() { return { curData:null, s2Opts:null, lastVal:null } },
-    template: '<select :form="form" :data-title="tooltip"><slot></slot></select>',
+        optionsLoadInit:Boolean, form:String, tooltip:String, label:String },
+    data: function() { return { curData:null, lastVal:null, curVal:this.value } },
+    template:
+        '<q-select dense options-dense use-input fill-input hide-selected input-debounce="20" @filter="filterFn" :clearable="allowEmpty"' +
+                ' :multiple="multiple" :use-chips="multiple" :form="form" stack-label :label="label" v-model="curVal" :options="curData">' +
+            '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
+            '<template v-slot:no-option><q-item><q-item-section class="text-grey">No results</q-item-section></q-item></template>' +
+        '<slot></slot></q-select>',
     methods: {
+        filterFn: function(val, update, abort) {
+            var vm = this;
+            update(function() {
+                if (vm.options && vm.options.length) {
+                    const needle = val.toLowerCase();
+                    vm.curData = vm.options.filter(function(v) { return v.label && v.label.toLowerCase().indexOf(needle) > -1; });
+                } else if (this.serverSearch) {
+                    if (val.length < this.serverMinLength) { abort(); return; }
+                    this.populateFromUrl({term:val})
+                } else {
+                    abort();
+                }
+            })
+        },
         processOptionList: function(list, page, term) {
             var newData = [];
-            // funny case where select2 specifies no option.@value if empty so &nbsp; ends up passed with form submit; now filtered on server for \u00a0 only and set to null
-            if (this.allowEmpty && (!page || page <= 1) && (!term || term.trim() === '')) newData.push({ id:'\u00a0', text:'\u00a0' });
             var labelField = this.labelField; if (!labelField) { labelField = "label"; }
             var valueField = this.valueField; if (!valueField) { valueField = "value"; }
             $.each(list, function(idx, curObj) {
-                var idVal = curObj[valueField]; if (!idVal) idVal = '\u00a0';
-                newData.push({ id:idVal, text:curObj[labelField] })
+                var valueVal = curObj[valueField];
+                var labelVal = curObj[labelField];
+                newData.push({ value:valueVal||labelVal, label:labelVal||valueVal })
             });
             return newData;
         },
@@ -987,72 +1005,41 @@ Vue.component('drop-down', {
         }
     },
     mounted: function() {
-        var jqEl = $(this.$el);
-        var vm = this; var opts = { minimumResultsForSearch:10 };
-        if (this.combo) { opts.tags = true; opts.tokenSeparators = [',',' ']; }
-        if (this.multiple === "multiple") {
-            opts.multiple = true; opts.closeOnSelect = false; opts.width = "100%";
-            jqEl.css("min-width", "240px"); // this gets ignored, not sure why select2 isn't passing it through
-            jqEl.addClass("noResetSelect2"); // so doesn't get reset on container dialog load
-        }
-        if (this.options && this.options.length > 0) {
-            if (this.allowEmpty && this.multiple !== "multiple") opts.data = [{id:'',text:'\u00a0'}].concat(this.options);
-            else opts.data = this.options;
-        }
+        var vm = this;
+        // TODO: handle combo somehow: if (this.combo) { opts.tags = true; opts.tokenSeparators = [',',' ']; }
+
         if (this.serverSearch) {
             if (!this.optionsUrl) console.error("drop-down in form " + this.form + " has no options-url but has server-search=true");
-            opts.ajax = { url:this.optionsUrl, type:"POST", dataType:"json", delay:this.serverDelay, cache:true,
-                data:this.serverData, processResults:this.processResponse, error:moqui.handleAjaxError };
-            opts.minimumInputLength = this.serverMinLength; opts.minimumResultsForSearch = 0;
-            // handle width differently because with no options will go to min-width, for table cells/etc use reasonable min-width
-            opts.width = "100%";
-            jqEl.css("min-width", "200px");
-            jqEl.addClass("noResetSelect2"); // so doesn't get reset on container dialog load
         }
-        this.s2Opts = opts;
-        // TODO jqEl.select2(opts).on('change', function () { vm.$emit('input', this.value); });
-        // TODO if (this.tooltip && this.tooltip.length) jqEl.next().tooltip({ title: function() { return $(this).prev().attr("data-title"); }, placement: "auto" });
-
-        // needed? was a hack for something, but interferes with closeOnSelect:false for multiple: .on('select2:select', function () { jqEl.select2('open').select2('close'); });
-        // needed? caused some issues: .on('change', function () { vm.$emit('input', vm.curVal); })
-        var initValue = this.value;
-        if (initValue && initValue.length) { this.curVal = initValue; }
         if (this.optionsUrl && this.optionsUrl.length > 0) {
             var dependsOnMap = this.dependsOn;
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
-                $('#' + dependsOnMap[doParm]).on('change', function() { vm.populateFromUrl({term:initValue}); }); }}
+                $('#' + dependsOnMap[doParm]).on('change', function() { vm.populateFromUrl({term:this.curVal}); }); }}
             // do initial populate if not a serverSearch or for serverSearch if we have an initial value do the search so we don't display the ID
             if (this.optionsLoadInit) {
                 if (!this.serverSearch) { this.populateFromUrl(); }
-                else if (initValue && initValue.length && moqui.isString(initValue)) { this.populateFromUrl({term:initValue}); }
+                else if (this.curVal && this.curVal.length && moqui.isString(this.curVal)) { this.populateFromUrl({term:this.curVal}); }
             }
         }
     },
-    computed: { curVal: { get: function() { return ""; /* TODO $(this.$el).select2().val(); */ },
-        set: function(value) { $(this.$el).val(value).trigger('change'); /* console.log('set ' + $(this.$el).attr('name') + ' to ' + this.curVal); */ } } },
     watch: {
-        value: function(value) { this.curVal = value; },
+        curVal: function(value) { this.$emit('input', value); },
         options: function(options) { this.curData = options; },
         curData: function(options) {
-            var jqEl = $(this.$el); var vm = this;
-            var wasFocused = jqEl.next().hasClass('select2-container--focus');
+            var jqEl = $(this.$el);
+            var vm = this;
             // save the lastVal if there is one to remember what was selected even if new options don't have it, just in case options change again
-            /* TODO
-            var saveVal = jqEl.select2().val(); if (saveVal && saveVal.length > 1) this.lastVal = saveVal;
-            jqEl.select2('destroy'); jqEl.empty();
-            this.s2Opts.data = options;
-            jqEl.select2(this.s2Opts).on('change', function () { vm.$emit('input', this.value); });
-             */
-            // TODO if (this.tooltip && this.tooltip.length) jqEl.next().tooltip({ title: function() { return $(this).prev().attr("data-title"); }, placement: "auto" });
-            if (wasFocused) jqEl.focus();
+            if (this.curVal && this.curVal.length > 1) this.lastVal = this.curVal;
+
             setTimeout(function() {
-                var setVal = vm.lastVal; if (!setVal || setVal.length < 2) { setVal = vm.value; }
+                var setVal = vm.lastVal;
+                if (!setVal || setVal.length < 1) { setVal = vm.curVal; }
                 if (setVal) {
                     var isInList = false;
                     var setValIsArray = moqui.isArray(setVal);
                     $.each(options, function(idx, curObj) {
-                        if (setValIsArray ? $.inArray(curObj.id, setVal) : curObj.id === setVal) isInList = true; });
-                    if (isInList) jqEl.val(setVal);
+                        if (setValIsArray ? $.inArray(curObj.value, setVal) : curObj.value === setVal) isInList = true; });
+                    if (isInList) vm.curVal = setVal;
                 }
                 jqEl.trigger('change');
             }, 50);
