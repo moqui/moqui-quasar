@@ -484,10 +484,10 @@ Vue.component('m-editable', {
 
 /* ========== form components ========== */
 Vue.component('m-form', {
-    props: { action:{type:String,required:true}, method:{type:String,'default':'POST'},
+    props: { fieldsInitial:Object, action:{type:String,required:true}, method:{type:String,'default':'POST'},
         submitMessage:String, submitReloadId:String, submitHideId:String, focusField:String, noValidate:Boolean },
-    data: function() { return { fields:{}, fieldsChanged:{}, buttonClicked:null }},
-    template: '<q-form ref="qForm" @submit.prevent="submitForm"><slot></slot></q-form>',
+    data: function() { return { fields:Object.assign({}, this.fieldsInitial), fieldsChanged:{}, buttonClicked:null }},
+    template: '<q-form ref="qForm" @submit.prevent="submitForm"><slot :fields="fields"></slot></q-form>',
     methods: {
         submitForm: function() {
             if (this.noValidate) {
@@ -626,9 +626,9 @@ Vue.component('m-form', {
     }
 });
 Vue.component('form-link', {
-    props: { action:{type:String,required:true}, focusField:String, noValidate:Boolean, bodyParameterNames:Array },
-    data: function() { return { fields:{} }},
-    template: '<q-form ref="qForm" @submit.prevent="submitForm"><slot :clearForm="clearForm"></slot></q-form>',
+    props: { fieldsInitial:Object, action:{type:String,required:true}, focusField:String, noValidate:Boolean, bodyParameterNames:Array },
+    data: function() { return { fields:Object.assign({}, this.fieldsInitial) }},
+    template: '<q-form ref="qForm" @submit.prevent="submitForm"><slot :clearForm="clearForm" :fields="fields"></slot></q-form>',
     methods: {
         submitForm: function() {
             if (this.noValidate) {
@@ -954,16 +954,17 @@ Vue.component('date-period', {
     beforeMount: function() { if (((this.fromDate && this.fromDate.length) || (this.thruDate && this.thruDate.length))) this.fromThruMode = true; }
 });
 Vue.component('drop-down', {
-    props: { options:{type:Array,'default':[]}, value:[Array,String], combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
+    props: { value:[Array,String], options:{type:Array,'default':[]}, combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
         serverSearch:{type:Boolean,'default':false}, serverDelay:{type:Number,'default':300}, serverMinLength:{type:Number,'default':1},
         optionsParameters:Object, labelField:{type:String,'default':'label'}, valueField:{type:String,'default':'value'},
         dependsOn:Object, dependsOptional:Boolean, optionsLoadInit:Boolean, form:String, tooltip:String, label:String, name:String, id:String },
-    data: function() { return { curData:null, lastVal:null, curVal:this.value, loading:false, fields:this.$parent.fields } },
+    data: function() { return { curOptions:null, lastVal:null, loading:false, fields:this.$parent.fields } },
     template:
-        '<q-select ref="qSelect" dense options-dense use-input fill-input hide-selected :name="name" :id="id" :form="form"' +
+        '<q-select ref="qSelect" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
+                ' dense options-dense use-input fill-input hide-selected :name="name" :id="id" :form="form"' +
                 ' input-debounce="500" @filter="filterFn" :clearable="allowEmpty"' +
                 ' :multiple="multiple" :use-chips="multiple" :emit-value="true" :map-options="true"' +
-                ' stack-label :label="label" :loading="loading" v-model="curVal" :options="curData">' +
+                ' stack-label :label="label" :loading="loading" :options="curOptions">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
             '<template v-slot:no-option><q-item><q-item-section class="text-grey">No results</q-item-section></q-item></template>' +
         '<slot></slot></q-select>',
@@ -972,14 +973,18 @@ Vue.component('drop-down', {
             if (this.options && this.options.length) {
                 var vm = this;
                 doneFn(function() {
-                    var needle = val.toLowerCase();
-                    vm.curData = vm.options.filter(function (v) {
-                        return v.label && v.label.toLowerCase().indexOf(needle) > -1;
-                    });
+                    if (val && val.length) {
+                        var needle = val.toLowerCase();
+                        vm.curOptions = vm.options.filter(function (v) {
+                            return v.label && v.label.toLowerCase().indexOf(needle) > -1;
+                        });
+                    } else {
+                        vm.curOptions = vm.options;
+                    }
                 });
             } else if (this.optionsUrl && this.optionsUrl.length) {
                 console.log("filterFn calling populateFromUrl" + val);
-                if (val.length < this.serverMinLength) { abortFn(); return; }
+                if (this.serverSearch && val.length < this.serverMinLength) { abortFn(); return; }
                 this.populateFromUrl({term:val}, doneFn, abortFn);
             } else {
                 console.error("drop-down " + this.name + " has no options and is no options-url");
@@ -1029,8 +1034,17 @@ Vue.component('drop-down', {
             var reqData = this.serverData(params);
             console.log("populateFromUrl 1 " + this.optionsUrl + " reqData.hasAllParms " + reqData.hasAllParms + " dependsOptional " + this.dependsOptional);
             console.log(reqData);
-            if (!this.optionsUrl || !this.optionsUrl.length) { console.warn("In drop-down tried to populateFromUrl but no optionsUrl"); if (abortFn) abortFn(); return; }
-            if (!reqData.hasAllParms && !this.dependsOptional) { console.warn("In drop-down tried to populateFromUrl but not hasAllParms and not dependsOptional"); this.curData = []; if (abortFn) abortFn(); return; }
+            if (!this.optionsUrl || !this.optionsUrl.length) {
+                console.warn("In drop-down tried to populateFromUrl but no optionsUrl");
+                if (abortFn) abortFn();
+                return;
+            }
+            if (!reqData.hasAllParms && !this.dependsOptional) {
+                console.warn("In drop-down tried to populateFromUrl but not hasAllParms and not dependsOptional");
+                this.curOptions = [];
+                if (abortFn) abortFn();
+                return;
+            }
             var vm = this;
             this.loading = true;
             $.ajax({ type:"POST", url:this.optionsUrl, data:reqData, dataType:"json", headers:{Accept:'application/json'},
@@ -1044,9 +1058,9 @@ Vue.component('drop-down', {
                     var procList = vm.processOptionList(list, null, (params ? params.term : null));
                     if (list) {
                         if (doneFn) {
-                            doneFn(function() { vm.curData = procList; })
+                            doneFn(function() { vm.curOptions = procList; })
                         } else {
-                            vm.curData = procList;
+                            vm.curOptions = procList;
                             vm.$refs.qSelect.refresh();
                             vm.$refs.qSelect.updateInputValue();
                         }
@@ -1056,7 +1070,6 @@ Vue.component('drop-down', {
         }
     },
     mounted: function() {
-        var vm = this;
         // TODO: handle combo somehow: if (this.combo) { opts.tags = true; opts.tokenSeparators = [',',' ']; }
 
         if (this.serverSearch) {
@@ -1068,38 +1081,41 @@ Vue.component('drop-down', {
                 var doJqEl = $('#' + dependsOnMap[doParm]);
                 var doSelectJqEl = doJqEl.find("select");
                 if (doSelectJqEl && doSelectJqEl.length) {
-                    doSelectJqEl.on('input-value', function() { vm.populateFromUrl({term:this.curVal}); });
+                    doSelectJqEl.on('input-value', function() { this.populateFromUrl({term:this.value}); });
                 } else {
-                    doJqEl.on('change', function() { vm.populateFromUrl({term:this.curVal}); });
+                    doJqEl.on('change', function() { this.populateFromUrl({term:this.value}); });
                 }
             } }
             // do initial populate if not a serverSearch or for serverSearch if we have an initial value do the search so we don't display the ID
             if (this.optionsLoadInit) {
                 if (!this.serverSearch) { this.populateFromUrl(); }
-                else if (this.curVal && this.curVal.length && moqui.isString(this.curVal)) { this.populateFromUrl({term:this.curVal}); }
+                else if (this.value && this.value.length && moqui.isString(this.value)) { this.populateFromUrl({term:this.value}); }
             }
         }
     },
     watch: {
-        curVal: function(value) { this.$emit('input', value); },
-        options: function(options) { this.curData = options; },
-        curData: function(options) {
+        // curVal: function(value) { this.$emit('input', value); },
+        value: function(newVal) { console.trace("drop-down new value " + newVal); },
+        options: function(options) { this.curOptions = options; },
+        curOptions: function(options) {
+            // save the lastVal if there is one to remember what was selected even if new options don't have it, just in case options change again
+            if (this.value && this.value.length) this.lastVal = this.value;
+
             var jqEl = $(this.$el);
             var vm = this;
-            // save the lastVal if there is one to remember what was selected even if new options don't have it, just in case options change again
-            if (this.curVal && this.curVal.length) this.lastVal = this.curVal;
-
+            // TODO: maybe change this to nextTick()
             setTimeout(function() {
                 var setVal = vm.lastVal;
-                if (!setVal || !setVal.length) { setVal = vm.curVal; }
+                if (!setVal || !setVal.length) { setVal = vm.value; }
                 if (setVal) {
                     var isInList = false;
                     var setValIsArray = moqui.isArray(setVal);
                     $.each(options, function(idx, curObj) {
                         if (setValIsArray ? $.inArray(curObj.value, setVal) : curObj.value === setVal) isInList = true; });
-                    if (isInList) vm.curVal = setVal;
+                    // for v-model approach don't set vm.value directly, instead emit input signal
+                    if (isInList) vm.$emit('input', setVal);
                 }
-                jqEl.trigger('change');
+                // TODO needed? jqEl.trigger('change');
             }, 50);
         }
     },
