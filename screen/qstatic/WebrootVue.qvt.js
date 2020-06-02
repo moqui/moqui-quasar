@@ -487,7 +487,9 @@ Vue.component('m-form', {
     props: { fieldsInitial:Object, action:{type:String,required:true}, method:{type:String,'default':'POST'},
         submitMessage:String, submitReloadId:String, submitHideId:String, focusField:String, noValidate:Boolean },
     data: function() { return { fields:Object.assign({}, this.fieldsInitial), fieldsChanged:{}, buttonClicked:null }},
-    template: '<q-form ref="qForm" @submit.prevent="submitForm"><slot :fields="fields"></slot></q-form>',
+    // for whatever reason <slot v-bind:fields="fields"></slot> doesn't work, using <m-form v-slot:default="formProps"> in qvt.ftl macro so caller specifies props wrapper name
+    // see https://vuejs.org/v2/guide/components-slots.html
+    template: '<q-form ref="qForm" @submit.prevent="submitForm" @reset.prevent="resetForm"><slot></slot></q-form>',
     methods: {
         submitForm: function() {
             if (this.noValidate) {
@@ -525,6 +527,10 @@ Vue.component('m-form', {
                     }
                 })
             }
+        },
+        resetForm: function() {
+            this.fields = Object.assign({}, this.fieldsInitial);
+            this.fieldsChanged = {};
         },
         submitGo: function() {
             var jqEl = $(this.$el);
@@ -628,7 +634,7 @@ Vue.component('m-form', {
 Vue.component('form-link', {
     props: { fieldsInitial:Object, action:{type:String,required:true}, focusField:String, noValidate:Boolean, bodyParameterNames:Array },
     data: function() { return { fields:Object.assign({}, this.fieldsInitial) }},
-    template: '<q-form ref="qForm" @submit.prevent="submitForm"><slot :clearForm="clearForm" :fields="fields"></slot></q-form>',
+    template: '<q-form ref="qForm" @submit.prevent="submitForm" @reset.prevent="resetForm"><slot></slot></q-form>',
     methods: {
         submitForm: function() {
             if (this.noValidate) {
@@ -693,10 +699,13 @@ Vue.component('form-link', {
             this.$root.setUrl(url, bodyParameters);
 
         },
-        clearForm: function() {
+        resetForm: function() {
+            this.fields = Object.assign({}, this.fieldsInitial);
+            /* old approach:
             var jqEl = $(this.$el);
             jqEl.find(':radio, :checkbox').removeAttr('checked');
             jqEl.find('textarea, :text, select').val('').trigger('change');
+             */
         }
     },
     mounted: function() {
