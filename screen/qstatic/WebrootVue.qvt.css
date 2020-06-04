@@ -19,6 +19,8 @@ body.test #top { background: #224422!important; }
 .q-btn--dense .q-btn__wrapper { padding: 0.285em 0.57em; }
 .q-btn .q-icon, .q-btn .q-spinner { font-size: 20px; } /* was 1.715em ~= 24px */
 
+/* TODO: move field lable up to 'notch' in outline (like https://material.io/components/text-fields) .q-field--dense .q-field__label { top:0; background:white; } */
+
 @media print {
     *, *:before, *:after { background: transparent none !important; }
     body { background: white none !important; font-size: 10px; }
