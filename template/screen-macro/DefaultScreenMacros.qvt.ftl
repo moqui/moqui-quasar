@@ -1634,14 +1634,16 @@ a => A, d => D, y => Y
 <#macro display>
     <#assign dispFieldId><@fieldId .node/></#assign>
     <#assign dispFieldName><@fieldName .node/></#assign>
-    <#assign dispFieldNode = .node?parent?parent>
+    <#assign dispSubFieldNode = .node?parent>
+    <#assign dispFieldNode = dispSubFieldNode?parent>
+    <#assign dispFormNode = dispFieldNode?parent>
     <#assign dispAlign = dispFieldNode["@align"]!"left">
     <#assign dispHidden = (!.node["@also-hidden"]?has_content || .node["@also-hidden"] == "true") && !(skipForm!false)>
     <#assign dispDynamic = .node["@dynamic-transition"]?has_content>
     <#assign fieldValue = "">
     <#if fieldsJsName?has_content>
         <#assign format = .node["@format"]!>
-        <#assign fieldValue>{{${fieldsJsName}.${dispFieldName} | format<#if format?has_content>("${format}")</#if>}}</#assign>
+        <#assign fieldValue>{{(${fieldsJsName}.${dispFieldName}_display || ${fieldsJsName}.${dispFieldName}) | format<#if format?has_content>("${format}")</#if>}}</#assign>
     <#else>
         <#if .node["@text"]?has_content>
             <#assign textMap = "">
@@ -1656,11 +1658,24 @@ a => A, d => D, y => Y
             <#assign fieldValue = sri.getFieldValueString(.node)>
         </#if>
     </#if>
+    <#-- TODO handle dispDynamic -->
     <#if dispDynamic && !fieldValue?has_content><#assign fieldValue><@widgetTextValue .node true/></#assign></#if>
-    <#t><span class="text-inline ${sri.getFieldValueClass(dispFieldNode)}<#if .node["@currency-unit-field"]?has_content> currency</#if><#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>"<#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if><#if dispDynamic> id="${dispFieldId}_display"</#if>>
-        <#t><#if fieldValue?has_content><#if .node["@encode"]! == "false">${fieldValue}<#else>${fieldValue?html?replace("\n", "<br>")}</#if><#else>&nbsp;</#if>
-    <#t></span>
+    <#if dispFormNode?node_name == "form-single">
+        <#t><q-input dense outlined readonly stack-label label="<@fieldTitle dispSubFieldNode/>" id="${dispFieldId}_display"
+                <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${dispFieldName}_display"</#if>
+                <#t>class="${sri.getFieldValueClass(dispFieldNode)}<#if .node["@currency-unit-field"]?has_content> currency</#if><#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
+            <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
+            <#-- TODO not sure if this will be used, might be for plain forms (not m-form or form-link) but need to find way to display like v-model as this ends up looking funny -->
+            <#t><#if !fieldsJsName?has_content && fieldValue?has_content><#if .node["@encode"]! == "false">${fieldValue}<#else>${fieldValue?html?replace("\n", "<br>")}</#if><#else>&nbsp;</#if>
+        <#t></q-input>
+    <#else>
+        <#t><span id="${dispFieldId}_display" class="text-inline ${sri.getFieldValueClass(dispFieldNode)}<#if .node["@currency-unit-field"]?has_content> currency</#if><#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
+            <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
+            <#t><#if fieldValue?has_content><#if .node["@encode"]! == "false">${fieldValue}<#else>${fieldValue?html?replace("\n", "<br>")}</#if><#else>&nbsp;</#if>
+        <#t></span>
+    </#if>
     <#if dispHidden>
+        <#-- TODO handle dispDynamic -->
         <#if dispDynamic>
             <#assign hiddenValue><@widgetTextValue .node true "value"/></#assign>
             <input type="hidden" id="${dispFieldId}" name="${dispFieldName}" value="${hiddenValue}"<#if ownerForm?has_content> form="${ownerForm}"</#if>>
@@ -1670,6 +1685,7 @@ a => A, d => D, y => Y
             <input type="hidden" id="${dispFieldId}" name="${dispFieldName}" <#if fieldsJsName?has_content>:value="${fieldsJsName}.${dispFieldName}"<#else>value="${sri.getFieldValuePlainString(dispFieldNode, "")?html}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>
         </#if>
     </#if>
+    <#-- TODO handle dispDynamic
     <#if dispDynamic>
         <#assign defUrlInfo = sri.makeUrlByType(.node["@dynamic-transition"], "transition", .node, "false")>
         <#assign defUrlParameterMap = defUrlInfo.getParameterMap()>
@@ -1679,7 +1695,7 @@ a => A, d => D, y => Y
                 <#if .node["@depends-optional"]! != "true">
                     var hasAllParms = true;
                     <#list depNodeList as depNode>if (!$('#<@fieldIdByName depNode["@field"]/>').val()) { hasAllParms = false; } </#list>
-                    if (!hasAllParms) { <#-- alert("not has all parms"); --> return; }
+                    if (!hasAllParms) {  return; }
                 </#if>
                 $.ajax({ type:"POST", url:"${defUrlInfo.url}", data:{ moquiSessionToken: "${(ec.getWeb().sessionToken)!}"<#rt>
                     <#t><#list depNodeList as depNode><#local depNodeField = depNode["@field"]><#local depNodeParm = depNode["@parameter"]!depNodeField><#local _void = defUrlParameterMap.remove(depNodeParm)!>, "${depNodeParm}": $("#<@fieldIdByName depNodeField/>").val()</#list>
@@ -1702,16 +1718,41 @@ a => A, d => D, y => Y
             <#list depNodeList as depNode>
             $("#<@fieldIdByName depNode["@field"]/>").on('change', function() { populate_${dispFieldId}(); });
             </#list>
-            <#-- <#if !fieldValue?has_content>populate_${dispFieldId}();</#if> -->
         </m-script>
     </#if>
+    -->
 </#macro>
 <#macro "display-entity">
-    <#assign fieldValue = sri.getFieldEntityValue(.node)!/>
+    <#assign dispFieldId><@fieldId .node/></#assign>
+    <#assign dispFieldName><@fieldName .node/></#assign>
+    <#assign dispSubFieldNode = .node?parent>
+    <#assign dispFieldNode = dispSubFieldNode?parent>
+    <#assign dispFormNode = dispFieldNode?parent>
+    <#assign dispAlign = dispFieldNode["@align"]!"left">
     <#assign dispHidden = (!.node["@also-hidden"]?has_content || .node["@also-hidden"] == "true") && !(skipForm!false)>
-    <#t><span class="text-inline<#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>"><#if fieldValue?has_content><#if .node["@encode"]! == "false">${fieldValue!"&nbsp;"}<#else>${(fieldValue!" ")?html?replace("\n", "<br>")}</#if><#else>&nbsp;</#if></span>
+
+    <#if fieldsJsName?has_content>
+        <#assign fieldValue>{{(${fieldsJsName}.${dispFieldName}_display || ${fieldsJsName}.${dispFieldName})}}</#assign>
+    <#else>
+        <#assign fieldValue = sri.getFieldEntityValue(.node)!/>
+    </#if>
+
+    <#if dispFormNode?node_name == "form-single">
+        <#t><q-input dense outlined readonly stack-label label="<@fieldTitle dispSubFieldNode/>" id="${dispFieldId}_display"
+                <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${dispFieldName}_display"</#if>
+                <#t>class="<#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
+            <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
+            <#-- TODO not sure if this will be used, might be for plain forms (not m-form or form-link) but need to find way to display like v-model as this ends up looking funny -->
+            <#t><#if !fieldsJsName?has_content && fieldValue?has_content><#if .node["@encode"]! == "false">${fieldValue}<#else>${fieldValue?html?replace("\n", "<br>")}</#if><#else>&nbsp;</#if>
+        <#t></q-input>
+    <#else>
+        <#t><span class="text-inline<#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
+            <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
+            <#if fieldValue?has_content><#if .node["@encode"]! == "false">${fieldValue!"&nbsp;"}<#else>${(fieldValue!" ")?html?replace("\n", "<br>")}</#if><#else>&nbsp;</#if></span>
+    </#if>
+
     <#-- don't default to fieldValue for the hidden input value, will only be different from the entry value if @text is used, and we don't want that in the hidden value -->
-    <#t><#if dispHidden><input type="hidden" id="<@fieldId .node/>" name="<@fieldName .node/>" value="${sri.getFieldValuePlainString(.node?parent?parent, "")?html}"<#if ownerForm?has_content> form="${ownerForm}"</#if>></#if>
+    <#t><#if dispHidden && !fieldsJsName?has_content><input type="hidden" id="<@fieldId .node/>" name="<@fieldName .node/>" value="${sri.getFieldValuePlainString(.node?parent?parent, "")?html}"<#if ownerForm?has_content> form="${ownerForm}"</#if>></#if>
 </#macro>
 
 <#macro "drop-down">
