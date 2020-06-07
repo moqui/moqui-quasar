@@ -19,7 +19,19 @@ body.test #top { background: #224422!important; }
 .q-btn--dense .q-btn__wrapper { padding: 0.285em 0.57em; }
 .q-btn .q-icon, .q-btn .q-spinner { font-size: 20px; } /* was 1.715em ~= 24px */
 
-/* TODO: move field lable up to 'notch' in outline (like https://material.io/components/text-fields) .q-field--dense .q-field__label { top:0; background:white; } */
+form.q-form { width:100%; }
+
+/* move field lable up to 'notch' in outline (like https://material.io/components/text-fields) */
+.q-field--dense .q-field__label { top:0; padding-left:4px; padding-right:4px; background-color:white; }
+.body--dark .q-field--dense .q-field__label { background-color:black; }
+.q-field--dense.q-field--float .q-field__label { right:auto; } /* make notch fit text, not full width */
+.q-field--labeled.q-field--dense .q-field__native { padding-top:10px; } /* move input text up 4px OOTB padding-top:14px */
+
+/* TODO: move drop-down input up 4px */
+.q-field--auto-height.q-field--dense.q-field--labeled .q-field__control-container { padding-top:10px; }
+.q-field--labeled.q-field--dense .q-field__native { padding-top:6px; } /* OOTB padding-top:10px */
+
+/* TODO fix blue focus border on top of label instead of behind */
 
 @media print {
     *, *:before, *:after { background: transparent none !important; }
