@@ -858,36 +858,45 @@ Vue.component('form-list', {
 
 /* ========== form field widget components ========== */
 Vue.component('date-time', {
-    props: { id:String, name:{type:String,required:true}, value:String, type:{type:String,'default':'date-time'},
+    props: { id:String, name:{type:String,required:true}, value:String, type:{type:String,'default':'date-time'}, label:String,
         size:String, format:String, tooltip:String, form:String, required:String, autoYear:String, minuteStep:{type:Number,'default':5} },
     template:
-    '<div v-if="type==\'time\'" class="input-group time" :id="id">' +
-        '<input type="text" class="form-control" :pattern="timePattern" :id="id?(id+\'_itime\'):\'\'" :name="name" :value="value" :size="sizeVal" :form="form">' +
-        '<span class="input-group-addon"><span class="fa fa-clock-o"></span></span>' +
-    '</div>' +
-    '<div v-else class="input-group date" :id="id">' +
-        '<input ref="dateInput" @focus="focusDate" @blur="blurDate" type="text" class="form-control" :id="id?(id+\'_idate\'):\'\'" :name="name" :value="value" :size="sizeVal" :form="form" :required="required == \'required\' ? true : false">' +
-        '<span class="input-group-addon"><span class="fa fa-calendar"></span></span>' +
-    '</div>',
+    '<q-input dense outlined stack-label :label="label" v-bind:value="value" v-on:input="$emit(\'input\', $event)" :id="id" :name="name" :form="form" @focus="focusDate" @blur="blurDate">' +
+        '<template v-slot:prepend v-if="type==\'date\' || type==\'date-time\'">' +
+            '<q-icon name="event" class="cursor-pointer">' +
+                '<q-popup-proxy transition-show="scale" transition-hide="scale">' +
+                    '<q-date v-bind:value="value" v-on:input="$emit(\'input\', $event)" :mask="formatVal"></q-date>' +
+                '</q-popup-proxy>' +
+            '</q-icon>' +
+        '</template>' +
+        '<template v-slot:append v-if="type==\'time\' || type==\'date-time\'">' +
+            '<q-icon name="access_time" class="cursor-pointer">' +
+                '<q-popup-proxy transition-show="scale" transition-hide="scale">' +
+                    '<q-time v-bind:value="value" v-on:input="$emit(\'input\', $event)" :mask="formatVal" format24h></q-time>' +
+                '</q-popup-proxy>' +
+            '</q-icon>' +
+        '</template>' +
+    '</q-input>',
+    // TODO handle required (:required="required == 'required' ? true : false")
     methods: {
-        focusDate: function() {
+        focusDate: function(event) {
             if (this.type === 'time' || this.autoYear === 'false') return;
-            var inputEl = $(this.$refs.dateInput); var curVal = inputEl.val();
+            var curVal = this.value;
             if (!curVal || !curVal.length) {
                 var startYear = (this.autoYear && this.autoYear.match(/^[12]\d\d\d$/)) ? this.autoYear : new Date().getFullYear()
-                inputEl.val(startYear);
+                this.$emit('input', startYear);
             }
         },
-        blurDate: function() {
+        blurDate: function(event) {
             if (this.type === 'time') return;
-            var inputEl = $(this.$refs.dateInput); var curVal = inputEl.val();
+            var curVal = this.value;
             // console.log("date/time unfocus val " + curVal);
             // if contains 'd ' (month/day missing, or month specified but date missing or partial) clear input
             // Sufficient to check for just 'd', since the mask handles any scenario where there would only be a single 'd'
-            if (curVal.indexOf('d') > 0) { inputEl.val(''); inputEl.trigger("change"); return; }
+            if (curVal.indexOf('d') > 0) { this.$emit('input', ''); return; }
             // default time to noon, or minutes to 00
-            if (curVal.indexOf('hh:mm') > 0) { inputEl.val(curVal.replace('hh:mm', '12:00')); inputEl.trigger("change"); return; }
-            if (curVal.indexOf(':mm') > 0) { inputEl.val(curVal.replace(':mm', ':00')); inputEl.trigger("change"); return; }
+            if (curVal.indexOf('hh:mm') > 0) { this.$emit('input', curVal.replace('hh:mm', '12:00')); return; }
+            if (curVal.indexOf(':mm') > 0) { this.$emit('input', curVal.replace(':mm', ':00')); return; }
         }
     },
     computed: {

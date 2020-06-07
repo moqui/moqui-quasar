@@ -395,6 +395,8 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         <#assign fieldsJsName = "">
     </#if>
 
+    <#-- TODO: handle disabled forms, for Quasar looks like will need to disable each field, maybe with a property on m-form and form-link (and something else for plain form?) -->
+    <#-- <#if urlInstance.disableLink> disabled="disabled"</#if> <#if urlInstance.disableLink> :disabled="true"</#if> -->
     <#if !skipStart>
     <${formSingleType} name="${formId}" id="${formId}" action="${urlInstance.path}"<#if formNode["@focus-field"]?has_content> focus-field="${formNode["@focus-field"]}"</#if><#rt>
             <#t><#if formNode["@body-parameters"]?has_content> :body-parameter-names="[<#list formNode["@body-parameters"]?split(",") as bodyParm>'${bodyParm}'<#sep>,</#list>]"</#if>
@@ -403,13 +405,11 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
             <#lt><#if formNode["@background-hide-id"]?has_content> submit-hide-id="${formNode["@background-hide-id"]}"</#if>
             <#if fieldsJsName?has_content> v-slot:default="formProps" :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(sri.getFormFieldValues(.node))}"</#if>>
     </#if>
-        <fieldset class="form-horizontal"<#if urlInstance.disableLink> disabled="disabled"</#if>>
-        <#if formNode["field-layout"]?has_content>
-            <#recurse formNode["field-layout"][0]/>
-        <#else>
-            <#list formNode["field"] as fieldNode><@formSingleSubField fieldNode formId/></#list>
-        </#if>
-        </fieldset>
+    <#if formNode["field-layout"]?has_content>
+        <#recurse formNode["field-layout"][0]/>
+    <#else>
+        <#list formNode["field"] as fieldNode><@formSingleSubField fieldNode formId/></#list>
+    </#if>
     <#if !skipEnd></${formSingleType}></#if>
     <#t>${sri.popContext()}<#-- context was pushed for the form-single so pop here at the end -->
     <#if sri.doBoundaryComments()><!-- END   form-single[@name=${.node["@name"]}] --></#if>
@@ -450,7 +450,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#assign rowContent = rowContent?trim>
     <#assign fsFieldRow = false><#assign fsBigRow = false>
     <#if rowContent?has_content>
-    <div class="form-group">
+    <div class="row">
     <#if .node["@title"]?has_content>
         <label class="control-label col-sm-2">${ec.getResource().expand(.node["@title"], "")}</label>
         <div class="col-sm-10">
@@ -537,28 +537,8 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#assign curFieldTitle><@fieldTitle fieldSubNode/></#assign>
     <#if bigRow>
         <div class="big-row-item">
-            <div class="form-group">
-                <#if curFieldTitle?has_content && !fieldSubNode["submit"]?has_content>
-                    <label class="control-label" for="${formId}_${fieldSubParent["@name"]}">${curFieldTitle}</label><#-- was form-title -->
-                </#if>
     <#else>
-        <#-- NOTE: this style is only good for 2 fields in a field-row! in field-row cols are double size because are inside a ${colPrefix}-6 element -->
-        <#if labelCols?has_content>
-            <#assign labelClass = colPrefix + "-" + labelCols>
-            <#assign widgetClass = colPrefix + "-" + (12 - labelCols?number)?c>
-        <#else>
-            <#assign labelClass><#if inFieldRow>${colPrefix}-4<#else>${colPrefix}-2</#if></#assign>
-            <#assign widgetClass><#if inFieldRow>${colPrefix}-8<#else>${colPrefix}-10</#if></#assign>
-        </#if>
-        <#if fieldSubNode["submit"]?has_content>
-        <div class="form-group">
-            <div class="${labelClass} hidden-xs">&nbsp;</div>
-            <div class="${widgetClass}<#if containerStyle?has_content> ${containerStyle}</#if>">
-        <#elseif !(inFieldRow! && !curFieldTitle?has_content)>
-        <div class="form-group">
-            <label class="control-label ${labelClass}" for="${formId}_${fieldSubParent["@name"]}">${curFieldTitle}</label><#-- was form-title -->
-            <div class="${widgetClass}<#if containerStyle?has_content> ${containerStyle}</#if>">
-        </#if>
+        <div class="q-ma-sm <#if containerStyle?has_content> ${containerStyle}</#if>">
     </#if>
     <#t>${sri.pushContext()}
     <#assign fieldFormId = formId><#-- set this globally so fieldId macro picks up the proper formId, clear after -->
@@ -593,17 +573,9 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#assign fieldFormId = ""><#-- clear after field so nothing else picks it up -->
     <#t>${sri.popContext()}
     <#if bigRow>
-        <#-- <#if curFieldTitle?has_content></#if> -->
-            </div><!-- /form-group -->
-        </div><!-- /field-row-item -->
+        </div><!-- /big-row-item -->
     <#else>
-        <#if fieldSubNode["submit"]?has_content>
-            </div><!-- /col -->
-        </div><!-- /form-group -->
-        <#elseif !(inFieldRow! && !curFieldTitle?has_content)>
-            </div><!-- /col -->
-        </div><!-- /form-group -->
-        </#if>
+        </div>
     </#if>
 </#macro>
 
@@ -1625,7 +1597,7 @@ a => A, d => D, y => Y
     </#if>
     <#assign fieldValue = sri.getFieldValueString(dtFieldNode, .node["@default-value"]!"", javaFormat)>
     <#assign validationClasses = formInstance.getFieldValidationClasses(dtSubFieldNode)>
-    <date-time id="<@fieldId .node/>" name="<@fieldName .node/>" value="${fieldValue?html}" type="${.node["@type"]!""}" size="${.node["@size"]!""}"<#rt>
+    <date-time id="<@fieldId .node/>" name="<@fieldName .node/>" value="${fieldValue?html}" type="${.node["@type"]!""}" size="${.node["@size"]!""}" label="<@fieldTitle dtSubFieldNode/>"<#rt>
         <#t><#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if>
         <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if javaFormat?has_content> format="<@getMomentDateFormat javaFormat/>"</#if>
         <#t><#if validationClasses?contains("required")> required="required"</#if> auto-year="${.node["@auto-year"]!"true"}" :minuteStep="${.node["@minute-stepping"]!"5"}"/>
@@ -1661,7 +1633,7 @@ a => A, d => D, y => Y
     <#-- TODO handle dispDynamic -->
     <#if dispDynamic && !fieldValue?has_content><#assign fieldValue><@widgetTextValue .node true/></#assign></#if>
     <#if dispFormNode?node_name == "form-single">
-        <#t><q-input dense outlined readonly stack-label label="<@fieldTitle dispSubFieldNode/>" id="${dispFieldId}_display"
+        <#t><q-input dense borderless readonly stack-label label="<@fieldTitle dispSubFieldNode/>" id="${dispFieldId}_display"
                 <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${dispFieldName}_display"</#if>
                 <#t>class="${sri.getFieldValueClass(dispFieldNode)}<#if .node["@currency-unit-field"]?has_content> currency</#if><#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
             <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
@@ -1738,7 +1710,7 @@ a => A, d => D, y => Y
     </#if>
 
     <#if dispFormNode?node_name == "form-single">
-        <#t><q-input dense outlined readonly stack-label label="<@fieldTitle dispSubFieldNode/>" id="${dispFieldId}_display"
+        <#t><q-input dense borderless readonly stack-label label="<@fieldTitle dispSubFieldNode/>" id="${dispFieldId}_display"
                 <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${dispFieldName}_display"</#if>
                 <#t>class="<#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
             <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
