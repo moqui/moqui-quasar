@@ -3,7 +3,7 @@
 a { color:var(--q-color-primary); text-decoration:none; }
 .q-menu a, .q-toolbar a { color:inherit; }
 
-form, fieldset { border:none; display:inline-block; }
+form, fieldset { border:none; display:inline; }
 
 body.dev #top { background: #0c1b29!important; }
 body.test #top { background: #224422!important; }
@@ -17,21 +17,30 @@ body.test #top { background: #224422!important; }
 .body--dark .q-dialog .q-card { background-color:black; }
 
 .q-btn--dense .q-btn__wrapper { padding: 0.285em 0.57em; }
-.q-btn .q-icon, .q-btn .q-spinner { font-size: 20px; } /* was 1.715em ~= 24px */
+.q-btn .q-icon, .q-btn .q-spinner { font-size: 18px; } /* was 1.715em ~= 24px */
 
 form.q-form { width:100%; }
 
+/* need small (6px) top margin so floating label does not overlap elements above, but to make all q-field consistent apply too all (not just .q-field--labeled.q-field--dense) */
+.q-field--dense { margin:6px 0 6px 0; }
 /* move field lable up to 'notch' in outline (like https://material.io/components/text-fields) */
 .q-field--dense .q-field__label { top:0; padding-left:4px; padding-right:4px; background-color:white; }
 .body--dark .q-field--dense .q-field__label { background-color:black; }
-.q-field--dense.q-field--float .q-field__label { right:auto; } /* make notch fit text, not full width */
-.q-field--labeled.q-field--dense .q-field__native { padding-top:10px; } /* move input text up 4px OOTB padding-top:14px */
+/* make notch fit text, not full width */
+.q-field--dense.q-field--float .q-field__label { right:auto; }
+/* move input text up 6px OOTB padding-top:14px */
+.q-field--labeled.q-field--dense .q-field__native { padding-top:8px; }
+/* move drop-down input up 6px; this padding-top defaults to 14px, have to move up 12px to handle wrapped field padding */
+.q-field--auto-height.q-field--dense.q-field--labeled .q-field__control-container { padding-top:0; }
+/* fix blue focus border on top of label instead of behind */
+.q-field--focused .q-field__label { z-index:10; }
 
-/* TODO: move drop-down input up 4px */
-.q-field--auto-height.q-field--dense.q-field--labeled .q-field__control-container { padding-top:10px; }
-.q-field--labeled.q-field--dense .q-field__native { padding-top:6px; } /* OOTB padding-top:10px */
+h4, .text-h4 { font-size: 1.5rem; margin-block-start:0.25em; margin-block-end:0.25em; }
+.text-success { color:var(--q-color-positive); }
+.text-danger { color:var(--q-color-negative); }
 
-/* TODO fix blue focus border on top of label instead of behind */
+/* for col in row with varying height items line up vertically */
+.row .col>* { margin-top:auto; margin-bottom:auto; }
 
 @media print {
     *, *:before, *:after { background: transparent none !important; }

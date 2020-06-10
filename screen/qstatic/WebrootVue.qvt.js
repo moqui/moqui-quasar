@@ -267,15 +267,29 @@ Vue.component('m-link', {
 Vue.component('router-link', {
     props: { to:{type:String,required:true} },
     template: '<a :href="linkHref" @click.prevent="go"><slot></slot></a>',
-    methods: { go: function(event) {
+    methods: {
+        go: function(event) {
             if (event.button !== 0) { return; }
             if (event.ctrlKey || event.metaKey) {
                 window.open(this.linkHref, "_blank");
             } else {
                 this.$root.setUrl(this.linkHref);
             }
-        }},
-    computed: { linkHref: function () { return this.$root.getLinkPath(this.to); } }
+        }
+    },
+    computed: {
+        linkHref: function () { return this.$root.getLinkPath(this.to); },
+        isActive: function () {
+            var path = this.to;
+            var questIdx = path.indexOf('?');
+            if (questIdx > 0) { path = path.slice(0, questIdx); }
+            var activePath = this.$root.currentPath;
+            console.warn("router-link path [" + path + "] active path [" + activePath + "]");
+            return (activePath.startsWith(path));
+        },
+        // TODO: this should be equals instead of startsWith()
+        isExactActive: function () { return this.isActive; }
+    }
 });
 
 Vue.component('m-script', {
@@ -1145,19 +1159,30 @@ Vue.component('drop-down', {
 /* ========== webrootVue - root Vue component with router ========== */
 Vue.component('subscreens-tabs', {
     data: function() { return { pathIndex:-1 }},
+    // TODO: how to handle tab.active?
     template:
-    '<ul v-if="subscreens.length > 0" class="nav nav-tabs" role="tablist">' +
-        '<li v-for="tab in subscreens" :class="{active:tab.active,disabled:tab.disableLink}">' +
-            '<span v-if="tab.disabled">{{tab.title}}</span>' +
-            '<m-link v-else :href="tab.pathWithParams">{{tab.title}}</m-link>' +
-        '</li>' +
-    '</ul>',
-    computed: { subscreens: function() {
-        if (!this.pathIndex || this.pathIndex < 0) return [];
-        var navMenu = this.$root.navMenuList[this.pathIndex];
-        if (!navMenu || !navMenu.subscreens) return [];
-        return navMenu.subscreens;
-    }},
+    '<div v-if="subscreens.length > 0"><q-tabs dense no-caps align="left" active-color="primary" indicator-color="primary" narrow-indicator :value="activeTab">' +
+        '<q-tab v-for="tab in subscreens" :name="tab.name" :label="tab.title" :disable="tab.disableLink" @click.prevent="goTo(tab.pathWithParams)"></q-tab>' +
+    '</q-tabs><q-separator class="q-mb-md"></q-separator></div>',
+    methods: {
+        goTo: function(pathWithParams) { this.$root.setUrl(this.$root.getLinkPath(pathWithParams)); }
+    },
+    computed: {
+        subscreens: function() {
+            if (!this.pathIndex || this.pathIndex < 0) return [];
+            var navMenu = this.$root.navMenuList[this.pathIndex];
+            if (!navMenu || !navMenu.subscreens) return [];
+            return navMenu.subscreens;
+        },
+        activeTab: function () {
+            if (!this.pathIndex || this.pathIndex < 0) return null;
+            var navMenu = this.$root.navMenuList[this.pathIndex];
+            if (!navMenu || !navMenu.subscreens) return null;
+            var activeName = null;
+            $.each(navMenu.subscreens, function(idx, tab) { if (tab.active) activeName = tab.name; });
+            return activeName;
+        }
+    },
     // this approach to get pathIndex won't work if the subscreens-active tag comes before subscreens-tabs
     mounted: function() { this.pathIndex = this.$root.activeSubscreens.length; }
 });

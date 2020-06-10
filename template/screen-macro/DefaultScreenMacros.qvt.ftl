@@ -398,7 +398,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#-- TODO: handle disabled forms, for Quasar looks like will need to disable each field, maybe with a property on m-form and form-link (and something else for plain form?) -->
     <#-- <#if urlInstance.disableLink> disabled="disabled"</#if> <#if urlInstance.disableLink> :disabled="true"</#if> -->
     <#if !skipStart>
-    <${formSingleType} name="${formId}" id="${formId}" action="${urlInstance.path}"<#if formNode["@focus-field"]?has_content> focus-field="${formNode["@focus-field"]}"</#if><#rt>
+    <div class="q-my-md"><${formSingleType} name="${formId}" id="${formId}" action="${urlInstance.path}"<#if formNode["@focus-field"]?has_content> focus-field="${formNode["@focus-field"]}"</#if><#rt>
             <#t><#if formNode["@body-parameters"]?has_content> :body-parameter-names="[<#list formNode["@body-parameters"]?split(",") as bodyParm>'${bodyParm}'<#sep>,</#list>]"</#if>
             <#t><#if formNode["@background-message"]?has_content> submit-message="${formNode["@background-message"]?html}"</#if>
             <#t><#if formNode["@background-reload-id"]?has_content> submit-reload-id="${formNode["@background-reload-id"]}"</#if>
@@ -410,7 +410,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#else>
         <#list formNode["field"] as fieldNode><@formSingleSubField fieldNode formId/></#list>
     </#if>
-    <#if !skipEnd></${formSingleType}></#if>
+    <#if !skipEnd></${formSingleType}></div></#if>
     <#t>${sri.popContext()}<#-- context was pushed for the form-single so pop here at the end -->
     <#if sri.doBoundaryComments()><!-- END   form-single[@name=${.node["@name"]}] --></#if>
     <#assign ownerForm = ""><#-- clear ownerForm so later form fields don't pick it up -->
@@ -450,15 +450,11 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#assign rowContent = rowContent?trim>
     <#assign fsFieldRow = false><#assign fsBigRow = false>
     <#if rowContent?has_content>
-    <div class="row">
+    <div class="row q-my-sm">
     <#if .node["@title"]?has_content>
-        <label class="control-label col-sm-2">${ec.getResource().expand(.node["@title"], "")}</label>
-        <div class="col-sm-10">
-    <#else>
-        <div class="col-sm-12">
+        <label class="col q-mx-sm q-my-auto">${ec.getResource().expand(.node["@title"], "")}</label>
     </#if>
-            ${rowContent}
-        </div><#-- /col-sm-12 bigRow -->
+        ${rowContent}
     </div><#-- /row -->
     </#if>
 </#macro>
@@ -536,7 +532,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#assign containerStyle = ec.getResource().expandNoL10n(fieldSubNode["@container-style"]!, "")>
     <#assign curFieldTitle><@fieldTitle fieldSubNode/></#assign>
     <#if bigRow>
-        <div class="big-row-item">
+        <div class="col q-mx-sm q-my-auto text-left">
     <#else>
         <div class="q-ma-sm <#if containerStyle?has_content> ${containerStyle}</#if>">
     </#if>
@@ -1633,7 +1629,8 @@ a => A, d => D, y => Y
     <#-- TODO handle dispDynamic -->
     <#if dispDynamic && !fieldValue?has_content><#assign fieldValue><@widgetTextValue .node true/></#assign></#if>
     <#if dispFormNode?node_name == "form-single">
-        <#t><q-input dense borderless readonly stack-label label="<@fieldTitle dispSubFieldNode/>" id="${dispFieldId}_display"
+        <#assign fieldLabel><@fieldTitle dispSubFieldNode/></#assign>
+        <#t><q-input dense borderless readonly<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> id="${dispFieldId}_display"
                 <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${dispFieldName}_display"</#if>
                 <#t>class="${sri.getFieldValueClass(dispFieldNode)}<#if .node["@currency-unit-field"]?has_content> currency</#if><#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
             <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
@@ -1710,7 +1707,8 @@ a => A, d => D, y => Y
     </#if>
 
     <#if dispFormNode?node_name == "form-single">
-        <#t><q-input dense borderless readonly stack-label label="<@fieldTitle dispSubFieldNode/>" id="${dispFieldId}_display"
+        <#assign fieldLabel><@fieldTitle dispSubFieldNode/></#assign>
+        <#t><q-input dense borderless readonly<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> id="${dispFieldId}_display"
                 <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${dispFieldName}_display"</#if>
                 <#t>class="<#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
             <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
@@ -1759,7 +1757,8 @@ a => A, d => D, y => Y
         <#assign doUrlParameterMap = doUrlInfo.getParameterMap()>
         <#if currentValue?has_content && !currentDescription?has_content><#assign currentDescription><@widgetTextValue .node true/></#assign></#if>
     </#if>
-    <drop-down name="${name}" id="${tlId}" stack-label label="<@fieldTitle ddSubFieldNode/>"<#rt>
+    <#assign fieldLabel><@fieldTitle ddSubFieldNode/></#assign>
+    <drop-down name="${name}" id="${tlId}"<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if><#rt>
             <#t> class="<#if isDynamicOptions>dynamic-options</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if><#if validationClasses?has_content> ${validationClasses}</#if>"<#rt>
             <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${name}"<#else><#if allowMultiple> :value="[<#list currentValueList as curVal><#if curVal?has_content>'${curVal}',</#if></#list>]"<#else> value="${currentValue!}"</#if></#if>
             <#t><#if allowMultiple> :multiple="true"</#if><#if allowEmpty> :allow-empty="true"</#if><#if .node["@combo-box"]! == "true"> :combo="true"</#if>
@@ -1828,7 +1827,7 @@ a => A, d => D, y => Y
     <#assign buttonText><#if .node["@text"]?has_content>${ec.getResource().expand(.node["@text"], "")}<#else><@fieldTitle .node?parent/></#if></#assign>
     <#assign iconClass = .node["@icon"]!>
     <#if !iconClass?has_content><#assign iconClass = sri.getThemeIconClass(buttonText)!></#if>
-    <q-btn dense outline type="submit" name="<@fieldName .node/>" value="<@fieldName .node/>" id="<@fieldId .node/>"<#if confirmationMessage?has_content> onclick="return confirm('${confirmationMessage?js_string}');"</#if><#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if> class="btn btn-primary btn-sm"<#if ownerForm?has_content> form="${ownerForm}"</#if>><#if iconClass?has_content><i class="${iconClass}"></i> </#if>
+    <q-btn dense outline no-caps type="submit" name="<@fieldName .node/>" value="<@fieldName .node/>" id="<@fieldId .node/>"<#if confirmationMessage?has_content> onclick="return confirm('${confirmationMessage?js_string}');"</#if><#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if> class="btn btn-primary btn-sm"<#if ownerForm?has_content> form="${ownerForm}"</#if>><#if iconClass?has_content><i class="${iconClass}"></i> </#if>
     <#if .node["image"]?has_content><#assign imageNode = .node["image"][0]>
         <img src="${sri.makeUrlByType(imageNode["@url"],imageNode["@url-type"]!"content",null,"true")}" alt="<#if imageNode["@alt"]?has_content>${imageNode["@alt"]}<#else><@fieldTitle .node?parent/></#if>"<#if imageNode["@width"]?has_content> width="${imageNode["@width"]}"</#if><#if imageNode["@height"]?has_content> height="${imageNode["@height"]}"</#if>>
     <#else>
@@ -1839,7 +1838,8 @@ a => A, d => D, y => Y
 
 <#macro "text-area">
     <#assign name><@fieldName .node/></#assign>
-    <q-input type="textarea" dense outlined stack-label label="<@fieldTitle .node?parent/>" name="${name}" id="<@fieldId .node/>"
+    <#assign fieldLabel><@fieldTitle .node?parent/></#assign>
+    <q-input type="textarea" dense outlined<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> name="${name}" id="<@fieldId .node/>"
             <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${name}"</#if>
             <#t><#if .node["@cols"]?has_content> cols="${.node["@cols"]}"<#else> style="width:100%;"</#if>
             <#t> rows="${.node["@rows"]!"3"}"<#if .node["@read-only"]! == "true"> readonly="readonly"</#if>
@@ -1885,7 +1885,8 @@ a => A, d => D, y => Y
         -->
     <#else>
         <#assign tlAlign = tlFieldNode["@align"]!"left">
-        <#t><q-input dense outlined stack-label label="<@fieldTitle tlSubFieldNode/>" id="${tlId}" type="<#if validationClasses?contains("email")>email<#elseif validationClasses?contains("url")>url<#else>text</#if>"
+        <#assign fieldLabel><@fieldTitle tlSubFieldNode/></#assign>
+        <#t><q-input dense outlined<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> id="${tlId}" type="<#if validationClasses?contains("email")>email<#elseif validationClasses?contains("url")>url<#else>text</#if>"
                 <#t> name="${name}" <#if fieldsJsName?has_content>v-model="${fieldsJsName}.${name}"<#else><#if fieldValue?html == fieldValue>value="${fieldValue}"<#else>:value="'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(fieldValue)}'"</#if></#if>
                 <#t> <#if .node.@size?has_content>size="${.node.@size}"<#else>style="width:100%;"</#if><#if .node.@maxlength?has_content> maxlength="${.node.@maxlength}"</#if>
                 <#t><#if ec.getResource().condition(.node.@disabled!"false", "")> disabled="disabled"</#if>
