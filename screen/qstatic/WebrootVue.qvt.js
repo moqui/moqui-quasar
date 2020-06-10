@@ -670,7 +670,7 @@ Vue.component('form-link', {
             // get button pressed value and disable ASAP to avoid double submit
             var btnName = null, btnValue = null;
             var $btn = $(document.activeElement);
-            if ($btn.length && jqEl.has($btn) && $btn.is('button[type="submit"], input[type="submit"], input[type="image"]')) {
+            if ($btn.length && $btn.is('button[type="submit"], input[type="submit"], input[type="image"]')) {
                 if ($btn.is('[name]')) { btnName = $btn.attr('name'); btnValue = $btn.val(); }
                 $btn.prop('disabled', true);
                 setTimeout(function() { $btn.prop('disabled', false); }, 3000);
@@ -1161,7 +1161,7 @@ Vue.component('subscreens-tabs', {
     data: function() { return { pathIndex:-1 }},
     // TODO: how to handle tab.active?
     template:
-    '<div v-if="subscreens.length > 0"><q-tabs dense no-caps align="left" active-color="primary" indicator-color="primary" narrow-indicator :value="activeTab">' +
+    '<div v-if="subscreens.length > 0"><q-tabs dense no-caps align="left" active-color="primary" indicator-color="primary" :value="activeTab">' +
         '<q-tab v-for="tab in subscreens" :name="tab.name" :label="tab.title" :disable="tab.disableLink" @click.prevent="goTo(tab.pathWithParams)"></q-tab>' +
     '</q-tabs><q-separator class="q-mb-md"></q-separator></div>',
     methods: {
