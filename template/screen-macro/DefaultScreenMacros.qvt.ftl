@@ -271,7 +271,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                 <#t><#if linkNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(linkNode["@tooltip"], "")}</q-tooltip></#if>
                 <#t><#if iconClass?has_content><i class="${iconClass} q-icon<#if linkText?has_content> on-left</#if>"></i> </#if><#rt>
                 <#t><#if linkNode["image"]?has_content><#visit linkNode["image"][0]><#else>${linkText}</#if>
-                <#t><#if badgeMessage?has_content> <span class="badge">${badgeMessage}</span></#if>
+                <#t> <#if badgeMessage?has_content> <q-badge class="on-right">${badgeMessage}</q-badge></#if>
                 <#if linkNode["@link-type"]! != "anchor"></q-btn></#if>
             <#t></${linkElement}>
         <#else>
@@ -285,8 +285,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                 <#else>
                     <#t>${linkText}
                 </#if>
-                <#-- TODO: button badges somehow? -->
-                <#t><#if badgeMessage?has_content> <span class="badge">${badgeMessage}</span></#if>
+                <#t><#if badgeMessage?has_content> <q-badge class="on-right">${badgeMessage}</q-badge></#if>
             <#t></q-btn>
             </#if>
         </#if>
@@ -314,8 +313,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                             <#t><#if confirmationMessage?has_content> onclick="return confirm('${confirmationMessage?js_string}')"</#if>>
                         <#t><#if linkNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(linkNode["@tooltip"], "")}</q-tooltip></#if>
                         <#t><#if iconClass?has_content><i class="${iconClass} q-icon<#if linkText?has_content> on-left</#if>"></i> </#if>${linkText}
-                        <#-- TODO: button badges somehow? -->
-                        <#t><#if badgeMessage?has_content> <span class="badge">${badgeMessage}</span></#if>
+                        <#t><#if badgeMessage?has_content> <q-badge class="on-right">${badgeMessage}</q-badge></#if>
                     <#t></q-btn>
                 </#if>
             </#if>
