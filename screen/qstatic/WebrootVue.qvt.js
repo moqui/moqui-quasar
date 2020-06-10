@@ -557,9 +557,10 @@ Vue.component('m-form', {
                 setTimeout(function() { $btn.prop('disabled', false); }, 3000);
             }
             var formData = new FormData(this.$refs.qForm.$el);
-            formData.append('moquiSessionToken', this.$root.moquiSessionToken);
-            $.each(this.fields, function (key, value) { formData.append(key, value); });
-            if (btnName) { formData.append(btnName, btnValue); }
+            formData.set('moquiSessionToken', this.$root.moquiSessionToken);
+            // NOTE: was using FormData.append() but with 'proper' fields
+            $.each(this.fields, function (key, value) { formData.set(key, value); });
+            if (btnName) { formData.set(btnName, btnValue); }
 
             // console.info('m-form parameters ' + JSON.stringify(formData));
             // for (var key of formData.keys()) { console.log('m-form key ' + key + ' val ' + JSON.stringify(formData.get(key))); }
@@ -676,14 +677,21 @@ Vue.component('form-link', {
                 setTimeout(function() { $btn.prop('disabled', false); }, 3000);
             }
 
+            /* old approach with jQuery serializeArray()
             var parmList = $(this.$refs.qForm.$el).serializeArray();
             $.each(this.fields, function (key, value) { parmList.push({name:key, value:value}); });
+            for (var pi=0; pi<parmList.length; pi++) { var parm = parmList[pi]; var key = parm.name; var value = parm.value;
+             */
+
+            var formData = new FormData(this.$refs.qForm.$el);
+            $.each(this.fields, function (key, value) { formData.set(key, value); });
+
             var extraList = [];
             var plainKeyList = [];
             var parmStr = "";
             var bodyParameters = null;
-            for (var pi=0; pi<parmList.length; pi++) {
-                var parm = parmList[pi]; var key = parm.name; var value = parm.value;
+            for(var pair of formData.entries()) {
+                var key = pair[0]; var value = pair[1];
                 if (value.trim().length === 0 || key === "moquiSessionToken" || key === "moquiFormName" || key.indexOf('[]') > 0) continue;
                 if (key.indexOf("_op") > 0 || key.indexOf("_not") > 0 || key.indexOf("_ic") > 0) {
                     extraList.push(parm);
