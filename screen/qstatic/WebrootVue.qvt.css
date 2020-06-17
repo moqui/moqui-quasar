@@ -3,7 +3,7 @@
 a { color:var(--q-color-primary); text-decoration:none; }
 .q-menu a, .q-toolbar a { color:inherit; }
 
-form, fieldset { border:none; display:inline; }
+form, fieldset { border:none; display:contents; }
 
 body.dev #top { background: #0c1b29!important; }
 body.test #top { background: #224422!important; }
@@ -16,6 +16,7 @@ body.test #top { background: #224422!important; }
 .q-dialog .q-card { background-color:white; }
 .body--dark .q-dialog .q-card { background-color:black; }
 
+.q-btn { margin: 2px; }
 .q-btn--dense .q-btn__wrapper { padding: 0.285em 0.57em; }
 .q-btn .q-icon, .q-btn .q-spinner { font-size: 18px; } /* was 1.715em ~= 24px */
 
