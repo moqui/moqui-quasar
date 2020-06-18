@@ -883,15 +883,18 @@ Vue.component('date-time', {
     props: { id:String, name:{type:String,required:true}, value:String, type:{type:String,'default':'date-time'}, label:String,
         size:String, format:String, tooltip:String, form:String, required:String, autoYear:String, minuteStep:{type:Number,'default':5} },
     template:
-    '<q-input dense outlined stack-label :label="label" v-bind:value="value" v-on:input="$emit(\'input\', $event)" :id="id" :name="name" :form="form" @focus="focusDate" @blur="blurDate">' +
-        '<template v-slot:prepend v-if="type==\'date\' || type==\'date-time\'">' +
+    // NOTE: tried :fill-mask="formatVal" but results in all Y, only supports single character for mask placeholder... how to show more helpful date mask?
+    // TODO: add back @focus="focusDate" @blur="blurDate" IFF needed given different mask/etc behavior
+    '<q-input dense outlined stack-label :label="label" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
+            ' :mask="inputMask" fill-mask :id="id" :name="name" :form="form">' +
+        '<template v-slot:prepend v-if="type==\'date\' || type==\'date-time\' || !type">' +
             '<q-icon name="event" class="cursor-pointer">' +
                 '<q-popup-proxy transition-show="scale" transition-hide="scale">' +
                     '<q-date v-bind:value="value" v-on:input="$emit(\'input\', $event)" :mask="formatVal"></q-date>' +
                 '</q-popup-proxy>' +
             '</q-icon>' +
         '</template>' +
-        '<template v-slot:append v-if="type==\'time\' || type==\'date-time\'">' +
+        '<template v-slot:append v-if="type==\'time\' || type==\'date-time\' || !type">' +
             '<q-icon name="access_time" class="cursor-pointer">' +
                 '<q-popup-proxy transition-show="scale" transition-hide="scale">' +
                     '<q-time v-bind:value="value" v-on:input="$emit(\'input\', $event)" :mask="formatVal" format24h></q-time>' +
@@ -924,6 +927,7 @@ Vue.component('date-time', {
     computed: {
         formatVal: function() { var format = this.format; if (format && format.length > 0) { return format; }
             return this.type === 'time' ? 'HH:mm' : (this.type === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'); },
+        inputMask: function() { var formatMask = this.formatVal; return formatMask.replace(/\w/g, '#') },
         extraFormatsVal: function() { return this.type === 'time' ? ['LT', 'LTS', 'HH:mm'] :
             (this.type === 'date' ? ['l', 'L', 'YYYY-MM-DD'] : ['YYYY-MM-DD HH:mm', 'YYYY-MM-DD HH:mm:ss', 'MM/DD/YYYY HH:mm']); },
         sizeVal: function() { var size = this.size; if (size && size.length > 0) { return size; }

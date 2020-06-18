@@ -1517,12 +1517,16 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#assign tlId><@fieldId .node/></#assign>
     <#assign curName><@fieldName .node/></#assign>
     <#assign containerStyle = ec.getResource().expandNoL10n(.node["@container-style"]!, "")>
-    <#list (options.keySet())! as key>
-        <#assign allChecked = ec.getResource().expandNoL10n(.node["@all-checked"]!, "")>
-        <#assign fullId = tlId>
-        <#if (key_index > 0)><#assign fullId = tlId + "_" + key_index></#if>
-        <span id="${fullId}"<#if containerStyle?has_content> class="${containerStyle}"</#if>><input type="checkbox" name="${curName}" value="${key?html}"<#if allChecked! == "true"> checked="checked"<#elseif currentValue?has_content && (currentValue==key || currentValue.contains(key))> checked="checked"</#if><#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>><#if options.get(key)! != ""><span class="checkbox-label" onclick="$('#${fullId}').children('input[type=checkbox]').click()" style="cursor: default">${options.get(key)}</span></#if></span>
-    </#list>
+    <#assign fieldLabel><@fieldTitle .node?parent/></#assign>
+    <q-field dense outlined<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if><#if containerStyle?has_content> class="${containerStyle}"</#if>>
+        <#if .node?parent["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(.node?parent["@tooltip"], "")}</q-tooltip></#if>
+        <template v-slot:control>
+            <#list (options.keySet())! as key>
+                <q-checkbox size="xs" val="${key?html}" label="${(options.get(key)!"")?html}" name="${curName}" id="${tlId}<#if (key_index > 0)>_${key_index}</#if>"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
+                    <#lt><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curName}"<#else><#if allChecked! == "true"> checked="checked"<#elseif currentValue?has_content && (currentValue==key || currentValue.contains(key))> checked="checked"</#if></#if>></q-checkbox>
+            </#list>
+        </template>
+    </q-field>
 </#macro>
 
 <#macro "date-find">
@@ -1598,12 +1602,13 @@ a => A, d => D, y => Y
         <#elseif .node["@type"]! == "date"><#assign javaFormat="yyyy-MM-dd">
         <#else><#assign javaFormat="yyyy-MM-dd HH:mm"></#if>
     </#if>
-    <#assign fieldValue = sri.getFieldValueString(dtFieldNode, .node["@default-value"]!"", javaFormat)>
+    <#assign curName><@fieldName .node/></#assign>
     <#assign validationClasses = formInstance.getFieldValidationClasses(dtSubFieldNode)>
-    <date-time id="<@fieldId .node/>" name="<@fieldName .node/>" value="${fieldValue?html}" type="${.node["@type"]!""}" size="${.node["@size"]!""}" label="<@fieldTitle dtSubFieldNode/>"<#rt>
+    <date-time id="<@fieldId .node/>" name="${curName}" type="${.node["@type"]!""}" size="${.node["@size"]!""}" label="<@fieldTitle dtSubFieldNode/>"<#rt>
+        <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curName}"<#else> value="${sri.getFieldValueString(dtFieldNode, .node["@default-value"]!"", javaFormat)?html}"</#if>
         <#t><#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if>
         <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if javaFormat?has_content> format="<@getMomentDateFormat javaFormat/>"</#if>
-        <#t><#if validationClasses?contains("required")> required="required"</#if> auto-year="${.node["@auto-year"]!"true"}" :minuteStep="${.node["@minute-stepping"]!"5"}"/>
+        <#t><#if validationClasses?contains("required")> required="required"</#if> auto-year="${.node["@auto-year"]!"true"}" :minuteStep="${.node["@minute-stepping"]!"5"}"></date-time>
 </#macro>
 
 <#macro display>
@@ -1715,7 +1720,7 @@ a => A, d => D, y => Y
 
     <#if dispFormNode?node_name == "form-single">
         <#assign fieldLabel><@fieldTitle dispSubFieldNode/></#assign>
-        <#t><q-input dense borderless readonly<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> id="${dispFieldId}_display"
+        <#t><q-input dense outlined readonly<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> id="${dispFieldId}_display"
                 <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${dispFieldName}_display"</#if>
                 <#t>class="<#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
             <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
@@ -1811,9 +1816,16 @@ a => A, d => D, y => Y
     <#if !currentValue?has_content><#assign currentValue = ec.getResource().expandNoL10n(.node["@no-current-selected-key"]!, "")/></#if>
     <#assign tlId><@fieldId .node/></#assign>
     <#assign curName><@fieldName .node/></#assign>
-    <#list (options.keySet())! as key>
-        <span id="${tlId}<#if (key_index > 0)>_${key_index}</#if>"><input type="radio" name="${curName}" value="${key?html}"<#if currentValue?has_content && currentValue==key> checked="checked"</#if><#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>&nbsp;${options.get(key)!""}</span>
-    </#list>
+    <#assign fieldLabel><@fieldTitle .node?parent/></#assign>
+    <q-field dense outlined<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if>>
+        <#if .node?parent["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(.node?parent["@tooltip"], "")}</q-tooltip></#if>
+        <template v-slot:control>
+        <#list (options.keySet())! as key>
+            <q-radio size="xs" val="${key?html}" label="${(options.get(key)!"")?html}" name="${curName}" id="${tlId}<#if (key_index > 0)>_${key_index}</#if>"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
+                <#lt><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curName}"<#else><#if currentValue?has_content && currentValue==key> checked="checked"</#if></#if>></q-radio>
+        </#list>
+        </template>
+    </q-field>
 </#macro>
 
 <#macro "range-find">
