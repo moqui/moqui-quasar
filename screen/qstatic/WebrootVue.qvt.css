@@ -43,6 +43,9 @@ h4, .text-h4 { font-size: 1.5rem; margin-block-start:0.25em; margin-block-end:0.
 .big-row { display:flex; flex-wrap:wrap; justify-content:flex-start; align-content:center; }
 .big-row-item {}
 
+.q-table--dense .q-table .form-list-nav-row th:first-child { padding:4px 0; }
+.form-list-nav-row .q-bar { background-color:transparent; }
+
 @media print {
     *, *:before, *:after { background: transparent none !important; }
     body { background: white none !important; font-size: 10px; }

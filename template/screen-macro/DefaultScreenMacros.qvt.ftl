@@ -586,315 +586,9 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
 <#-- ======================= Form List ========================= -->
 <#-- =========================================================== -->
 
-<#macro paginationHeaderModals formListInfo formId isHeaderDialog>
-    <#assign formNode = formListInfo.getFormNode()>
-    <#assign allColInfoList = formListInfo.getAllColInfo()>
-    <#assign isSavedFinds = formNode["@saved-finds"]! == "true">
-    <#assign isSelectColumns = formNode["@select-columns"]! == "true">
-    <#assign currentFindUrl = sri.getScreenUrlInstance().cloneUrlInstance().removeParameter("pageIndex").removeParameter("moquiFormName").removeParameter("moquiSessionToken").removeParameter("lastStandalone").removeParameter("formListFindId")>
-    <#assign currentFindUrlParms = currentFindUrl.getParameterMap()>
-    <#assign hiddenParameterMap = sri.getFormHiddenParameters(formNode)>
-    <#assign hiddenParameterKeys = hiddenParameterMap.keySet()>
-    <#if isSavedFinds || isHeaderDialog>
-        <#assign headerFormDialogId = formId + "_hdialog">
-        <#assign headerFormId = formId + "_header">
-        <#assign headerFormButtonText = ec.getL10n().localize("Find Options")>
-        <container-dialog id="${headerFormDialogId}" title="${headerFormButtonText}">
-            <#-- Saved Finds -->
-            <#if isSavedFinds && isHeaderDialog><h4 style="margin-top: 0;">${ec.getL10n().localize("Saved Finds")}</h4></#if>
-            <#if isSavedFinds>
-                <#assign activeFormListFind = formListInfo.getFormInstance().getActiveFormListFind(ec)!>
-                <#assign formSaveFindUrl = sri.buildUrl("formSaveFind").path>
-                <#assign descLabel = ec.getL10n().localize("Description")>
-                <#if activeFormListFind?has_content>
-                    <#assign screenScheduled = formListInfo.getScreenForm().getFormListFindScreenScheduled(activeFormListFind.formListFindId, ec)!>
-                    <div><strong>${ec.getL10n().localize("Active Saved Find:")} ${activeFormListFind.description?html}</strong></div>
-                    <#if screenScheduled?has_content>
-                        <p>(Scheduled for <#if screenScheduled.renderMode! == 'xsl-fo'>PDF<#else>${screenScheduled.renderMode!?upper_case}</#if><#rt>
-                            <#t> ${Static["org.moqui.impl.service.ScheduledJobRunner"].getCronDescription(screenScheduled.cronExpression, ec.user.getLocale(), true)!})</p>
-                    <#else>
-                        <m-form class="form-inline" id="${formId}_SCHED" action="${formSaveFindUrl}">
-                            <input type="hidden" name="formListFindId" value="${activeFormListFind.formListFindId}">
-                            <input type="hidden" name="screenPath" value="${sri.getScreenUrlInstance().path}">
-                            <div class="form-group">
-                                <label class="sr-only" for="${formId}_SCHED_renderMode">${ec.getL10n().localize("Mode")}</label>
-                                <drop-down name="renderMode" id="${formId}_SCHED_renderMode" :options="[{id:'xlsx',text:'XLSX'},{id:'csv',text:'CSV'},{id:'xsl-fo',text:'PDF'}]"></drop-down>
-                            </div>
-                            <div class="form-group">
-                                <label class="sr-only" for="${formId}_SCHED_cronSelected">${ec.getL10n().localize("Schedule")}</label>
-                                <drop-down name="cronSelected" id="${formId}_SCHED_cronSelected" value="" :options="[{id:'0 0 6 ? * MON-FRI',text:'Monday-Friday'},{id:'0 0 6 ? * *',text:'Every Day'},{id:'0 0 6 ? * MON',text:'Monday Only'},{id:'0 0 6 1 * ?',text:'Monthly'}]"></drop-down>
-                            </div>
-
-                            <button type="submit" name="ScheduleFind" class="btn btn-primary btn-sm" onclick="return confirm('${ec.getL10n().localize("Setup a schedule to send this saved find to you by email?")}');">${ec.getL10n().localize("Schedule")}</button>
-                        </m-form>
-                    </#if>
-                </#if>
-                <#if currentFindUrlParms?has_content>
-                    <div><m-form class="form-inline" id="${formId}_NewFind" action="${formSaveFindUrl}">
-                        <input type="hidden" name="formLocation" value="${formListInfo.getSavedFindFullLocation()}">
-                        <#list currentFindUrlParms.keySet() as parmName>
-                            <input type="hidden" name="${parmName}" value="${currentFindUrlParms.get(parmName)!?html}">
-                        </#list>
-                        <div class="form-group">
-                            <label class="sr-only" for="${formId}_NewFind_description">${descLabel}</label>
-                            <input type="text" size="40" name="_findDescription" id="${formId}_NewFind_description" placeholder="${descLabel}" class="form-control required" required="required">
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-sm">${ec.getL10n().localize("Save New Find")}</button>
-                    </m-form></div>
-                <#else>
-                    <p>${ec.getL10n().localize("No find parameters, choose some to save a new find or update existing")}</p>
-                </#if>
-                <#assign userFindInfoList = formListInfo.getUserFormListFinds(ec)>
-                <#list userFindInfoList as userFindInfo>
-                    <#assign formListFind = userFindInfo.formListFind>
-                    <#assign findParameters = userFindInfo.findParameters>
-                    <#-- use only formListFindId now that ScreenRenderImpl picks it up and auto adds configured parameters:
-                        <#assign doFindUrl = sri.buildUrl(sri.getScreenUrlInstance().path).addParameters(findParameters)> -->
-                    <#assign doFindUrl = sri.buildUrl(sri.getScreenUrlInstance().path).addParameter("formListFindId", formListFind.formListFindId)>
-                    <#assign saveFindFormId = formId + "_SaveFind" + userFindInfo_index>
-                    <div>
-                    <#if currentFindUrlParms?has_content>
-                        <m-form class="form-inline" id="${saveFindFormId}" action="${formSaveFindUrl}">
-                            <input type="hidden" name="formLocation" value="${formListInfo.getSavedFindFullLocation()}">
-                            <input type="hidden" name="formListFindId" value="${formListFind.formListFindId}">
-                            <#list currentFindUrlParms.keySet() as parmName>
-                                <input type="hidden" name="${parmName}" value="${currentFindUrlParms.get(parmName)!?html}">
-                            </#list>
-                            <div class="form-group">
-                                <label class="sr-only" for="${saveFindFormId}_description">${descLabel}</label>
-                                <input type="text" size="40" name="_findDescription" id="${saveFindFormId}_description" value="${formListFind.description?html}" class="form-control required" required="required">
-                            </div>
-                            <button type="submit" name="UpdateFind" class="btn btn-primary btn-sm">${ec.getL10n().localize("Update to Current")}</button>
-                            <#if userFindInfo.isByUserId == "true"><button type="submit" name="DeleteFind" class="btn btn-danger btn-sm" onclick="return confirm('${ec.getL10n().localize("Delete")} ${formListFind.description?js_string}?');">&times;</button></#if>
-                        </m-form>
-                        <m-link href="${doFindUrl.pathWithParams}" class="btn btn-success btn-sm">${ec.getL10n().localize("Do Find")}</m-link>
-                    <#else>
-                        <m-link href="${doFindUrl.pathWithParams}" class="btn btn-success btn-sm">${ec.getL10n().localize("Do Find")}</m-link>
-                        <#if userFindInfo.isByUserId == "true">
-                        <m-form class="form-inline" id="${saveFindFormId}" action="${formSaveFindUrl}" :no-validate="true">
-                            <input type="hidden" name="formListFindId" value="${formListFind.formListFindId}">
-                            <button type="submit" name="DeleteFind" class="btn btn-danger btn-sm" onclick="return confirm('${ec.getL10n().localize("Delete")} ${formListFind.description?js_string}?');">&times;</button>
-                        </m-form>
-                        </#if>
-                        <strong>${formListFind.description?html}</strong>
-                    </#if>
-                    </div>
-                </#list>
-            </#if>
-            <#if isSavedFinds && isHeaderDialog><h4>${ec.getL10n().localize("Find Parameters")}</h4></#if>
-            <#if isHeaderDialog>
-                <#-- Find Parameters Form -->
-                <#assign curUrlInstance = sri.getCurrentScreenUrl()>
-                <#assign skipFormSave = skipForm!false>
-                <#assign skipForm = false>
-                <form-link name="${headerFormId}" id="${headerFormId}" action="${curUrlInstance.path}"><template slot-scope="props">
-                    <#if formListFindId?has_content><input type="hidden" name="formListFindId" value="${formListFindId}"></#if>
-                    <#if context[listName + "PageSize"]??><input type="hidden" name="pageSize" value="${context[listName + "PageSize"]?c}"></#if>
-                    <#list hiddenParameterKeys as hiddenParameterKey><input type="hidden" name="${hiddenParameterKey}" value="${hiddenParameterMap.get(hiddenParameterKey)!""}"></#list>
-                    <fieldset class="form-horizontal">
-                        <div class="form-group"><div class="col-sm-2">&nbsp;</div><div class="col-sm-10">
-                            <button type="button" name="clearParameters" class="btn btn-primary btn-sm" @click.prevent="props.clearForm">${ec.getL10n().localize("Clear Parameters")}</button></div></div>
-
-                        <#-- Always add an orderByField to select one or more columns to order by -->
-                        <div class="form-group">
-                            <label class="control-label col-sm-2" for="${headerFormId}_orderByField">${ec.getL10n().localize("Order By")}</label>
-                            <div class="col-sm-10">
-                                <select name="orderBySelect" id="${headerFormId}_orderBySelect" multiple="multiple" style="width:100%;" class="noResetSelect2">
-                                    <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content>
-                                        <#assign headerFieldNode = fieldNode["header-field"][0]>
-                                        <#assign showOrderBy = (headerFieldNode["@show-order-by"])!>
-                                        <#if showOrderBy?has_content && showOrderBy != "false">
-                                            <#assign caseInsensitive = showOrderBy == "case-insensitive">
-                                            <#assign orderFieldName = fieldNode["@name"]>
-                                            <#assign orderFieldTitle><@fieldTitle headerFieldNode/></#assign>
-                                            <option value="${caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Asc)")}</option>
-                                            <option value="${"-" + caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Desc)")}</option>
-                                        </#if>
-                                    </#if></#list>
-                                </select>
-                                <input type="hidden" id="${headerFormId}_orderByField" name="orderByField" value="${(orderByField!"")?html}">
-                                <m-script>
-                                    $("#${headerFormId}_orderBySelect").selectivity({ positionDropdown: function(dropdownEl, selectEl) { dropdownEl.css("width", "300px"); } })[0].selectivity.filterResults = function(results) {
-                                        // Filter out asc and desc options if anyone selected.
-                                        return results.filter(function(item){return !this._data.some(function(data_item) {return data_item.id.substring(1) === item.id.substring(1);});}, this);
-                                    };
-                                    <#assign orderByJsValue = formListInfo.getOrderByActualJsString(ec.getContext().orderByField)>
-                                    <#if orderByJsValue?has_content>$("#${headerFormId}_orderBySelect").selectivity("value", ${orderByJsValue});</#if>
-                                    $("div#${headerFormId}_orderBySelect").on("change", function(evt) {
-                                        if (evt.value) $("#${headerFormId}_orderByField").val(evt.value.join(","));
-                                    });
-                                </m-script>
-                            </div>
-                        </div>
-                        <#t>${sri.pushSingleFormMapContext("")}
-                        <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content && fieldNode["header-field"][0]?children?has_content>
-                            <#assign headerFieldNode = fieldNode["header-field"][0]>
-                            <#assign allHidden = true>
-                            <#list fieldNode?children as fieldSubNode>
-                                <#if !(fieldSubNode["hidden"]?has_content || fieldSubNode["ignored"]?has_content)><#assign allHidden = false></#if>
-                            </#list>
-
-                            <#if !(ec.getResource().condition(fieldNode["@hide"]!, "") || allHidden ||
-                                    ((!fieldNode["@hide"]?has_content) && fieldNode?children?size == 1 &&
-                                    (headerFieldNode["hidden"]?has_content || headerFieldNode["ignored"]?has_content)))>
-                                <@formSingleWidget headerFieldNode headerFormId "col-sm" false false/>
-                            <#elseif (headerFieldNode["hidden"])?has_content>
-                                <#recurse headerFieldNode/>
-                            </#if>
-                        </#if></#list>
-                        <#t>${sri.popContext()}<#-- context was pushed so pop here at the end -->
-                    </fieldset>
-                </template></form-link>
-                <#assign skipForm = skipFormSave>
-            </#if>
-        </container-dialog>
-    </#if>
-    <#if isSelectColumns>
-        <#assign selectColumnsDialogId = formId + "_SelColsDialog">
-        <#assign selectColumnsSortableId = formId + "_SelColsSortable">
-        <#assign fieldsNotInColumns = formListInfo.getFieldsNotReferencedInFormListColumn()>
-        <container-dialog id="${selectColumnsDialogId}" title="${ec.l10n.localize("Column Fields")}">
-            <p>${ec.getL10n().localize("Drag fields to the desired column or do not display")}</p>
-            <ul id="${selectColumnsSortableId}">
-                <li id="hidden"><div>${ec.l10n.localize("Do Not Display")}</div>
-                    <#if fieldsNotInColumns?has_content>
-                        <ul>
-                            <#list fieldsNotInColumns as fieldNode>
-                                <#assign fieldSubNode = (fieldNode["header-field"][0])!(fieldNode["default-field"][0])!>
-                                <li id="${fieldNode["@name"]}"><div><@fieldTitle fieldSubNode/></div></li>
-                            </#list>
-                        </ul>
-                    </#if>
-                </li>
-                <#list allColInfoList as columnFieldList>
-                    <li id="column_${columnFieldList_index}"><div>${ec.l10n.localize("Column")} ${columnFieldList_index + 1}</div><ul>
-                        <#list columnFieldList as fieldNode>
-                            <#assign fieldSubNode = (fieldNode["header-field"][0])!(fieldNode["default-field"][0])!>
-                            <li id="${fieldNode["@name"]}"><div><@fieldTitle fieldSubNode/></div></li>
-                        </#list>
-                    </ul></li>
-                </#list>
-                <#list allColInfoList?size..(allColInfoList?size + 2) as ind><#-- always add 3 more columns for flexibility -->
-                    <li id="column_${ind}"><div>${ec.getL10n().localize("Column")} ${ind + 1}</div></li>
-                </#list>
-            </ul>
-            <m-form class="form-inline" id="${formId}_SelColsForm" action="${sri.buildUrl("formSelectColumns").path}">
-                <input type="hidden" name="formLocation" value="${formListInfo.getFormLocation()}">
-                <input type="hidden" id="${formId}_SelColsForm_columnsTree" name="columnsTree" value="">
-                <#if currentFindUrlParms?has_content><#list currentFindUrlParms.keySet() as parmName>
-                    <input type="hidden" name="${parmName}" value="${currentFindUrlParms.get(parmName)!?html}">
-                </#list></#if>
-                <input type="submit" name="SaveColumns" value="${ec.getL10n().localize("Save Columns")}" class="btn btn-success btn-sm"/>
-                <input type="submit" name="ResetColumns" value="${ec.getL10n().localize("Reset to Default")}" class="btn btn-danger btn-sm"/>
-            </m-form>
-        </container-dialog>
-        <m-script>$('#${selectColumnsDialogId}').on('shown.bs.modal', function() {
-            $("#${selectColumnsSortableId}").sortableLists({
-                isAllowed: function(currEl, hint, target) {
-                    <#-- don't allow hidden and column items to be moved; only allow others to be under hidden or column items -->
-                    if (currEl.attr('id') === 'hidden' || currEl.attr('id').startsWith('column_')) {
-                        if (!target.attr('id') || (target.attr('id') != 'hidden' && !currEl.attr('id').startsWith('column_'))) { hint.css('background-color', '#99ff99'); return true; }
-                        else { hint.css('background-color', '#ff9999'); return false; }
-                    }
-                    if (target.attr('id') && (target.attr('id') === 'hidden' || target.attr('id').startsWith('column_'))) { hint.css('background-color', '#99ff99'); return true; }
-                    else { hint.css('background-color', '#ff9999'); return false; }
-                },
-                placeholderCss: {'background-color':'#999999'}, insertZone: 50,
-                <#-- jquery-sortable-lists currently logs an error if opener.as is not set to html or class -->
-                opener: { active:false, as:'html', close:'', open:'' },
-                onChange: function(cEl) {
-                    var sortableHierarchy = $('#${selectColumnsSortableId}').sortableListsToHierarchy();
-                    // console.log(sortableHierarchy); console.log(JSON.stringify(sortableHierarchy));
-                    $("#${formId}_SelColsForm_columnsTree").val(JSON.stringify(sortableHierarchy));
-                }
-            });
-            $("#${formId}_SelColsForm_columnsTree").val(JSON.stringify($('#${selectColumnsSortableId}').sortableListsToHierarchy()));
-        })</m-script>
-    </#if>
-    <#if formNode["@show-text-button"]! == "true">
-        <#assign showTextDialogId = formId + "_TextDialog">
-        <#assign textLinkUrl = sri.getScreenUrlInstance()>
-        <#assign textLinkUrlParms = textLinkUrl.getParameterMap()>
-        <container-dialog id="${showTextDialogId}" title="${ec.getL10n().localize("Export Fixed-Width Plain Text")}">
-            <#-- NOTE: don't use m-form, most commonly results in download and if not won't be html -->
-            <form id="${formId}_Text" method="post" action="${textLinkUrl.getUrl()}">
-                <input type="hidden" name="renderMode" value="text">
-                <input type="hidden" name="pageNoLimit" value="true">
-                <input type="hidden" name="lastStandalone" value="true">
-                <#list textLinkUrlParms.keySet() as parmName>
-                    <input type="hidden" name="${parmName}" value="${textLinkUrlParms.get(parmName)!?html}"></#list>
-                <fieldset class="form-horizontal">
-                    <div class="form-group">
-                        <label class="control-label col-sm-3" for="${formId}_Text_lineCharacters">${ec.getL10n().localize("Line Characters")}</label>
-                        <div class="col-sm-9">
-                            <input type="text" class="form-control" size="4" name="lineCharacters" id="${formId}_Text_lineCharacters" value="132">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="control-label col-sm-3" for="${formId}_Text_pageLines">${ec.getL10n().localize("Page Lines")}</label>
-                        <div class="col-sm-9">
-                            <input type="text" class="form-control" size="4" name="pageLines" id="${formId}_Text_pageLines" value="88">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="control-label col-sm-3" for="${formId}_Text_lineWrap">${ec.getL10n().localize("Line Wrap?")}</label>
-                        <div class="col-sm-9">
-                            <input type="checkbox" class="form-control" name="lineWrap" id="${formId}_Text_lineWrap" value="true">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="control-label col-sm-3" for="${formId}_Text_saveFilename">${ec.getL10n().localize("Save to Filename")}</label>
-                        <div class="col-sm-9">
-                            <input type="text" class="form-control" size="40" name="saveFilename" id="${formId}_Text_saveFilename" value="${formNode["@name"] + ".txt"}">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-default">${ec.getL10n().localize("Export Text")}</button>
-                </fieldset>
-            </form>
-        </container-dialog>
-    </#if>
-    <#if formNode["@show-pdf-button"]! == "true">
-        <#assign showPdfDialogId = formId + "_PdfDialog">
-        <#assign pdfLinkUrl = sri.getScreenUrlInstance()>
-        <#assign pdfLinkUrlParms = pdfLinkUrl.getParameterMap()>
-        <container-dialog id="${showPdfDialogId}" title="${ec.getL10n().localize("Generate PDF")}">
-            <#-- NOTE: don't use m-form, most commonly results in download and if not won't be html -->
-            <form id="${formId}_Pdf" method="post" action="${ec.web.getWebappRootUrl(false, null)}/fop${pdfLinkUrl.getPath()}">
-                <input type="hidden" name="pageNoLimit" value="true">
-                <#list pdfLinkUrlParms.keySet() as parmName>
-                    <input type="hidden" name="${parmName}" value="${pdfLinkUrlParms.get(parmName)!?html}"></#list>
-                <fieldset class="form-horizontal">
-                    <div class="form-group">
-                        <label class="control-label col-sm-3" for="${formId}_Pdf_layoutMaster">${ec.getL10n().localize("Page Layout")}</label>
-                        <div class="col-sm-9">
-                            <select name="layoutMaster"  id="${formId}_Pdf_layoutMaster" class="form-control">
-                                <option value="letter-landscape">US Letter - Landscape (11x8.5)</option>
-                                <option value="letter-portrait">US Letter - Portrait (8.5x11)</option>
-                                <option value="legal-landscape">US Legal - Landscape (14x8.5)</option>
-                                <option value="legal-portrait">US Legal - Portrait (8.5x14)</option>
-                                <option value="tabloid-landscape">US Tabloid - Landscape (17x11)</option>
-                                <option value="tabloid-portrait">US Tabloid - Portrait (11x17)</option>
-                                <option value="a4-landscape">A4 - Landscape (297x210)</option>
-                                <option value="a4-portrait">A4 - Portrait (210x297)</option>
-                                <option value="a3-landscape">A3 - Landscape (420x297)</option>
-                                <option value="a3-portrait">A3 - Portrait (297x420)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="control-label col-sm-3" for="${formId}_Pdf_saveFilename">${ec.getL10n().localize("Save to Filename")}</label>
-                        <div class="col-sm-9">
-                            <input type="text" class="form-control" size="40" name="saveFilename" id="${formId}_Pdf_saveFilename" value="${formNode["@name"] + ".pdf"}">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-default">${ec.getL10n().localize("Generate PDF")}</button>
-                </fieldset>
-            </form>
-        </container-dialog>
-    </#if>
-</#macro>
 <#macro paginationHeader formListInfo formId isHeaderDialog>
     <#assign formNode = formListInfo.getFormNode()>
+    <#assign allColInfoList = formListInfo.getAllColInfo()>
     <#assign mainColInfoList = formListInfo.getMainColInfo()>
     <#assign numColumns = (mainColInfoList?size)!100>
     <#if numColumns == 0><#assign numColumns = 100></#if>
@@ -902,58 +596,353 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#assign isSelectColumns = formNode["@select-columns"]! == "true">
     <#assign isPaginated = (!(formNode["@paginate"]! == "false") && context[listName + "Count"]?? && (context[listName + "Count"]! > 0) &&
             (!formNode["@paginate-always-show"]?has_content || formNode["@paginate-always-show"]! == "true" || (context[listName + "PageMaxIndex"] > 0)))>
+    <#assign currentFindUrl = sri.getScreenUrlInstance().cloneUrlInstance().removeParameter("pageIndex").removeParameter("moquiFormName").removeParameter("moquiSessionToken").removeParameter("lastStandalone").removeParameter("formListFindId")>
+    <#assign currentFindUrlParms = currentFindUrl.getParameterMap()>
+    <#assign hiddenParameterMap = sri.getFormHiddenParameters(formNode)>
+    <#assign hiddenParameterKeys = hiddenParameterMap.keySet()>
     <#if (isHeaderDialog || isSavedFinds || isSelectColumns || isPaginated) && hideNav! != "true">
-        <tr class="form-list-nav-row"><th colspan="${numColumns}"><nav class="form-list-nav">
+        <tr class="form-list-nav-row"><th colspan="${numColumns}"><q-bar>
             <#if isSavedFinds>
                 <#assign userFindInfoList = formListInfo.getUserFormListFinds(ec)>
                 <#if userFindInfoList?has_content>
                     <#assign activeUserFindName = ""/>
                     <#if ec.getContext().formListFindId?has_content>
                         <#list userFindInfoList as userFindInfo>
-                            <#if formListFind.formListFindId == ec.getContext().formListFindId>
+                            <#if userFindInfo.formListFind.formListFindId == ec.getContext().formListFindId>
                                 <#assign activeUserFindName = userFindInfo.description/></#if></#list>
                     </#if>
-                    <div class="btn-group">
-                      <button type="button" class="btn <#if activeUserFindName?has_content>btn-info<#else>btn-default</#if> dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <#if activeUserFindName?has_content>${activeUserFindName?html}<#else>${ec.getL10n().localize("Saved Finds")}</#if> <span class="caret"></span>
-                      </button>
-                      <ul class="dropdown-menu">
-                        <li><m-link href="${sri.buildUrl(sri.getScreenUrlInstance().path).pathWithParams}">${ec.getL10n().localize("Clear Current Find")}</m-link></li>
+                    <q-btn-dropdown dense outline no-caps label="<#if activeUserFindName?has_content>${activeUserFindName?html}<#else>${ec.getL10n().localize("Saved Finds")}</#if>" color="<#if activeUserFindName?has_content>info</#if>"><q-list dense>
+                        <q-item clickable v-close-popup><q-item-section>
+                            <m-link href="${sri.buildUrl(sri.getScreenUrlInstance().path).pathWithParams}">${ec.getL10n().localize("Clear Current Find")}</m-link>
+                        </q-item-section></q-item>
                         <#list userFindInfoList as userFindInfo>
                             <#assign formListFind = userFindInfo.formListFind>
                             <#assign findParameters = userFindInfo.findParameters>
                             <#-- use only formListFindId now that ScreenRenderImpl picks it up and auto adds configured parameters:
-                                <#assign doFindUrl = sri.buildUrl(sri.getScreenUrlInstance().path).addParameters(findParameters)> -->
+                            <#assign doFindUrl = sri.buildUrl(sri.getScreenUrlInstance().path).addParameters(findParameters)> -->
                             <#assign doFindUrl = sri.buildUrl(sri.getScreenUrlInstance().path).addParameter("formListFindId", formListFind.formListFindId)>
-                            <li><m-link href="${doFindUrl.pathWithParams}">${userFindInfo.description?html}</m-link></li>
+                            <q-item clickable v-close-popup><q-item-section>
+                                <m-link href="${doFindUrl.pathWithParams}">${userFindInfo.description?html}</m-link>
+                            </q-item-section></q-item>
                         </#list>
-                      </ul>
-                    </div>
+                    </q-list></q-btn-dropdown>
                 </#if>
             </#if>
-            <#if isSavedFinds || isHeaderDialog><button id="${headerFormDialogId}_button" type="button" data-toggle="modal" data-target="#${headerFormDialogId}" data-original-title="${headerFormButtonText}" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> ${headerFormButtonText}</button></#if>
-            <#if isSelectColumns><button id="${selectColumnsDialogId}_button" type="button" data-toggle="modal" data-target="#${selectColumnsDialogId}" data-original-title="${ec.getL10n().localize("Columns")}" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> ${ec.getL10n().localize("Columns")}</button></#if>
+            <#if isSavedFinds || isHeaderDialog>
+                <#assign headerFormDialogId = formId + "_hdialog">
+                <#assign headerFormId = formId + "_header">
+                <#assign headerFormButtonText = ec.getL10n().localize("Find Options")>
+                <container-dialog id="${headerFormDialogId}" button-text="${headerFormButtonText}" title="${headerFormButtonText}">
+                    <#-- Saved Finds -->
+                    <#if isSavedFinds && isHeaderDialog><h4 style="margin-top: 0;">${ec.getL10n().localize("Saved Finds")}</h4></#if>
+                    <#if isSavedFinds>
+                        <#assign activeFormListFind = formListInfo.getFormInstance().getActiveFormListFind(ec)!>
+                        <#assign formSaveFindUrl = sri.buildUrl("formSaveFind").path>
+                        <#assign descLabel = ec.getL10n().localize("Description")>
+                        <#if activeFormListFind?has_content>
+                            <#assign screenScheduled = formListInfo.getScreenForm().getFormListFindScreenScheduled(activeFormListFind.formListFindId, ec)!>
+                            <div><strong>${ec.getL10n().localize("Active Saved Find:")} ${activeFormListFind.description?html}</strong></div>
+                            <#if screenScheduled?has_content>
+                                <p>(Scheduled for <#if screenScheduled.renderMode! == 'xsl-fo'>PDF<#else>${screenScheduled.renderMode!?upper_case}</#if><#rt>
+                                    <#t> ${Static["org.moqui.impl.service.ScheduledJobRunner"].getCronDescription(screenScheduled.cronExpression, ec.user.getLocale(), true)!})</p>
+                            <#else>
+                                <m-form class="form-inline" id="${formId}_SCHED" action="${formSaveFindUrl}" v-slot:default="formProps"
+                                        :fields-initial="{formListFindId:'${activeFormListFind.formListFindId}', screenPath:'${sri.getScreenUrlInstance().path}', renderMode:'', cronSelected:''}">
+                                    <drop-down v-model="formProps.fields.renderMode" name="renderMode" label="${ec.getL10n().localize("Mode")}" id="${formId}_SCHED_renderMode"
+                                               :options="[{value:'xlsx',label:'XLSX'},{value:'csv',label:'CSV'},{value:'xsl-fo',label:'PDF'}]"></drop-down>
+                                    <drop-down v-model="formProps.fields.cronSelected" name="cronSelected" label="${ec.getL10n().localize("Schedule")}" id="${formId}_SCHED_cronSelected"
+                                               :options="[{value:'0 0 6 ? * MON-FRI',label:'Monday-Friday'},{value:'0 0 6 ? * *',label:'Every Day'},{value:'0 0 6 ? * MON',label:'Monday Only'},{value:'0 0 6 1 * ?',label:'Monthly'}]"></drop-down>
+                                    <q-btn dense outline no-caps type="submit" name="ScheduleFind" onclick="return confirm('${ec.getL10n().localize("Setup a schedule to send this saved find to you by email?")}');" label="${ec.getL10n().localize("Schedule")}"></q-btn>
+                                </m-form>
+                            </#if>
+                        </#if>
+                        <#if currentFindUrlParms?has_content>
+                            <m-form class="form-inline" id="${formId}_NewFind" action="${formSaveFindUrl}" v-slot:default="formProps"
+                                    :fields-initial="{formLocation:'${formListInfo.getSavedFindFullLocation()}',_findDescription:'',<#rt>
+                                    <#t><#list currentFindUrlParms.keySet() as parmName>'${parmName}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentFindUrlParms.get(parmName)!)}',</#list>}">
+                                <div class="big-row">
+                                    <div class="q-my-auto big-row-item"><q-input v-model="formProps.fields._findDescription" dense outlined stack-label label="${descLabel}" size="30" name="_findDescription" id="${formId}_NewFind_description" required="required"></q-input></div>
+                                    <div class="q-mx-sm q-my-auto big-row-item"><q-btn dense outline no-caps type="submit" label="${ec.getL10n().localize("Save New Find")}"></q-btn></div>
+                                </div>
+                            </m-form>
+                        <#else>
+                            <p>${ec.getL10n().localize("No find parameters, choose some to save a new find or update existing")}</p>
+                        </#if>
+                        <#assign userFindInfoList = formListInfo.getUserFormListFinds(ec)>
+                        <#list userFindInfoList as userFindInfo>
+                            <#assign formListFind = userFindInfo.formListFind>
+                            <#assign findParameters = userFindInfo.findParameters>
+                            <#-- use only formListFindId now that ScreenRenderImpl picks it up and auto adds configured parameters:
+                            <#assign doFindUrl = sri.buildUrl(sri.getScreenUrlInstance().path).addParameters(findParameters)> -->
+                            <#assign doFindUrl = sri.buildUrl(sri.getScreenUrlInstance().path).addParameter("formListFindId", formListFind.formListFindId)>
+                            <#assign saveFindFormId = formId + "_SaveFind" + userFindInfo_index>
+                            <div>
+                                <#if currentFindUrlParms?has_content>
+                                    <m-form class="form-inline" id="${saveFindFormId}" action="${formSaveFindUrl}">
+                                        <input type="hidden" name="formLocation" value="${formListInfo.getSavedFindFullLocation()}">
+                                        <input type="hidden" name="formListFindId" value="${formListFind.formListFindId}">
+                                        <#list currentFindUrlParms.keySet() as parmName>
+                                            <input type="hidden" name="${parmName}" value="${currentFindUrlParms.get(parmName)!?html}">
+                                        </#list>
+                                        <div class="form-group">
+                                            <label class="sr-only" for="${saveFindFormId}_description">${descLabel}</label>
+                                            <input type="text" size="40" name="_findDescription" id="${saveFindFormId}_description" value="${formListFind.description?html}" class="form-control required" required="required">
+                                        </div>
+                                        <button type="submit" name="UpdateFind" class="btn btn-primary btn-sm">${ec.getL10n().localize("Update to Current")}</button>
+                                        <#if userFindInfo.isByUserId == "true"><button type="submit" name="DeleteFind" class="btn btn-danger btn-sm" onclick="return confirm('${ec.getL10n().localize("Delete")} ${formListFind.description?js_string}?');">&times;</button></#if>
+                                    </m-form>
+                                    <m-link href="${doFindUrl.pathWithParams}" class="btn btn-success btn-sm">${ec.getL10n().localize("Do Find")}</m-link>
+                                <#else>
+                                    <m-link href="${doFindUrl.pathWithParams}" class="btn btn-success btn-sm">${ec.getL10n().localize("Do Find")}</m-link>
+                                    <#if userFindInfo.isByUserId == "true">
+                                        <m-form class="form-inline" id="${saveFindFormId}" action="${formSaveFindUrl}" :no-validate="true">
+                                            <input type="hidden" name="formListFindId" value="${formListFind.formListFindId}">
+                                            <button type="submit" name="DeleteFind" class="btn btn-danger btn-sm" onclick="return confirm('${ec.getL10n().localize("Delete")} ${formListFind.description?js_string}?');">&times;</button>
+                                        </m-form>
+                                    </#if>
+                                    <strong>${formListFind.description?html}</strong>
+                                </#if>
+                            </div>
+                        </#list>
+                    </#if>
+                    <#if isSavedFinds && isHeaderDialog><h4>${ec.getL10n().localize("Find Parameters")}</h4></#if>
+                    <#if isHeaderDialog>
+                        <#-- Find Parameters Form -->
+                        <#assign curUrlInstance = sri.getCurrentScreenUrl()>
+                        <#assign skipFormSave = skipForm!false>
+                        <#assign skipForm = false>
+                        <form-link name="${headerFormId}" id="${headerFormId}" action="${curUrlInstance.path}"><template slot-scope="props">
+                                <#if formListFindId?has_content><input type="hidden" name="formListFindId" value="${formListFindId}"></#if>
+                                <#if context[listName + "PageSize"]??><input type="hidden" name="pageSize" value="${context[listName + "PageSize"]?c}"></#if>
+                                <#list hiddenParameterKeys as hiddenParameterKey><input type="hidden" name="${hiddenParameterKey}" value="${hiddenParameterMap.get(hiddenParameterKey)!""}"></#list>
+                                <fieldset class="form-horizontal">
+                                    <div class="form-group"><div class="col-sm-2">&nbsp;</div><div class="col-sm-10">
+                                            <button type="button" name="clearParameters" class="btn btn-primary btn-sm" @click.prevent="props.clearForm">${ec.getL10n().localize("Clear Parameters")}</button></div></div>
+
+                                    <#-- Always add an orderByField to select one or more columns to order by -->
+                                    <div class="form-group">
+                                        <label class="control-label col-sm-2" for="${headerFormId}_orderByField">${ec.getL10n().localize("Order By")}</label>
+                                        <div class="col-sm-10">
+                                            <select name="orderBySelect" id="${headerFormId}_orderBySelect" multiple="multiple" style="width:100%;" class="noResetSelect2">
+                                                <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content>
+                                                    <#assign headerFieldNode = fieldNode["header-field"][0]>
+                                                    <#assign showOrderBy = (headerFieldNode["@show-order-by"])!>
+                                                    <#if showOrderBy?has_content && showOrderBy != "false">
+                                                        <#assign caseInsensitive = showOrderBy == "case-insensitive">
+                                                        <#assign orderFieldName = fieldNode["@name"]>
+                                                        <#assign orderFieldTitle><@fieldTitle headerFieldNode/></#assign>
+                                                        <option value="${caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Asc)")}</option>
+                                                        <option value="${"-" + caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Desc)")}</option>
+                                                    </#if>
+                                                </#if></#list>
+                                            </select>
+                                            <input type="hidden" id="${headerFormId}_orderByField" name="orderByField" value="${(orderByField!"")?html}">
+                                            <m-script>
+                                                $("#${headerFormId}_orderBySelect").selectivity({ positionDropdown: function(dropdownEl, selectEl) { dropdownEl.css("width", "300px"); } })[0].selectivity.filterResults = function(results) {
+                                                // Filter out asc and desc options if anyone selected.
+                                                return results.filter(function(item){return !this._data.some(function(data_item) {return data_item.id.substring(1) === item.id.substring(1);});}, this);
+                                                };
+                                                <#assign orderByJsValue = formListInfo.getOrderByActualJsString(ec.getContext().orderByField)>
+                                                <#if orderByJsValue?has_content>$("#${headerFormId}_orderBySelect").selectivity("value", ${orderByJsValue});</#if>
+                                                $("div#${headerFormId}_orderBySelect").on("change", function(evt) {
+                                                if (evt.value) $("#${headerFormId}_orderByField").val(evt.value.join(","));
+                                                });
+                                            </m-script>
+                                        </div>
+                                    </div>
+                                    <#t>${sri.pushSingleFormMapContext("")}
+                                    <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content && fieldNode["header-field"][0]?children?has_content>
+                                        <#assign headerFieldNode = fieldNode["header-field"][0]>
+                                        <#assign allHidden = true>
+                                        <#list fieldNode?children as fieldSubNode>
+                                            <#if !(fieldSubNode["hidden"]?has_content || fieldSubNode["ignored"]?has_content)><#assign allHidden = false></#if>
+                                        </#list>
+
+                                        <#if !(ec.getResource().condition(fieldNode["@hide"]!, "") || allHidden ||
+                                        ((!fieldNode["@hide"]?has_content) && fieldNode?children?size == 1 &&
+                                        (headerFieldNode["hidden"]?has_content || headerFieldNode["ignored"]?has_content)))>
+                                            <@formSingleWidget headerFieldNode headerFormId "col-sm" false false/>
+                                        <#elseif (headerFieldNode["hidden"])?has_content>
+                                            <#recurse headerFieldNode/>
+                                        </#if>
+                                    </#if></#list>
+                                    <#t>${sri.popContext()}<#-- context was pushed so pop here at the end -->
+                                </fieldset>
+                            </template></form-link>
+                        <#assign skipForm = skipFormSave>
+                    </#if>
+                </container-dialog>
+            </#if>
+
+            <#if isSelectColumns>
+                <#assign selectColumnsDialogId = formId + "_SelColsDialog">
+                <#assign selectColumnsSortableId = formId + "_SelColsSortable">
+                <#assign fieldsNotInColumns = formListInfo.getFieldsNotReferencedInFormListColumn()>
+                <container-dialog id="${selectColumnsDialogId}" button-text="${ec.getL10n().localize("Columns")}" title="${ec.l10n.localize("Column Fields")}">
+                    <p>${ec.getL10n().localize("Drag fields to the desired column or do not display")}</p>
+                    <ul id="${selectColumnsSortableId}">
+                        <li id="hidden"><div>${ec.l10n.localize("Do Not Display")}</div>
+                            <#if fieldsNotInColumns?has_content>
+                                <ul>
+                                    <#list fieldsNotInColumns as fieldNode>
+                                        <#assign fieldSubNode = (fieldNode["header-field"][0])!(fieldNode["default-field"][0])!>
+                                        <li id="${fieldNode["@name"]}"><div><@fieldTitle fieldSubNode/></div></li>
+                                    </#list>
+                                </ul>
+                            </#if>
+                        </li>
+                        <#list allColInfoList as columnFieldList>
+                            <li id="column_${columnFieldList_index}"><div>${ec.l10n.localize("Column")} ${columnFieldList_index + 1}</div><ul>
+                                    <#list columnFieldList as fieldNode>
+                                        <#assign fieldSubNode = (fieldNode["header-field"][0])!(fieldNode["default-field"][0])!>
+                                        <li id="${fieldNode["@name"]}"><div><@fieldTitle fieldSubNode/></div></li>
+                                    </#list>
+                                </ul></li>
+                        </#list>
+                        <#list allColInfoList?size..(allColInfoList?size + 2) as ind><#-- always add 3 more columns for flexibility -->
+                            <li id="column_${ind}"><div>${ec.getL10n().localize("Column")} ${ind + 1}</div></li>
+                        </#list>
+                    </ul>
+                    <m-form class="form-inline" id="${formId}_SelColsForm" action="${sri.buildUrl("formSelectColumns").path}">
+                        <input type="hidden" name="formLocation" value="${formListInfo.getFormLocation()}">
+                        <input type="hidden" id="${formId}_SelColsForm_columnsTree" name="columnsTree" value="">
+                        <#if currentFindUrlParms?has_content><#list currentFindUrlParms.keySet() as parmName>
+                            <input type="hidden" name="${parmName}" value="${currentFindUrlParms.get(parmName)!?html}">
+                        </#list></#if>
+                        <input type="submit" name="SaveColumns" value="${ec.getL10n().localize("Save Columns")}" class="btn btn-success btn-sm"/>
+                        <input type="submit" name="ResetColumns" value="${ec.getL10n().localize("Reset to Default")}" class="btn btn-danger btn-sm"/>
+                    </m-form>
+                </container-dialog>
+                <#-- TODO: implement replacement for sortableLists() (from jquery-sortable-lists library)
+                <m-script>$('#${selectColumnsDialogId}').on('shown.bs.modal', function() {
+                    $("#${selectColumnsSortableId}").sortableLists({
+                    isAllowed: function(currEl, hint, target) {
+                    <#- - don't allow hidden and column items to be moved; only allow others to be under hidden or column items - ->
+                    if (currEl.attr('id') === 'hidden' || currEl.attr('id').startsWith('column_')) {
+                    if (!target.attr('id') || (target.attr('id') != 'hidden' && !currEl.attr('id').startsWith('column_'))) { hint.css('background-color', '#99ff99'); return true; }
+                    else { hint.css('background-color', '#ff9999'); return false; }
+                    }
+                    if (target.attr('id') && (target.attr('id') === 'hidden' || target.attr('id').startsWith('column_'))) { hint.css('background-color', '#99ff99'); return true; }
+                    else { hint.css('background-color', '#ff9999'); return false; }
+                    },
+                    placeholderCss: {'background-color':'#999999'}, insertZone: 50,
+                    <#- - jquery-sortable-lists currently logs an error if opener.as is not set to html or class - ->
+                    opener: { active:false, as:'html', close:'', open:'' },
+                    onChange: function(cEl) {
+                    var sortableHierarchy = $('#${selectColumnsSortableId}').sortableListsToHierarchy();
+                    // console.log(sortableHierarchy); console.log(JSON.stringify(sortableHierarchy));
+                    $("#${formId}_SelColsForm_columnsTree").val(JSON.stringify(sortableHierarchy));
+                    }
+                    });
+                    $("#${formId}_SelColsForm_columnsTree").val(JSON.stringify($('#${selectColumnsSortableId}').sortableListsToHierarchy()));
+                })</m-script>
+                -->
+            </#if>
 
             <#if formNode["@show-csv-button"]! == "true">
                 <#assign csvLinkUrl = sri.getScreenUrlInstance().cloneUrlInstance().addParameter("renderMode", "csv")
                         .addParameter("pageNoLimit", "true").addParameter("lastStandalone", "true").addParameter("saveFilename", formNode["@name"] + ".csv")>
-                <a href="${csvLinkUrl.getUrlWithParams()}" class="btn btn-default">${ec.getL10n().localize("CSV")}</a>
+                <q-btn dense outline type="a" href="${csvLinkUrl.getUrlWithParams()}" label="${ec.getL10n().localize("CSV")}"></q-btn>
             </#if>
             <#if formNode["@show-xlsx-button"]! == "true" && ec.screen.isRenderModeValid("xlsx")>
                 <#assign xlsxLinkUrl = sri.getScreenUrlInstance().cloneUrlInstance().addParameter("renderMode", "xlsx")
                         .addParameter("pageNoLimit", "true").addParameter("lastStandalone", "true").addParameter("saveFilename", formNode["@name"] + ".xlsx")>
-                <a href="${xlsxLinkUrl.getUrlWithParams()}" class="btn btn-default">${ec.getL10n().localize("XLS")}</a>
+                <q-btn dense outline type="a" href="${xlsxLinkUrl.getUrlWithParams()}" label="${ec.getL10n().localize("XLS")}"></q-btn>
             </#if>
             <#if formNode["@show-text-button"]! == "true">
                 <#assign showTextDialogId = formId + "_TextDialog">
-                <button id="${showTextDialogId}_button" type="button" data-toggle="modal" data-target="#${showTextDialogId}" data-original-title="${ec.getL10n().localize("Text")}" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> ${ec.getL10n().localize("Text")}</button>
+                <#assign textLinkUrl = sri.getScreenUrlInstance()>
+                <#assign textLinkUrlParms = textLinkUrl.getParameterMap()>
+                <container-dialog id="${showTextDialogId}" button-text="${ec.getL10n().localize("Text")}" title="${ec.getL10n().localize("Export Fixed-Width Plain Text")}">
+                    <#-- NOTE: don't use m-form, most commonly results in download and if not won't be html -->
+                    <form id="${formId}_Text" method="post" action="${textLinkUrl.getUrl()}">
+                        <input type="hidden" name="renderMode" value="text">
+                        <input type="hidden" name="pageNoLimit" value="true">
+                        <input type="hidden" name="lastStandalone" value="true">
+                        <#list textLinkUrlParms.keySet() as parmName>
+                            <input type="hidden" name="${parmName}" value="${textLinkUrlParms.get(parmName)!?html}"></#list>
+                        <#-- TODO quasar components and layout, lower priority (not commonly used) -->
+                        <fieldset class="form-horizontal">
+                            <div class="form-group">
+                                <label class="control-label col-sm-3" for="${formId}_Text_lineCharacters">${ec.getL10n().localize("Line Characters")}</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" size="4" name="lineCharacters" id="${formId}_Text_lineCharacters" value="132">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-sm-3" for="${formId}_Text_pageLines">${ec.getL10n().localize("Page Lines")}</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" size="4" name="pageLines" id="${formId}_Text_pageLines" value="88">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-sm-3" for="${formId}_Text_lineWrap">${ec.getL10n().localize("Line Wrap?")}</label>
+                                <div class="col-sm-9">
+                                    <input type="checkbox" class="form-control" name="lineWrap" id="${formId}_Text_lineWrap" value="true">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-sm-3" for="${formId}_Text_saveFilename">${ec.getL10n().localize("Save to Filename")}</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" size="40" name="saveFilename" id="${formId}_Text_saveFilename" value="${formNode["@name"] + ".txt"}">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-default">${ec.getL10n().localize("Export Text")}</button>
+                        </fieldset>
+                    </form>
+                </container-dialog>
             </#if>
             <#if formNode["@show-pdf-button"]! == "true">
                 <#assign showPdfDialogId = formId + "_PdfDialog">
-                <button id="${showPdfDialogId}_button" type="button" data-toggle="modal" data-target="#${showPdfDialogId}" data-original-title="${ec.getL10n().localize("PDF")}" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> ${ec.getL10n().localize("PDF")}</button>
+                <#assign pdfLinkUrl = sri.getScreenUrlInstance()>
+                <#assign pdfLinkUrlParms = pdfLinkUrl.getParameterMap()>
+                <container-dialog id="${showPdfDialogId}" button-text="${ec.getL10n().localize("PDF")}" title="${ec.getL10n().localize("Generate PDF")}">
+                    <#-- NOTE: don't use m-form, most commonly results in download and if not won't be html -->
+                    <form id="${formId}_Pdf" method="post" action="${ec.web.getWebappRootUrl(false, null)}/fop${pdfLinkUrl.getPath()}">
+                        <input type="hidden" name="pageNoLimit" value="true">
+                        <#list pdfLinkUrlParms.keySet() as parmName>
+                            <input type="hidden" name="${parmName}" value="${pdfLinkUrlParms.get(parmName)!?html}"></#list>
+                        <#-- TODO quasar components and layout, lower priority (not commonly used) -->
+                        <fieldset class="form-horizontal">
+                            <div class="form-group">
+                                <label class="control-label col-sm-3" for="${formId}_Pdf_layoutMaster">${ec.getL10n().localize("Page Layout")}</label>
+                                <div class="col-sm-9">
+                                    <select name="layoutMaster"  id="${formId}_Pdf_layoutMaster" class="form-control">
+                                        <option value="letter-landscape">US Letter - Landscape (11x8.5)</option>
+                                        <option value="letter-portrait">US Letter - Portrait (8.5x11)</option>
+                                        <option value="legal-landscape">US Legal - Landscape (14x8.5)</option>
+                                        <option value="legal-portrait">US Legal - Portrait (8.5x14)</option>
+                                        <option value="tabloid-landscape">US Tabloid - Landscape (17x11)</option>
+                                        <option value="tabloid-portrait">US Tabloid - Portrait (11x17)</option>
+                                        <option value="a4-landscape">A4 - Landscape (297x210)</option>
+                                        <option value="a4-portrait">A4 - Portrait (210x297)</option>
+                                        <option value="a3-landscape">A3 - Landscape (420x297)</option>
+                                        <option value="a3-portrait">A3 - Portrait (297x420)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-sm-3" for="${formId}_Pdf_saveFilename">${ec.getL10n().localize("Save to Filename")}</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" size="40" name="saveFilename" id="${formId}_Pdf_saveFilename" value="${formNode["@name"] + ".pdf"}">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-default">${ec.getL10n().localize("Generate PDF")}</button>
+                        </fieldset>
+                    </form>
+                </container-dialog>
+            </#if>
+
+            <#if (context[listName + "Count"]!(context[listName].size())!0) == 0>
+                <#if context.getSharedMap().get("_entityListNoSearchParms")!false == true>
+                    <strong class="text-warning" style="display:inline-block;padding-top:2px;">${ec.getL10n().localize("Find Options required to view results")}</strong>
+                <#else>
+                    <strong class="text-warning" style="display:inline-block;padding-top:2px;">${ec.getL10n().localize("No results found")}</strong>
+                </#if>
             </#if>
 
             <#if isPaginated>
+                <q-space></q-space>
                 <#-- no more paginate/show-all button, use page size drop-down with 500 instead:
                 <#if formNode["@show-all-button"]! == "true" && (context[listName + 'Count'] < 500)>
                     <#if context["pageNoLimit"]?has_content>
@@ -966,17 +955,14 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                 </#if>
                 -->
                 <#if formNode["@show-all-button"]! == "true" || formNode["@show-page-size"]! == "true">
-                    <div class="btn-group">
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        ${context[listName + "PageSize"]?c} <span class="caret"></span>
-                      </button>
-                      <ul class="dropdown-menu">
+                    <q-btn-dropdown dense outline no-caps label="${context[listName + "PageSize"]?c}"><q-list dense>
                         <#list [10,20,50,100,200,500] as curPageSize>
                             <#assign pageSizeUrl = sri.getScreenUrlInstance().cloneUrlInstance().addParameter("pageSize", curPageSize?c)>
-                            <li><m-link href="${pageSizeUrl.pathWithParams}">${curPageSize?c}</m-link></li>
+                            <q-item clickable v-close-popup><q-item-section>
+                                <m-link href="${pageSizeUrl.pathWithParams}">${curPageSize?c}</m-link>
+                            </q-item-section></q-item>
                         </#list>
-                      </ul>
-                    </div>
+                    </q-list></q-btn-dropdown>
                 </#if>
 
                 <#assign curPageMaxIndex = context[listName + "PageMaxIndex"]>
@@ -985,15 +971,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                     <#t> pageSize:${context[listName + "PageSize"]?c}, pageMaxIndex:${context[listName + "PageMaxIndex"]?c},
                     <#lt> pageRangeLow:${context[listName + "PageRangeLow"]?c}, pageRangeHigh:${context[listName + "PageRangeHigh"]?c} }"></form-paginate>
             </#if>
-
-            <#if (context[listName + "Count"]!(context[listName].size())!0) == 0>
-                <#if context.getSharedMap().get("_entityListNoSearchParms")!false == true>
-                    <h4 class="text-warning" style="display:inline-block;padding-top:2px;">${ec.getL10n().localize("Find Options required to view results")}</h4>
-                <#else>
-                    <h4 class="text-warning" style="display:inline-block;padding-top:2px;">${ec.getL10n().localize("No results found")}</h4>
-                </#if>
-            </#if>
-        </nav></th></tr>
+        </q-bar></th></tr>
 
         <#if isHeaderDialog>
         <tr><th colspan="${numColumns}" style="font-weight: normal">
@@ -1063,7 +1041,6 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#assign hiddenParameterKeys = hiddenParameterMap.keySet()>
 
 <#if isServerStatic><#-- client rendered, static -->
-    <#if !skipHeader><@paginationHeaderModals formListInfo formId isHeaderDialog/></#if>
     <form-list name="${formName}" id="${formId}" rows="${formName}" action="${formListUrlInfo.path}" :multi="${isMulti?c}"<#rt>
             <#t> :skip-form="${skipForm?c}" :skip-header="${skipHeader?c}" :header-form="${needHeaderForm?c}"
             <#t> :header-dialog="${isHeaderDialog?c}" :saved-finds="${(formNode["@saved-finds"]! == "true")?c}"
@@ -1204,7 +1181,6 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         </m-form>
         </#if>
 
-        <#if !skipHeader><@paginationHeaderModals formListInfo formId isHeaderDialog/></#if>
         <div class="q-table__container q-table__card q-table--horizontal-separator q-table--dense q-table--flat"><table class="q-table ${tableStyle}" id="${formId}_table">
         <#if !skipHeader>
             <thead>
@@ -1326,26 +1302,24 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         </#if>
         <#-- footer pagination control -->
         <#if isPaginated?? && isPaginated>
-            <tr class="form-list-nav-row"><th colspan="${numColumns}"><nav class="form-list-nav">
+            <tr class="form-list-nav-row"><th colspan="${numColumns}"><q-bar>
+                <q-space></q-space>
                 <#if formNode["@show-all-button"]! == "true" || formNode["@show-page-size"]! == "true">
-                    <div class="btn-group">
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        ${context[listName + "PageSize"]?c} <span class="caret"></span>
-                      </button>
-                      <ul class="dropdown-menu">
+                    <q-btn-dropdown dense outline no-caps label="${context[listName + "PageSize"]?c}"><q-list dense>
                         <#list [10,20,50,100,200,500] as curPageSize>
                             <#assign pageSizeUrl = sri.getScreenUrlInstance().cloneUrlInstance().addParameter("pageSize", curPageSize?c)>
-                            <li><m-link href="${pageSizeUrl.pathWithParams}">${curPageSize?c}</m-link></li>
+                            <q-item clickable v-close-popup><q-item-section>
+                                <m-link href="${pageSizeUrl.pathWithParams}">${curPageSize?c}</m-link>
+                            </q-item-section></q-item>
                         </#list>
-                      </ul>
-                    </div>
+                    </q-list></q-btn-dropdown>
                 </#if>
                 <#assign curPageMaxIndex = context[listName + "PageMaxIndex"]>
                 <#if (curPageMaxIndex > 4)><form-go-page id-val="${formId}" :max-index="${curPageMaxIndex?c}"></form-go-page></#if>
                 <form-paginate :paginate="{ count:${context[listName + "Count"]?c}, pageIndex:${context[listName + "PageIndex"]?c},<#rt>
                     <#t> pageSize:${context[listName + "PageSize"]?c}, pageMaxIndex:${context[listName + "PageMaxIndex"]?c},
                     <#lt> pageRangeLow:${context[listName + "PageRangeLow"]?c}, pageRangeHigh:${context[listName + "PageRangeHigh"]?c} }"></form-paginate>
-            </nav></th></tr>
+            </q-bar></th></tr>
         </#if>
         <#if !isServerStatic></tbody></#if>
         <#assign ownerForm = "">
@@ -1770,7 +1744,7 @@ a => A, d => D, y => Y
         <#if currentValue?has_content && !currentDescription?has_content><#assign currentDescription><@widgetTextValue .node true/></#assign></#if>
     </#if>
     <#assign fieldLabel><@fieldTitle ddSubFieldNode/></#assign>
-    <drop-down name="${name}" id="${tlId}"<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if><#rt>
+    <drop-down name="${name}" id="${tlId}"<#if fieldLabel?has_content> label="${fieldLabel}"</#if><#rt>
             <#t> class="<#if isDynamicOptions>dynamic-options</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if><#if validationClasses?has_content> ${validationClasses}</#if>"<#rt>
             <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${name}"<#else><#if allowMultiple> :value="[<#list currentValueList as curVal><#if curVal?has_content>'${curVal}',</#if></#list>]"<#else> value="${currentValue!}"</#if></#if>
             <#t><#if allowMultiple> :multiple="true"</#if><#if allowEmpty> :allow-empty="true"</#if><#if .node["@combo-box"]! == "true"> :combo="true"</#if>
