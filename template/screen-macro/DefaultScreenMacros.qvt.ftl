@@ -264,11 +264,12 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
             <#else><#assign linkElement = "a">
                 <#if linkNoParam><#assign urlText = urlInstance.url/><#else><#assign urlText = urlInstance.urlWithParams/></#if>
             </#if>
+            <#-- TODO: consider simplifying to use q-btn with 'to' attribute instead of m-link or for anchor type="a" + href, where we want a button (not @link-type=anchor) -->
             <${linkElement} href="${urlText}"<#if linkFormId?has_content> id="${linkFormId}"</#if><#rt>
                 <#t><#if linkNode["@target-window"]?has_content> target="${linkNode["@target-window"]}"</#if>
                 <#t><#if linkNode["@dynamic-load-id"]?has_content> load-id="${linkNode["@dynamic-load-id"]}"</#if>
                 <#t><#if confirmationMessage?has_content><#if linkElement == "m-link"> :confirmation="'${confirmationMessage?js_string}'"<#else> onclick="return confirm('${confirmationMessage?js_string}')"</#if></#if>
-                <#-- non q-btn approach might simulate styles like old stuff, initial attempt failed though: <#if linkNode["@link-type"]! != "anchor">btn btn-${linkNode["@btn-type"]!"primary"} btn-sm</#if> -->
+                <#-- TODO non q-btn approach might simulate styles like old stuff, initial attempt failed though: <#if linkNode["@link-type"]! != "anchor">btn btn-${linkNode["@btn-type"]!"primary"} btn-sm</#if> -->
                 <#if linkNode["@link-type"]! != "anchor">
                     <#t>>
                     <q-btn dense outline no-caps color="<@getQuasarColor linkNode["@btn-type"]!"primary"/>"<#rt>
@@ -691,9 +692,9 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                                         <button type="submit" name="UpdateFind" class="btn btn-primary btn-sm">${ec.getL10n().localize("Update to Current")}</button>
                                         <#if userFindInfo.isByUserId == "true"><button type="submit" name="DeleteFind" class="btn btn-danger btn-sm" onclick="return confirm('${ec.getL10n().localize("Delete")} ${formListFind.description?js_string}?');">&times;</button></#if>
                                     </m-form>
-                                    <m-link href="${doFindUrl.pathWithParams}" class="btn btn-success btn-sm">${ec.getL10n().localize("Do Find")}</m-link>
+                                    <q-btn dense outline to="${doFindUrl.pathWithParams}" label="${ec.getL10n().localize("Do Find")}"></q-btn>
                                 <#else>
-                                    <m-link href="${doFindUrl.pathWithParams}" class="btn btn-success btn-sm">${ec.getL10n().localize("Do Find")}</m-link>
+                                    <q-btn dense outline to="${doFindUrl.pathWithParams}" label="${ec.getL10n().localize("Do Find")}"></q-btn>
                                     <#if userFindInfo.isByUserId == "true">
                                         <m-form class="form-inline" id="${saveFindFormId}" action="${formSaveFindUrl}" :no-validate="true">
                                             <input type="hidden" name="formListFindId" value="${formListFind.formListFindId}">
@@ -737,6 +738,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                                                 </#if></#list>
                                             </select>
                                             <input type="hidden" id="${headerFormId}_orderByField" name="orderByField" value="${(orderByField!"")?html}">
+                                            <#-- TODO use Quasar widgets instead of selectivity drop-down
                                             <m-script>
                                                 $("#${headerFormId}_orderBySelect").selectivity({ positionDropdown: function(dropdownEl, selectEl) { dropdownEl.css("width", "300px"); } })[0].selectivity.filterResults = function(results) {
                                                 // Filter out asc and desc options if anyone selected.
@@ -748,6 +750,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                                                 if (evt.value) $("#${headerFormId}_orderByField").val(evt.value.join(","));
                                                 });
                                             </m-script>
+                                            -->
                                         </div>
                                     </div>
                                     <#t>${sri.pushSingleFormMapContext("")}
@@ -1497,7 +1500,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         <template v-slot:control>
             <#list (options.keySet())! as key>
                 <q-checkbox size="xs" val="${key?html}" label="${(options.get(key)!"")?html}" name="${curName}" id="${tlId}<#if (key_index > 0)>_${key_index}</#if>"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
-                    <#lt><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curName}"<#else><#if allChecked! == "true"> checked="checked"<#elseif currentValue?has_content && (currentValue==key || currentValue.contains(key))> checked="checked"</#if></#if>></q-checkbox>
+                    <#lt><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curName}"<#else> value="${key?html}"<#if allChecked! == "true"> checked="checked"<#elseif currentValue?has_content && (currentValue==key || currentValue.contains(key))> checked="checked"</#if></#if>></q-checkbox>
             </#list>
         </template>
     </q-field>
@@ -1796,7 +1799,7 @@ a => A, d => D, y => Y
         <template v-slot:control>
         <#list (options.keySet())! as key>
             <q-radio size="xs" val="${key?html}" label="${(options.get(key)!"")?html}" name="${curName}" id="${tlId}<#if (key_index > 0)>_${key_index}</#if>"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
-                <#lt><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curName}"<#else><#if currentValue?has_content && currentValue==key> checked="checked"</#if></#if>></q-radio>
+                <#lt><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curName}"<#else> value="${key?html}"<#if currentValue?has_content && currentValue==key> checked="checked"</#if></#if>></q-radio>
         </#list>
         </template>
     </q-field>

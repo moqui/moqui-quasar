@@ -1141,7 +1141,7 @@ Vue.component('drop-down', {
     },
     watch: {
         // curVal: function(value) { this.$emit('input', value); },
-        value: function(newVal) { console.trace("drop-down new value " + newVal); },
+        // value: function(newVal) { console.trace("drop-down new value " + newVal); },
         options: function(options) { this.curOptions = options; },
         curOptions: function(options) {
             // save the lastVal if there is one to remember what was selected even if new options don't have it, just in case options change again
@@ -1528,3 +1528,11 @@ moqui.webrootVue = new Vue({
 
 });
 window.addEventListener('popstate', function() { moqui.webrootVue.setUrl(window.location.pathname + window.location.search); });
+
+// NOTE: simulate vue-router so this.$router.resolve() works in a basic form; required for use of q-btn 'to' attribute along with router-link component defined above
+moqui.webrootRouter = {
+    resolve: function(to, current, append) { return to; },
+    replace: function(location, onComplete, onAbort) { moqui.webrootVue.setUrl(location); },
+    push: function(location, onComplete, onAbort) { moqui.webrootVue.setUrl(location); },
+}
+Object.defineProperty(Vue.prototype, '$router', { get: function get () { return moqui.webrootRouter; } });
