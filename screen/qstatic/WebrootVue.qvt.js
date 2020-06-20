@@ -337,30 +337,83 @@ Vue.component('box-body', {
     data: function() { return this.height ? { dialogStyle:{'max-height':this.height+'px', 'overflow-y':'auto'}} : {dialogStyle:{}}},
     template: '<div class="q-pa-xs" :style="dialogStyle"><slot></slot></div>'
 });
-Vue.component('container-dialog', {
-    props: { id:{type:String}, color:String, buttonText:String, buttonClass:String, title:String, width:{type:String}, openDialog:{type:Boolean,'default':false} },
-    data: function() { return { isShown:false }},
+Vue.component('m-dialog', {
+    name: "mDialog",
+    props: { draggable:{type:Boolean,default:true}, value:{type:Boolean,'default':false}, id:String, color:String, width:{type:String}, title:{type:String} },
+    data: function() { return { isShown:false }; },
     template:
-    '<span>' +
-        '<q-btn dense outline no-caps icon="open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
-        '<q-dialog v-model="isShown" :id="id" v-on:show="focusFirst()"><q-card flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
-            '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
-                '<q-btn icon="close" flat round dense v-close-popup></q-btn></q-card-section>' +
+    '<q-dialog v-bind:value="value" v-on:input="$emit(\'input\', $event)" :id="id" @show="onShow" @hide="onHide">' +
+        '<q-card ref="dialogCard" flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
+            '<q-card-actions ref="dialogHeader" :style="{cursor:(draggable?\'move\':\'default\')}">' +
+                '<h5 class="q-pl-sm non-selectable">{{title}}</h5><q-space></q-space>' +
+                '<q-btn icon="close" flat round dense v-close-popup></q-btn>' +
+            '</q-card-actions><q-separator></q-separator>' +
             '<q-card-section ref="dialogBody"><slot></slot></q-card-section>' +
-        '</q-card></q-dialog>' +
-    '</span>',
+        '</q-card>' +
+    '</q-dialog>',
     methods: {
-        hide: function() { this.isShown = false; },
+        onShow: function() {
+            if (this.draggable) { this.$refs.dialogHeader.$el.addEventListener("mousedown", this.onGrab); }
+            this.focusFirst();
+            this.$emit("onShow");
+        },
+        onHide: function() {
+            if (this.draggable) {
+                document.removeEventListener("mousemove", this.onDrag);
+                document.removeEventListener("mouseup", this.onLetGo);
+                this.$refs.dialogHeader && this.$refs.dialogHeader.$el.removeEventListener("mousedown", this.onGrab);
+            }
+            this.$emit("onHide");
+        },
+        onDrag: function(e) {
+            var targetEl = this.$refs.dialogCard.$el;
+            var originalStyles = window.getComputedStyle(targetEl);
+            var newLeft = parseInt(originalStyles.left) + e.movementX;
+            var newTop = parseInt(originalStyles.top) + e.movementY;
+
+            var windowWidth = window.innerWidth / 2; var windowHeight = window.innerHeight / 2;
+            var elWidth = targetEl.offsetWidth / 2; var elHeight = targetEl.offsetHeight / 2;
+            var minLeft = -(windowWidth - elWidth - 10);
+            var maxLeft = (windowWidth - elWidth - 10);
+            var minTop = -(windowHeight - elHeight - 10);
+            var maxTop = (windowHeight - elHeight - 10);
+            if (newLeft < minLeft) { newLeft = minLeft; } else if (newLeft > maxLeft) { newLeft = maxLeft; }
+            if (newTop < minTop) { newTop = minTop; } else if (newTop > maxTop) { newTop = maxTop; }
+
+            targetEl.style.left = newLeft + "px";
+            targetEl.style.top = newTop + "px";
+        },
+        onLetGo: function() {
+            document.removeEventListener("mousemove", this.onDrag);
+            document.removeEventListener("mouseup", this.onLetGo);
+        },
+        onGrab: function() {
+            document.addEventListener("mousemove", this.onDrag);
+            document.addEventListener("mouseup", this.onLetGo);
+        },
         focusFirst: function() {
             var jqEl = $(this.$refs.dialogBody.$el);
             var defFocus = jqEl.find(".default-focus");
             if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
         }
+    }
+});
+Vue.component('container-dialog', {
+    name: "containerDialog",
+    props: { id:String, color:String, buttonText:String, buttonClass:String, title:String, width:{type:String}, openDialog:{type:Boolean,'default':false} },
+    data: function() { return { isShown:false }},
+    template:
+    '<span>' +
+        '<q-btn dense outline no-caps icon="open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
+        '<m-dialog v-model="isShown" :id="id" :title="title" :color="color" :width="width"><slot></slot></m-dialog>' +
+    '</span>',
+    methods: {
+        hide: function() { this.isShown = false; },
     },
-    watch: { isShown: function(newShown) { } },
     mounted: function() { if (this.openDialog) { this.isShown = true; } }
 });
 Vue.component('dynamic-container', {
+    name: "dynamicContainer",
     props: { id:{type:String,required:true}, url:{type:String} },
     data: function() { return { curComponent:moqui.EmptyComponent, curUrl:"" } },
     template: '<component :is="curComponent"></component>',
@@ -373,17 +426,14 @@ Vue.component('dynamic-container', {
     mounted: function() { this.$root.addContainer(this.id, this); this.curUrl = this.url; }
 });
 Vue.component('dynamic-dialog', {
+    name: "dynamicDialog",
     props: { id:{type:String}, url:{type:String,required:true}, color:String, buttonText:String, buttonClass:String, title:String, width:{type:String},
         openDialog:{type:Boolean,'default':false}, dynamicParams:{type:Object,'default':null} },
     data: function() { return { curComponent:moqui.EmptyComponent, curUrl:"", isShown:false} },
     template:
     '<span>' +
         '<q-btn dense outline no-caps icon="open_in_new" :label="buttonText" :color="color" :class="buttonClass" @click="isShown = true"></q-btn>' +
-        '<q-dialog v-model="isShown" :id="id"><q-card flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
-            '<q-card-section class="row"><div class="text-h6">{{title}}</div><q-space></q-space>' +
-                '<q-btn icon="close" flat round dense v-close-popup></q-btn></q-card-section>' +
-            '<q-card-section ref="dialogBody"><component :is="curComponent"></component></q-card-section>' +
-        '</q-card></q-dialog>' +
+        '<m-dialog ref="dialog" v-model="isShown" :id="id" :title="title" :color="color" :width="width"><component :is="curComponent"></component></m-dialog>' +
     '</span>',
     methods: {
         reload: function() { if (this.isShown) { this.isShown = false; this.isShown = true; }}, // TODO: needs delay? needed at all?
@@ -403,13 +453,7 @@ Vue.component('dynamic-dialog', {
                 if (dpStr.length) newUrl = newUrl + (newUrl.indexOf("?") > 0 ? '&' : '?') + dpStr;
             }
             moqui.loadComponent(newUrl, function(comp) {
-                comp.mounted = function() {
-                    this.$nextTick(function () {
-                        var jqEl = $(vm.$refs.dialogBody.$el);
-                        var defFocus = jqEl.find(".default-focus");
-                        if (defFocus.length) { defFocus.focus(); } else { jqEl.find("form :input:visible:not([type='submit']):first").focus(); }
-                    });
-                };
+                comp.mounted = function() { this.$nextTick(function () { vm.$refs.dialog.focusFirst(); }); };
                 vm.curComponent = comp;
             }, this.id);
         },
