@@ -695,7 +695,7 @@ Vue.component('m-form', {
 Vue.component('form-link', {
     props: { fieldsInitial:Object, action:{type:String,required:true}, focusField:String, noValidate:Boolean, bodyParameterNames:Array },
     data: function() { return { fields:Object.assign({}, this.fieldsInitial) }},
-    template: '<q-form ref="qForm" @submit.prevent="submitForm" @reset.prevent="resetForm"><slot v-bind:fields="fields"></slot></q-form>',
+    template: '<q-form ref="qForm" @submit.prevent="submitForm" @reset.prevent="resetForm"><slot :clearForm="clearForm" :fields="fields"></slot></q-form>',
     methods: {
         submitForm: function() {
             if (this.noValidate) {
@@ -769,11 +769,10 @@ Vue.component('form-link', {
         },
         resetForm: function() {
             this.fields = Object.assign({}, this.fieldsInitial);
-            /* old approach:
-            var jqEl = $(this.$el);
-            jqEl.find(':radio, :checkbox').removeAttr('checked');
-            jqEl.find('textarea, :text, select').val('').trigger('change');
-             */
+        },
+        clearForm: function() {
+            // TODO: probably need to iterate over object and clear each value
+            this.fields = {};
         }
     },
     mounted: function() {

@@ -663,7 +663,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                                     <#t><#list currentFindUrlParms.keySet() as parmName>'${parmName}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentFindUrlParms.get(parmName)!)}',</#list>}">
                                 <div class="big-row">
                                     <div class="q-my-auto big-row-item"><q-input v-model="formProps.fields._findDescription" dense outlined stack-label label="${descLabel}" size="30" name="_findDescription" id="${formId}_NewFind_description" required="required"></q-input></div>
-                                    <div class="q-mx-sm q-my-auto big-row-item"><q-btn dense outline no-caps type="submit" label="${ec.getL10n().localize("Save New Find")}"></q-btn></div>
+                                    <div class="on-right q-my-auto big-row-item"><q-btn dense outline no-caps type="submit" label="${ec.getL10n().localize("Save New Find")}"></q-btn></div>
                                 </div>
                             </m-form>
                         <#else>
@@ -677,33 +677,33 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                             <#assign doFindUrl = sri.buildUrl(sri.getScreenUrlInstance().path).addParameters(findParameters)> -->
                             <#assign doFindUrl = sri.buildUrl(sri.getScreenUrlInstance().path).addParameter("formListFindId", formListFind.formListFindId)>
                             <#assign saveFindFormId = formId + "_SaveFind" + userFindInfo_index>
-                            <div>
-                                <#if currentFindUrlParms?has_content>
-                                    <m-form class="form-inline" id="${saveFindFormId}" action="${formSaveFindUrl}">
-                                        <input type="hidden" name="formLocation" value="${formListInfo.getSavedFindFullLocation()}">
-                                        <input type="hidden" name="formListFindId" value="${formListFind.formListFindId}">
-                                        <#list currentFindUrlParms.keySet() as parmName>
-                                            <input type="hidden" name="${parmName}" value="${currentFindUrlParms.get(parmName)!?html}">
-                                        </#list>
-                                        <div class="form-group">
-                                            <label class="sr-only" for="${saveFindFormId}_description">${descLabel}</label>
-                                            <input type="text" size="40" name="_findDescription" id="${saveFindFormId}_description" value="${formListFind.description?html}" class="form-control required" required="required">
-                                        </div>
-                                        <button type="submit" name="UpdateFind" class="btn btn-primary btn-sm">${ec.getL10n().localize("Update to Current")}</button>
-                                        <#if userFindInfo.isByUserId == "true"><button type="submit" name="DeleteFind" class="btn btn-danger btn-sm" onclick="return confirm('${ec.getL10n().localize("Delete")} ${formListFind.description?js_string}?');">&times;</button></#if>
+                            <#if currentFindUrlParms?has_content>
+                                <div class="big-row">
+                                    <m-form id="${saveFindFormId}" action="${formSaveFindUrl}" v-slot:default="formProps"
+                                            :fields-initial="{formLocation:'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(formListInfo.getSavedFindFullLocation())}', formListFindId:'${formListFind.formListFindId}',<#rt>
+                                            <#t>_findDescription:'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(formListFind.description?html)}',
+                                            <#t><#list currentFindUrlParms.keySet() as parmName>'${parmName}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentFindUrlParms.get(parmName)!)}',</#list>}">
+                                        <div class="q-my-auto big-row-item"><q-input v-model="formProps.fields._findDescription" dense outlined stack-label label="${descLabel}" size="30" name="_findDescription" id="${saveFindFormId}_description" required="required"></q-input></div>
+                                        <div class="on-right q-my-auto big-row-item"><q-btn dense outline no-caps type="submit" name="UpdateFind" label="${ec.getL10n().localize("Update")}">
+                                            <q-tooltip>Update saved find using description and current find parameters</q-tooltip>
+                                        </q-btn></div>
+                                        <#if userFindInfo.isByUserId == "true">
+                                            <div class="q-my-auto big-row-item"><q-btn dense flat no-caps type="submit" name="DeleteFind" color="negative" icon="delete_forever" onclick="return confirm('${ec.getL10n().localize("Delete")} ${formListFind.description?js_string}?');"></q-btn></div>
+                                        </#if>
+                                        <div class="q-my-auto big-row-item"><q-btn dense outline no-caps to="${doFindUrl.pathWithParams}" label="${ec.getL10n().localize("Do Find")}"></q-btn></div>
                                     </m-form>
-                                    <q-btn dense outline to="${doFindUrl.pathWithParams}" label="${ec.getL10n().localize("Do Find")}"></q-btn>
-                                <#else>
-                                    <q-btn dense outline to="${doFindUrl.pathWithParams}" label="${ec.getL10n().localize("Do Find")}"></q-btn>
+                                </div>
+                            <#else>
+                                <div>
+                                    <q-btn dense outline no-caps to="${doFindUrl.pathWithParams}" label="${ec.getL10n().localize("Do Find")}"></q-btn>
                                     <#if userFindInfo.isByUserId == "true">
-                                        <m-form class="form-inline" id="${saveFindFormId}" action="${formSaveFindUrl}" :no-validate="true">
-                                            <input type="hidden" name="formListFindId" value="${formListFind.formListFindId}">
-                                            <button type="submit" name="DeleteFind" class="btn btn-danger btn-sm" onclick="return confirm('${ec.getL10n().localize("Delete")} ${formListFind.description?js_string}?');">&times;</button>
+                                        <m-form id="${saveFindFormId}" action="${formSaveFindUrl}" :no-validate="true" :fields-initial="{formListFindId:'${formListFind.formListFindId}'}">
+                                            <q-btn dense flat no-caps type="submit" name="DeleteFind" color="negative" icon="delete_forever" onclick="return confirm('${ec.getL10n().localize("Delete")} ${formListFind.description?js_string}?');"></q-btn>
                                         </m-form>
                                     </#if>
                                     <strong>${formListFind.description?html}</strong>
-                                </#if>
-                            </div>
+                                </div>
+                            </#if>
                         </#list>
                     </#if>
                     <#if isSavedFinds && isHeaderDialog><h4>${ec.getL10n().localize("Find Parameters")}</h4></#if>
@@ -712,66 +712,61 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                         <#assign curUrlInstance = sri.getCurrentScreenUrl()>
                         <#assign skipFormSave = skipForm!false>
                         <#assign skipForm = false>
-                        <form-link name="${headerFormId}" id="${headerFormId}" action="${curUrlInstance.path}"><template slot-scope="props">
-                                <#if formListFindId?has_content><input type="hidden" name="formListFindId" value="${formListFindId}"></#if>
-                                <#if context[listName + "PageSize"]??><input type="hidden" name="pageSize" value="${context[listName + "PageSize"]?c}"></#if>
-                                <#list hiddenParameterKeys as hiddenParameterKey><input type="hidden" name="${hiddenParameterKey}" value="${hiddenParameterMap.get(hiddenParameterKey)!""}"></#list>
-                                <fieldset class="form-horizontal">
-                                    <div class="form-group"><div class="col-sm-2">&nbsp;</div><div class="col-sm-10">
-                                            <button type="button" name="clearParameters" class="btn btn-primary btn-sm" @click.prevent="props.clearForm">${ec.getL10n().localize("Clear Parameters")}</button></div></div>
+                        <form-link name="${headerFormId}" id="${headerFormId}" action="${curUrlInstance.path}" v-slot:default="formProps"<#rt>
+                                <#t> :fields-initial="{<#if formListFindId?has_content>formListFindId:'${formListFindId}',</#if>
+                                    <#t><#if context[listName + "PageSize"]??>pageSize:'${context[listName + "PageSize"]?c}',</#if>
+                                    <#t><#list hiddenParameterKeys as hiddenParameterKey>'${hiddenParameterKey}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(hiddenParameterMap.get(hiddenParameterKey)!)}',</#list>
+                                <#t>}">
+                            <q-btn dense outline no-caps name="clearParameters" @click.prevent="formProps.clearForm" label="${ec.getL10n().localize("Clear Parameters")}"></q-btn>
 
-                                    <#-- Always add an orderByField to select one or more columns to order by -->
-                                    <div class="form-group">
-                                        <label class="control-label col-sm-2" for="${headerFormId}_orderByField">${ec.getL10n().localize("Order By")}</label>
-                                        <div class="col-sm-10">
-                                            <select name="orderBySelect" id="${headerFormId}_orderBySelect" multiple="multiple" style="width:100%;" class="noResetSelect2">
-                                                <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content>
-                                                    <#assign headerFieldNode = fieldNode["header-field"][0]>
-                                                    <#assign showOrderBy = (headerFieldNode["@show-order-by"])!>
-                                                    <#if showOrderBy?has_content && showOrderBy != "false">
-                                                        <#assign caseInsensitive = showOrderBy == "case-insensitive">
-                                                        <#assign orderFieldName = fieldNode["@name"]>
-                                                        <#assign orderFieldTitle><@fieldTitle headerFieldNode/></#assign>
-                                                        <option value="${caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Asc)")}</option>
-                                                        <option value="${"-" + caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Desc)")}</option>
-                                                    </#if>
-                                                </#if></#list>
-                                            </select>
-                                            <input type="hidden" id="${headerFormId}_orderByField" name="orderByField" value="${(orderByField!"")?html}">
-                                            <#-- TODO use Quasar widgets instead of selectivity drop-down
-                                            <m-script>
-                                                $("#${headerFormId}_orderBySelect").selectivity({ positionDropdown: function(dropdownEl, selectEl) { dropdownEl.css("width", "300px"); } })[0].selectivity.filterResults = function(results) {
-                                                // Filter out asc and desc options if anyone selected.
-                                                return results.filter(function(item){return !this._data.some(function(data_item) {return data_item.id.substring(1) === item.id.substring(1);});}, this);
-                                                };
-                                                <#assign orderByJsValue = formListInfo.getOrderByActualJsString(ec.getContext().orderByField)>
-                                                <#if orderByJsValue?has_content>$("#${headerFormId}_orderBySelect").selectivity("value", ${orderByJsValue});</#if>
-                                                $("div#${headerFormId}_orderBySelect").on("change", function(evt) {
-                                                if (evt.value) $("#${headerFormId}_orderByField").val(evt.value.join(","));
-                                                });
-                                            </m-script>
-                                            -->
-                                        </div>
-                                    </div>
-                                    <#t>${sri.pushSingleFormMapContext("")}
-                                    <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content && fieldNode["header-field"][0]?children?has_content>
-                                        <#assign headerFieldNode = fieldNode["header-field"][0]>
-                                        <#assign allHidden = true>
-                                        <#list fieldNode?children as fieldSubNode>
-                                            <#if !(fieldSubNode["hidden"]?has_content || fieldSubNode["ignored"]?has_content)><#assign allHidden = false></#if>
-                                        </#list>
+                            <#-- Always add an orderByField to select one or more columns to order by -->
+                            <q-select dense outlined options-dense multiple v-model="formProps.fields.orderBySelect"
+                                      name="orderBySelect" id="${headerFormId}_orderBySelect" stack-label label="${ec.getL10n().localize("Order By")}"></q-select>
+                            <select multiple="multiple">
+                                <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content>
+                                    <#assign headerFieldNode = fieldNode["header-field"][0]>
+                                    <#assign showOrderBy = (headerFieldNode["@show-order-by"])!>
+                                    <#if showOrderBy?has_content && showOrderBy != "false">
+                                        <#assign caseInsensitive = showOrderBy == "case-insensitive">
+                                        <#assign orderFieldName = fieldNode["@name"]>
+                                        <#assign orderFieldTitle><@fieldTitle headerFieldNode/></#assign>
+                                        <option value="${caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Asc)")}</option>
+                                        <option value="${"-" + caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Desc)")}</option>
+                                    </#if>
+                                </#if></#list>
+                            </select>
+                            <input type="hidden" id="${headerFormId}_orderByField" name="orderByField" value="${(orderByField!"")?html}">
+                            <#-- TODO use Quasar widgets instead of selectivity drop-down
+                            <m-script>
+                                $("#${headerFormId}_orderBySelect").selectivity({ positionDropdown: function(dropdownEl, selectEl) { dropdownEl.css("width", "300px"); } })[0].selectivity.filterResults = function(results) {
+                                // Filter out asc and desc options if anyone selected.
+                                return results.filter(function(item){return !this._data.some(function(data_item) {return data_item.id.substring(1) === item.id.substring(1);});}, this);
+                                };
+                                <#assign orderByJsValue = formListInfo.getOrderByActualJsString(ec.getContext().orderByField)>
+                                <#if orderByJsValue?has_content>$("#${headerFormId}_orderBySelect").selectivity("value", ${orderByJsValue});</#if>
+                                $("div#${headerFormId}_orderBySelect").on("change", function(evt) {
+                                if (evt.value) $("#${headerFormId}_orderByField").val(evt.value.join(","));
+                                });
+                            </m-script>
+                            -->
+                            <#t>${sri.pushSingleFormMapContext("")}
+                            <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content && fieldNode["header-field"][0]?children?has_content>
+                                <#assign headerFieldNode = fieldNode["header-field"][0]>
+                                <#assign allHidden = true>
+                                <#list fieldNode?children as fieldSubNode>
+                                    <#if !(fieldSubNode["hidden"]?has_content || fieldSubNode["ignored"]?has_content)><#assign allHidden = false></#if>
+                                </#list>
 
-                                        <#if !(ec.getResource().condition(fieldNode["@hide"]!, "") || allHidden ||
+                                <#if !(ec.getResource().condition(fieldNode["@hide"]!, "") || allHidden ||
                                         ((!fieldNode["@hide"]?has_content) && fieldNode?children?size == 1 &&
                                         (headerFieldNode["hidden"]?has_content || headerFieldNode["ignored"]?has_content)))>
-                                            <@formSingleWidget headerFieldNode headerFormId "col-sm" false false/>
-                                        <#elseif (headerFieldNode["hidden"])?has_content>
-                                            <#recurse headerFieldNode/>
-                                        </#if>
-                                    </#if></#list>
-                                    <#t>${sri.popContext()}<#-- context was pushed so pop here at the end -->
-                                </fieldset>
-                            </template></form-link>
+                                    <@formSingleWidget headerFieldNode headerFormId "col-sm" false false/>
+                                <#elseif (headerFieldNode["hidden"])?has_content>
+                                    <#recurse headerFieldNode/>
+                                </#if>
+                            </#if></#list>
+                            <#t>${sri.popContext()}<#-- context was pushed so pop here at the end -->
+                        </form-link>
                         <#assign skipForm = skipFormSave>
                     </#if>
                 </container-dialog>
