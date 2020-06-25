@@ -23,6 +23,8 @@ along with this software (see the LICENSE.md file). If not, see
     <#assign navbarCompList = sri.getThemeValues("STRT_HEADER_NAVBAR_COMP")>
     <#list navbarCompList! as navbarCompUrl><input type="hidden" class="confNavPluginUrl" value="${navbarCompUrl}"></#list>
 
+    <#-- for layout options see: https://quasar.dev/layout/layout -->
+    <#-- to build a layout use the handy Quasar tool: https://quasar.dev/layout-builder -->
     <q-layout view="hHh LpR fFf">
 
         <q-header reveal bordered class="bg-black text-white" id="top"><q-toolbar style="font-size:15px;">
@@ -45,7 +47,7 @@ along with this software (see the LICENSE.md file). If not, see
                 <div v-else-if="navMenuItem.subscreens && navMenuItem.subscreens.length > 1" class="cursor-pointer">
                     {{navMenuItem.title}}
                     <q-menu anchor="bottom left" self="top left"><q-list dense style="min-width: 200px">
-                        <q-item v-for="subscreen in navMenuItem.subscreens" :class="{'bg-primary':subscreen.active, 'text-white':subscreen.active}" clickable v-close-popup><q-item-section>
+                        <q-item v-for="subscreen in navMenuItem.subscreens" :key="subscreen.name" :class="{'bg-primary':subscreen.active, 'text-white':subscreen.active}" clickable v-close-popup><q-item-section>
                             <m-link :href="subscreen.pathWithParams">
                                 <template v-if="subscreen.image">
                                     <i v-if="subscreen.imageType === 'icon'" :class="subscreen.image" style="padding-right: 4px;"></i>
@@ -75,7 +77,7 @@ along with this software (see the LICENSE.md file). If not, see
             <q-btn dense flat icon="help_outline" color="info" :class="{hidden:!documentMenuList.length}">
                 <q-tooltip>${ec.l10n.localize("Documentation")}</q-tooltip>
                 <q-menu><q-list style="min-width: 300px">
-                    <q-item v-for="screenDoc in documentMenuList"><q-item-section>
+                    <q-item v-for="screenDoc in documentMenuList" :key="screenDoc.index"><q-item-section>
                         <q-btn flat no-caps :label="screenDoc.title" @click.prevent="showScreenDocDialog(screenDoc.index)"></q-btn>
                     </q-item-section></q-item>
                 </q-list></q-menu>
@@ -102,7 +104,7 @@ along with this software (see the LICENSE.md file). If not, see
             <q-btn dense flat icon="history">
                 <q-tooltip>${ec.l10n.localize("Screen History")}</q-tooltip>
                 <q-menu><q-list dense style="min-width: 300px">
-                    <q-item v-for="histItem in navHistoryList" clickable v-close-popup><q-item-section>
+                    <q-item v-for="histItem in navHistoryList" :key="histItem.pathWithParams" clickable v-close-popup><q-item-section>
                         <m-link :href="histItem.pathWithParams">
                             <template v-if="histItem.image">
                                 <i v-if="histItem.imageType === 'icon'" :class="histItem.image" style="padding-right: 8px;"></i>
