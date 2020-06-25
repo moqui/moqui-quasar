@@ -20,6 +20,8 @@ along with this software (see the LICENSE.md file). If not, see
         // if user not logged in save current path and params then redirect to Login
         if (!ec.user.userId) { ec.web.saveScreenLastInfo(null, null); sri.sendRedirectAndStopRender('/Login') }
 
+        String quasarVersion = "1.12.8"
+
         // TODO move stylesheets to the STT_INTERNAL_QUASAR theme (QuasarThemeData.xml), once stabilized
 
         // TODO consider using material icons instead of font-awesome - ISSUE: there are many XML Screen files with 'fa-' references
@@ -28,7 +30,7 @@ along with this software (see the LICENSE.md file). If not, see
         // NOTE: using FA 4.7.0 with 'fa' class, for FA 5+ must change all to 'fas' class
         html_stylesheets.add('/libs/font-awesome/css/font-awesome.min.css')
         // from Quasar docs, not valid? html_stylesheets.add('https://use.fontawesome.com/releases/v5.0.13/css/all.cs')
-        html_stylesheets.add('https://cdn.jsdelivr.net/npm/quasar@1.12.6/dist/quasar.min.css')
+        html_stylesheets.add("https://cdn.jsdelivr.net/npm/quasar@${quasarVersion}/dist/quasar.min.css")
         // load last to override
         html_stylesheets.add('/qstatic/WebrootVue.qvt.css')
 
@@ -49,7 +51,7 @@ along with this software (see the LICENSE.md file). If not, see
             // Vue JS
             footer_scripts.add('/libs/vue/vue.js') // TODO change to vue.min.js
             // Quasar
-            footer_scripts.add('https://cdn.jsdelivr.net/npm/quasar@1.12.6/dist/quasar.umd.min.js')
+            footer_scripts.add("https://cdn.jsdelivr.net/npm/quasar@${quasarVersion}/dist/quasar.umd.min.js")
             // Webroot Quasar-Vue instance, in footer so runs after page loaded
             footer_scripts.add('/qstatic/WebrootVue.qvt.js')
         } else {
@@ -57,7 +59,7 @@ along with this software (see the LICENSE.md file). If not, see
             // Vue JS
             footer_scripts.add('/libs/vue/vue.js')
             // Quasar
-            footer_scripts.add('https://cdn.jsdelivr.net/npm/quasar@1.12.6/dist/quasar.umd.min.js')
+            footer_scripts.add("https://cdn.jsdelivr.net/npm/quasar@${quasarVersion}/dist/quasar.umd.min.js")
             // Webroot Quasar-Vue instance, in footer so runs after page loaded
             footer_scripts.add('/qstatic/WebrootVue.qvt.js')
         }
