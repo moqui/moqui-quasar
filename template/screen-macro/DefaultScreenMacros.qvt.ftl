@@ -712,43 +712,41 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                         <#assign curUrlInstance = sri.getCurrentScreenUrl()>
                         <#assign skipFormSave = skipForm!false>
                         <#assign skipForm = false>
+                        <#assign fieldsJsName = "formProps.fields">
+                        <#assign orderByOptions>
+                            <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content>
+                                <#assign headerFieldNode = fieldNode["header-field"][0]>
+                                <#assign showOrderBy = (headerFieldNode["@show-order-by"])!>
+                                <#if showOrderBy?has_content && showOrderBy != "false">
+                                    <#assign caseInsensitive = showOrderBy == "case-insensitive">
+                                    <#assign orderFieldName = fieldNode["@name"]>
+                                    <#assign orderFieldTitle><@fieldTitle headerFieldNode/></#assign>
+                                    <#t>{value:'${caseInsensitive?string("^", "") + orderFieldName}',label:'${orderFieldTitle} ${ec.getL10n().localize("(Asc)")}'},
+                                    <#t>{value:'${"-" + caseInsensitive?string("^", "") + orderFieldName}',label:'${orderFieldTitle} ${ec.getL10n().localize("(Desc)")}'},
+                                </#if>
+                            </#if></#list>
+                        </#assign>
+                        <#assign orderByFieldStr = "">
+                        <#assign curOrderByField = ec.getContext().orderByField!>
+                        <#if curOrderByField?has_content>
+                            <#if curOrderByField?contains(",")>
+                                <#assign orderByFieldStr><#list curOrderByField?split(",") as curField>'${curField}'<#sep>,</#list></#assign>
+                            <#else>
+                                <#assign orderByFieldStr = curOrderByField>
+                            </#if>
+                        </#if>
                         <form-link name="${headerFormId}" id="${headerFormId}" action="${curUrlInstance.path}" v-slot:default="formProps"<#rt>
                                 <#t> :fields-initial="{<#if formListFindId?has_content>formListFindId:'${formListFindId}',</#if>
                                     <#t><#if context[listName + "PageSize"]??>pageSize:'${context[listName + "PageSize"]?c}',</#if>
+                                    <#t>orderByField:[${orderByFieldStr}],
                                     <#t><#list hiddenParameterKeys as hiddenParameterKey>'${hiddenParameterKey}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(hiddenParameterMap.get(hiddenParameterKey)!)}',</#list>
                                 <#t>}">
                             <q-btn dense outline no-caps name="clearParameters" @click.prevent="formProps.clearForm" label="${ec.getL10n().localize("Clear Parameters")}"></q-btn>
 
                             <#-- Always add an orderByField to select one or more columns to order by -->
-                            <q-select dense outlined options-dense multiple v-model="formProps.fields.orderBySelect"
-                                      name="orderBySelect" id="${headerFormId}_orderBySelect" stack-label label="${ec.getL10n().localize("Order By")}"></q-select>
-                            <select multiple="multiple">
-                                <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content>
-                                    <#assign headerFieldNode = fieldNode["header-field"][0]>
-                                    <#assign showOrderBy = (headerFieldNode["@show-order-by"])!>
-                                    <#if showOrderBy?has_content && showOrderBy != "false">
-                                        <#assign caseInsensitive = showOrderBy == "case-insensitive">
-                                        <#assign orderFieldName = fieldNode["@name"]>
-                                        <#assign orderFieldTitle><@fieldTitle headerFieldNode/></#assign>
-                                        <option value="${caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Asc)")}</option>
-                                        <option value="${"-" + caseInsensitive?string("^", "") + orderFieldName}">${orderFieldTitle} ${ec.getL10n().localize("(Desc)")}</option>
-                                    </#if>
-                                </#if></#list>
-                            </select>
-                            <input type="hidden" id="${headerFormId}_orderByField" name="orderByField" value="${(orderByField!"")?html}">
-                            <#-- TODO use Quasar widgets instead of selectivity drop-down
-                            <m-script>
-                                $("#${headerFormId}_orderBySelect").selectivity({ positionDropdown: function(dropdownEl, selectEl) { dropdownEl.css("width", "300px"); } })[0].selectivity.filterResults = function(results) {
-                                // Filter out asc and desc options if anyone selected.
-                                return results.filter(function(item){return !this._data.some(function(data_item) {return data_item.id.substring(1) === item.id.substring(1);});}, this);
-                                };
-                                <#assign orderByJsValue = formListInfo.getOrderByActualJsString(ec.getContext().orderByField)>
-                                <#if orderByJsValue?has_content>$("#${headerFormId}_orderBySelect").selectivity("value", ${orderByJsValue});</#if>
-                                $("div#${headerFormId}_orderBySelect").on("change", function(evt) {
-                                if (evt.value) $("#${headerFormId}_orderByField").val(evt.value.join(","));
-                                });
-                            </m-script>
-                            -->
+                            <q-select dense outlined options-dense multiple clearable emit-value map-options v-model="formProps.fields.orderByField"
+                                    name="orderByField" id="${headerFormId}_orderByField" stack-label label="${ec.getL10n().localize("Order By")}"
+                                    :options="[${orderByOptions}]"></q-select>
                             <#t>${sri.pushSingleFormMapContext("")}
                             <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content && fieldNode["header-field"][0]?children?has_content>
                                 <#assign headerFieldNode = fieldNode["header-field"][0]>
@@ -768,6 +766,8 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                             <#t>${sri.popContext()}<#-- context was pushed so pop here at the end -->
                         </form-link>
                         <#assign skipForm = skipFormSave>
+                        <#-- TODO: anything needed for per-row or multi forms? -->
+                        <#assign fieldsJsName = "">
                     </#if>
                 </container-dialog>
             </#if>
@@ -1507,18 +1507,19 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#else><#assign size=16><#assign maxlength=23><#assign defaultFormat="yyyy-MM-dd HH:mm">
     </#if>
     <#assign curFieldName><@fieldName .node/></#assign>
+    <#assign curFieldTitle><@fieldTitle dtSubFieldNode/></#assign>
     <#assign fieldValueFrom = ec.getL10n().format(ec.getContext().get(curFieldName + "_from")!?default(.node["@default-value-from"]!""), defaultFormat)>
     <#assign fieldValueThru = ec.getL10n().format(ec.getContext().get(curFieldName + "_thru")!?default(.node["@default-value-thru"]!""), defaultFormat)>
     <span class="form-date-find">
-      <span>${ec.getL10n().localize("From")}&nbsp;</span>
       <date-time id="<@fieldId .node/>_from" name="${curFieldName}_from" value="${fieldValueFrom?html}" type="${.node["@type"]!""}" size="${.node["@size"]!""}"<#rt>
-        <#t><#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"<#else> tooltip="From"</#if>
-        <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if javaFormat?has_content> format="<@getMomentDateFormat javaFormat/>"</#if>/>
+          <#t> :label="${curFieldTitle} ${ec.getL10n().localize("From")}"
+          <#t><#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if>
+          <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if javaFormat?has_content> format="<@getMomentDateFormat javaFormat/>"</#if>/>
     </span>
     <span class="form-date-find">
-      <span>${ec.getL10n().localize("Thru")}&nbsp;</span>
       <date-time id="<@fieldId .node/>_thru" name="${curFieldName}_thru" value="${fieldValueThru?html}" type="${.node["@type"]!""}" size="${.node["@size"]!""}"<#rt>
-          <#t><#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"<#else> tooltip="Thru"</#if>
+          <#t> :label="${curFieldTitle} ${ec.getL10n().localize("Thru")}"
+          <#t><#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if>
           <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if javaFormat?has_content> format="<@getMomentDateFormat javaFormat/>"</#if>/>
     </span>
 </#macro>
@@ -1834,7 +1835,7 @@ a => A, d => D, y => Y
             <#t><#if .node["@cols"]?has_content> cols="${.node["@cols"]}"<#else> style="width:100%;"</#if>
             <#t> rows="${.node["@rows"]!"3"}"<#if .node["@read-only"]! == "true"> readonly="readonly"</#if>
             <#t><#if .node["@maxlength"]?has_content> maxlength="${.node["@maxlength"]}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>
-        <#if .node?parent["@tooltip"]?has_content><q-tooltip>{{ ${ec.getResource().expand(.node?parent["@tooltip"], "")} }}</q-tooltip></#if>
+        <#if .node?parent["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(.node?parent["@tooltip"], "")}</q-tooltip></#if>
         <#if !fieldsJsName?has_content>${sri.getFieldValueString(.node)?html}</#if>
     </q-input>
 </#macro>
@@ -1884,10 +1885,15 @@ a => A, d => D, y => Y
                 <#t><#if validationClasses?contains("required")> required</#if><#if regexpInfo?has_content> pattern="${regexpInfo.regexp}" data-msg-pattern="${regexpInfo.message!"Invalid format"}"</#if>
                 <#t><#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if>
                 <#t><#if ownerForm?has_content> form="${ownerForm}"</#if>>
-            <#if tlFieldNode["@tooltip"]?has_content><q-tooltip>{{ ${ec.getResource().expand(tlFieldNode["@tooltip"], "")} }}</q-tooltip></#if>
+            <#if tlFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(tlFieldNode["@tooltip"], "")}</q-tooltip></#if>
         </q-input>
         <#assign expandedMask = ec.getResource().expandNoL10n(.node["@mask"], "")!>
+        <#if expandedMask?has_content>mask not yet supported - ${expandedMask}</#if>
+        <#-- TODO handle @mask:
         <#if expandedMask?has_content><m-script>$('#${tlId}').inputmask("${expandedMask}");</m-script></#if>
+        -->
+        <#if .node["@default-transition"]?has_content>default-transition not yet supported - ${.node["@default-transition"]}</#if>
+        <#-- TODO handle @default-transition:
         <#if .node["@default-transition"]?has_content>
             <#assign defUrlInfo = sri.makeUrlByType(.node["@default-transition"], "transition", .node, "false")>
             <#assign defUrlParameterMap = defUrlInfo.getParameterMap()>
@@ -1897,7 +1903,7 @@ a => A, d => D, y => Y
                     // if ($('#${tlId}').val()) return;
                     var hasAllParms = true;
                     <#list depNodeList as depNode>if (!$('#<@fieldIdByName depNode["@field"]/>').val()) { hasAllParms = false; } </#list>
-                    if (!hasAllParms) { <#-- alert("not has all parms"); --> return; }
+                    if (!hasAllParms) { <#- - alert("not has all parms"); - -> return; }
                     $.ajax({ type:"POST", url:"${defUrlInfo.url}", data:{ moquiSessionToken: "${(ec.getWeb().sessionToken)!}"<#rt>
                             <#t><#list depNodeList as depNode><#local depNodeField = depNode["@field"]><#local _void = defUrlParameterMap.remove(depNodeField)!>, "${depNode["@parameter"]!depNodeField}": $("#<@fieldIdByName depNodeField/>").val()</#list>
                             <#t><#list defUrlParameterMap.keySet() as parameterKey><#if defUrlParameterMap.get(parameterKey)?has_content>, "${parameterKey}":"${defUrlParameterMap.get(parameterKey)}"</#if></#list>
@@ -1909,6 +1915,7 @@ a => A, d => D, y => Y
                 populate_${tlId}();
             </m-script>
         </#if>
+        -->
     </#if>
 </#macro>
 
@@ -1916,9 +1923,8 @@ a => A, d => D, y => Y
 <span class="form-text-find">
     <#assign defaultOperator = .node["@default-operator"]!"contains">
     <#assign curFieldName><@fieldName .node/></#assign>
-    <#if .node["@hide-options"]! == "true" || .node["@hide-options"]! == "operator">
-        <input type="hidden" name="${curFieldName}_op" value="${defaultOperator}"<#if ownerForm?has_content> form="${ownerForm}"</#if>>
-    <#else>
+    <#assign fieldLabel><@fieldTitle .node?parent/></#assign>
+    <#if .node["@hide-options"]! != "true" && .node["@hide-options"]! != "operator">
         <span><input type="checkbox" class="form-control" name="${curFieldName}_not" value="Y"<#if ec.getWeb().parameters.get(curFieldName + "_not")! == "Y"> checked="checked"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>&nbsp;${ec.getL10n().localize("Not")}</span>
         <select name="${curFieldName}_op" class="form-control"<#if ownerForm?has_content> form="${ownerForm}"</#if>>
             <option value="equals"<#if defaultOperator == "equals"> selected="selected"</#if>>${ec.getL10n().localize("Equals")}</option>
@@ -1928,11 +1934,14 @@ a => A, d => D, y => Y
             <option value="empty"<#rt/><#if defaultOperator == "empty"> selected="selected"</#if>>${ec.getL10n().localize("Empty")}</option>
         </select>
     </#if>
-    <input type="text" class="form-control" name="${curFieldName}" value="${sri.getFieldValueString(.node)?html}" size="${.node.@size!"30"}"<#if .node.@maxlength?has_content> maxlength="${.node.@maxlength}"</#if> id="<@fieldId .node/>"<#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>
+    <q-input dense outlined<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> name="${curFieldName}"<#rt>
+            <#t> size="${.node.@size!"30"}"<#if .node.@maxlength?has_content> maxlength="${.node.@maxlength}"</#if> id="<@fieldId .node/>"
+            <#t><#if ownerForm?has_content> form="${ownerForm}"</#if>
+            <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${name}"<#else> value="${sri.getFieldValueString(.node)?html}"</#if>>
+        <#if .node["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(.node["@tooltip"], "")}</q-tooltip></#if>
+    </q-input>
     <#assign ignoreCase = (ec.getWeb().parameters.get(curFieldName + "_ic")! == "Y") || !(.node["@ignore-case"]?has_content) || (.node["@ignore-case"] == "true")>
-    <#if .node["@hide-options"]! == "true" || .node["@hide-options"]! == "ignore-case">
-        <input type="hidden" name="${curFieldName}_ic" value="Y"<#if ownerForm?has_content> form="${ownerForm}"</#if>>
-    <#else>
+    <#if .node["@hide-options"]! != "true" && .node["@hide-options"]! != "ignore-case">
         <span><input type="checkbox" class="form-control" name="${curFieldName}_ic" value="Y"<#if ignoreCase> checked="checked"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>&nbsp;${ec.getL10n().localize("Ignore Case")}</span>
     </#if>
 </span>

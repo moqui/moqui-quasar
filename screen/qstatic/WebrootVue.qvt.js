@@ -721,12 +721,6 @@ Vue.component('form-link', {
                 setTimeout(function() { $btn.prop('disabled', false); }, 3000);
             }
 
-            /* old approach with jQuery serializeArray()
-            var parmList = $(this.$refs.qForm.$el).serializeArray();
-            $.each(this.fields, function (key, value) { parmList.push({name:key, value:value}); });
-            for (var pi=0; pi<parmList.length; pi++) { var parm = parmList[pi]; var key = parm.name; var value = parm.value;
-             */
-
             var formData = new FormData(this.$refs.qForm.$el);
             $.each(this.fields, function (key, value) { formData.set(key, value); });
 
@@ -738,7 +732,7 @@ Vue.component('form-link', {
                 var key = pair[0]; var value = pair[1];
                 if (value.trim().length === 0 || key === "moquiSessionToken" || key === "moquiFormName" || key.indexOf('[]') > 0) continue;
                 if (key.indexOf("_op") > 0 || key.indexOf("_not") > 0 || key.indexOf("_ic") > 0) {
-                    extraList.push(parm);
+                    extraList.push({name:key, value:value});
                 } else {
                     plainKeyList.push(key);
                     if (this.bodyParameterNames && this.bodyParameterNames.indexOf(key) >= 0) {
@@ -751,7 +745,8 @@ Vue.component('form-link', {
                 }
             }
             for (var ei=0; ei<extraList.length; ei++) {
-                var eparm = extraList[ei]; var keyName = eparm.name.substring(0, eparm.name.indexOf('_'));
+                var eparm = extraList[ei];
+                var keyName = eparm.name.substring(0, eparm.name.indexOf('_'));
                 if (plainKeyList.indexOf(keyName) >= 0) {
                     if (parmStr.length > 0) { parmStr += '&'; }
                     parmStr += (encodeURIComponent(eparm.name) + '=' + encodeURIComponent(eparm.value));
@@ -1052,7 +1047,7 @@ Vue.component('drop-down', {
         '<q-select ref="qSelect" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
                 ' dense outlined options-dense use-input fill-input hide-selected :name="name" :id="id" :form="form"' +
                 ' input-debounce="500" @filter="filterFn" :clearable="allowEmpty"' +
-                ' :multiple="multiple" :use-chips="multiple" :emit-value="true" :map-options="true"' +
+                ' :multiple="multiple" :use-chips="multiple" emit-value map-options' +
                 ' stack-label :label="label" :loading="loading" :options="curOptions">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
             '<template v-slot:no-option><q-item><q-item-section class="text-grey">No results</q-item-section></q-item></template>' +
