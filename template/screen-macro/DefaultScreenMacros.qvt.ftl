@@ -728,7 +728,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                             </#if></#list>
                         </#assign>
                         <form-link name="${headerFormId}" id="${headerFormId}" action="${curUrlInstance.path}" v-slot:default="formProps"<#rt>
-                                <#t> :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(sri.getFormListHeaderValues(.node))}">
+                                <#t> :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(sri.getFormListHeaderValues(formNode))}">
                             <q-btn dense outline no-caps name="clearParameters" @click.prevent="formProps.clearForm" label="${ec.getL10n().localize("Clear Parameters")}"></q-btn>
 
                             <#-- Always add an orderByField to select one or more columns to order by -->
@@ -1752,7 +1752,7 @@ a => A, d => D, y => Y
             <#if ec.getResource().expandNoL10n(.node["@show-not"]!, "") == "true">
             <template v-slot:after>
                 <q-checkbox name="${name}_not" label="${ec.getL10n().localize("Not")}"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
-                    <#t><#if fieldsJsName?has_content> val="Y" v-model="${fieldsJsName}.${name}_not"<#else> value="Y"<#if ec.getWeb().parameters.get(name + "_not")! == "Y"> checked="checked"</#if></#if>></q-checkbox>
+                    <#t><#if fieldsJsName?has_content> true-value="Y" false-value="N" v-model="${fieldsJsName}.${name}_not"<#else> value="Y"<#if ec.getWeb().parameters.get(name + "_not")! == "Y"> checked="checked"</#if></#if>></q-checkbox>
             </template>
             </#if>
     </drop-down>
@@ -1924,7 +1924,7 @@ a => A, d => D, y => Y
         <#if .node["@hide-options"]! != "true" && .node["@hide-options"]! != "operator">
             <#assign defaultOperator = .node["@default-operator"]!"contains">
             <q-checkbox class="on-left" name="${curFieldName}_not" label="${ec.getL10n().localize("Not")}"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
-                <#t><#if fieldsJsName?has_content> val="Y" v-model="${fieldsJsName}.${curFieldName}_not"<#else>
+                <#t><#if fieldsJsName?has_content> true-value="Y" false-value="N" v-model="${fieldsJsName}.${curFieldName}_not"<#else>
                 <#t> value="Y"<#if ec.getWeb().parameters.get(curFieldName + "_not")! == "Y"> checked="checked"</#if></#if>></q-checkbox>
             <q-select class="on-left" dense outlined options-dense emit-value map-options name="${curFieldName}_op"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
                 <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curFieldName}_op"<#else> value="${ec.web.parameters.get(curFieldName + "_op")!defaultOperator!""}"</#if>
@@ -1935,7 +1935,7 @@ a => A, d => D, y => Y
         <#if .node["@hide-options"]! != "true" && .node["@hide-options"]! != "ignore-case">
             <#assign ignoreCase = (ec.getWeb().parameters.get(curFieldName + "_ic")! == "Y") || !(.node["@ignore-case"]?has_content) || (.node["@ignore-case"] == "true")>
             <q-checkbox name="${curFieldName}_ic" label="${ec.getL10n().localize("Ignore Case")}"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
-                <#t><#if fieldsJsName?has_content> val="Y" v-model="${fieldsJsName}.${curFieldName}_ic"<#else> value="Y"<#if ignoreCase> checked="checked"</#if></#if>></q-checkbox>
+                <#t><#if fieldsJsName?has_content> true-value="Y" false-value="N" v-model="${fieldsJsName}.${curFieldName}_ic"<#else> value="Y"<#if ignoreCase> checked="checked"</#if></#if>></q-checkbox>
         </#if>
         </template>
     </q-input>
