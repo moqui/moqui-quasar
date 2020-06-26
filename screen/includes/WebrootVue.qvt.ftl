@@ -137,7 +137,7 @@ along with this software (see the LICENSE.md file). If not, see
         </q-drawer>
 
         <q-page-container class="q-ma-sm"><q-page>
-            <subscreens-active></subscreens-active>
+            <m-subscreens-active></m-subscreens-active>
         </q-page></q-page-container>
 
         <q-footer reveal bordered class="bg-grey-9 text-white row q-pa-xs" id="footer">

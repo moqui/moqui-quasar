@@ -185,7 +185,7 @@ moqui.loadComponent = function(urlInfo, callback, divId) {
      * to reproduce: make a screen like a dashboad slow loading with a Thread.sleep(5000), from another screen select it
      * in the menu and before it loads click on a link for another screen, won't load and gets into a bad state where
      * nothing in the same path will load, need to somehow force it to re-render;
-     * note that vm.$forceUpdate() in subscreens-active component before return false did not work
+     * note that vm.$forceUpdate() in m-subscreens-active component before return false did not work
     // check cache
     // console.info('component lru ' + JSON.stringify(moqui.componentCache.lruList));
     var cachedComp = moqui.componentCache.get(path);
@@ -322,12 +322,14 @@ Vue.component('m-script', {
     }
 });
 Vue.component('m-stylesheet', {
+    name: "mStylesheet",
     props: { href:{type:String,required:true}, rel:{type:String,'default':'stylesheet'}, type:{type:String,'default':'text/css'} },
     template: '<div :type="type" style="display:none;"></div>',
     created: function() { moqui.loadStylesheet(this.href, this.rel, this.type); }
 });
 /* ========== layout components ========== */
-Vue.component('container-box', {
+Vue.component('m-container-box', {
+    name: "mContainerBox",
     props: { type:{type:String,'default':'default'}, title:String, initialOpen:{type:Boolean,'default':true} },
     data: function() { return { isBodyOpen:this.initialOpen }},
     // TODO: handle type, somehow, with text color and Bootstrap to Quasar mapping
@@ -343,7 +345,8 @@ Vue.component('container-box', {
     '</q-card>',
     methods: { toggleBody: function() { this.isBodyOpen = !this.isBodyOpen; } }
 });
-Vue.component('box-body', {
+Vue.component('m-box-body', {
+    name: "mBoxBody",
     props: { height:String },
     data: function() { return this.height ? { dialogStyle:{'max-height':this.height+'px', 'overflow-y':'auto'}} : {dialogStyle:{}}},
     template: '<div class="q-pa-xs" :style="dialogStyle"><slot></slot></div>'
@@ -409,8 +412,8 @@ Vue.component('m-dialog', {
         }
     }
 });
-Vue.component('container-dialog', {
-    name: "containerDialog",
+Vue.component('m-container-dialog', {
+    name: "mContainerDialog",
     props: { id:String, color:String, buttonText:String, buttonClass:String, title:String, width:{type:String}, openDialog:{type:Boolean,'default':false} },
     data: function() { return { isShown:false }},
     template:
@@ -423,8 +426,8 @@ Vue.component('container-dialog', {
     },
     mounted: function() { if (this.openDialog) { this.isShown = true; } }
 });
-Vue.component('dynamic-container', {
-    name: "dynamicContainer",
+Vue.component('m-dynamic-container', {
+    name: "mDynamicContainer",
     props: { id:{type:String,required:true}, url:{type:String} },
     data: function() { return { curComponent:moqui.EmptyComponent, curUrl:"" } },
     template: '<component :is="curComponent"></component>',
@@ -436,8 +439,8 @@ Vue.component('dynamic-container', {
     }},
     mounted: function() { this.$root.addContainer(this.id, this); this.curUrl = this.url; }
 });
-Vue.component('dynamic-dialog', {
-    name: "dynamicDialog",
+Vue.component('m-dynamic-dialog', {
+    name: "mDynamicDialog",
     props: { id:{type:String}, url:{type:String,required:true}, color:String, buttonText:String, buttonClass:String, title:String, width:{type:String},
         openDialog:{type:Boolean,'default':false}, dynamicParams:{type:Object,'default':null} },
     data: function() { return { curComponent:moqui.EmptyComponent, curUrl:"", isShown:false} },
@@ -481,8 +484,9 @@ Vue.component('dynamic-dialog', {
         if (this.openDialog) { this.isShown = true; }
     }
 });
-Vue.component('tree-top', {
-    template: '<ul :id="id" class="tree-list"><tree-item v-for="model in itemList" :key="model.id" :model="model" :top="top"/></ul>',
+Vue.component('m-tree-top', {
+    name: "mTreeTop",
+    template: '<ul :id="id" class="tree-list"><m-tree-item v-for="model in itemList" :key="model.id" :model="model" :top="top"/></ul>',
     props: { id:{type:String,required:true}, items:{type:[String,Array],required:true}, openPath:String, parameters:Object },
     data: function() { return { urlItems:null, currentPath:null, top:this }},
     computed: {
@@ -493,10 +497,11 @@ Vue.component('tree-top', {
         this.currentPath = this.openPath;
         var allParms = $.extend({ moquiSessionToken:this.$root.moquiSessionToken, treeNodeId:'#', treeOpenPath:this.openPath }, this.parameters);
         var vm = this; $.ajax({ type:'POST', dataType:'json', url:this.items, headers:{Accept:'application/json'}, data:allParms,
-            error:moqui.handleAjaxError, success:function(resp) { vm.urlItems = resp; /*console.info('tree-top response ' + JSON.stringify(resp));*/ } });
+            error:moqui.handleAjaxError, success:function(resp) { vm.urlItems = resp; /*console.info('m-tree-top response ' + JSON.stringify(resp));*/ } });
     }}
 });
-Vue.component('tree-item', {
+Vue.component('m-tree-item', {
+    name: "mTreeItem",
     template:
     '<li :id="model.id">' +
         '<i v-if="isFolder" @click="toggle" class="glyphicon" :class="{\'glyphicon-chevron-right\':!open, \'glyphicon-chevron-down\':open}"></i>' +
@@ -505,7 +510,7 @@ Vue.component('tree-item', {
             '<m-link v-if="model.a_attr" :href="model.a_attr.urlText" :load-id="model.a_attr.loadId" :class="{\'text-success\':selected}">{{model.text}}</m-link>' +
             '<span v-if="!model.a_attr" :class="{\'text-success\':selected}">{{model.text}}</span>' +
         '</span>' +
-        '<ul v-show="open" v-if="hasChildren"><tree-item v-for="model in model.children" :key="model.id" :model="model" :top="top"/></ul></li>',
+        '<ul v-show="open" v-if="hasChildren"><m-tree-item v-for="model in model.children" :key="model.id" :model="model" :top="top"/></ul></li>',
     props: { model:Object, top:Object },
     data: function() { return { open:false }},
     computed: {
@@ -533,6 +538,7 @@ Vue.component('tree-item', {
 });
 /* ========== general field components ========== */
 Vue.component('m-editable', {
+    name: "mEditable",
     props: { id:{type:String,required:true}, labelType:{type:String,'default':'span'}, labelValue:{type:String,required:true},
         url:{type:String,required:true}, urlParameters:{type:Object,'default':{}},
         parameterName:{type:String,'default':'value'}, widgetType:{type:String,'default':'textarea'},
@@ -553,6 +559,7 @@ Vue.component('m-editable', {
 
 /* ========== form components ========== */
 Vue.component('m-form', {
+    name: "mForm",
     props: { fieldsInitial:Object, action:{type:String,required:true}, method:{type:String,'default':'POST'},
         submitMessage:String, submitReloadId:String, submitHideId:String, focusField:String, noValidate:Boolean },
     data: function() { return { fields:Object.assign({}, this.fieldsInitial), fieldsChanged:{}, buttonClicked:null }},
@@ -703,7 +710,8 @@ Vue.component('m-form', {
         jqEl.find('button[type="submit"], input[type="submit"], input[type="image"]').on('click', function() { vm.buttonClicked = this; });
     }
 });
-Vue.component('form-link', {
+Vue.component('m-form-link', {
+    name: "mFormLink",
     props: { fieldsInitial:Object, action:{type:String,required:true}, focusField:String, noValidate:Boolean, bodyParameterNames:Array },
     data: function() { return { fields:Object.assign({}, this.fieldsInitial) }},
     template: '<q-form ref="qForm" @submit.prevent="submitForm" @reset.prevent="resetForm"><slot :clearForm="clearForm" :fields="fields"></slot></q-form>',
@@ -792,7 +800,8 @@ Vue.component('form-link', {
     }
 });
 
-Vue.component('form-paginate', {
+Vue.component('m-form-paginate', {
+    name: "mFormPaginate",
     props: { paginate:Object, formList:Object },
     template:
     '<div v-if="paginate" class="q-pagination row no-wrap items-center">' +
@@ -825,7 +834,8 @@ Vue.component('form-paginate', {
         if (this.formList) { this.formList.setPageIndex(newIndex); } else { this.$root.setParameters({pageIndex:newIndex}); }
     }}
 });
-Vue.component('form-go-page', {
+Vue.component('m-form-go-page', {
+    name: "mFormGoPage",
     props: { idVal:{type:String,required:true}, maxIndex:Number, formList:Object },
     template:
     '<form v-if="!formList || (formList.paginate && formList.paginate.pageMaxIndex > 4)" @submit.prevent="goPage" class="form-inline" :id="idVal+\'_GoPage\'">' +
@@ -847,7 +857,8 @@ Vue.component('form-go-page', {
         }
     }}
 });
-Vue.component('form-list', {
+Vue.component('m-form-list', {
+    name: "mFormList",
     // rows can be a full path to a REST service or transition, a plain form name on the current screen, or a JS Array with the actual rows
     props: { name:{type:String,required:true}, id:String, rows:{type:[String,Array],required:true}, search:{type:Object},
             action:String, multi:Boolean, skipForm:Boolean, skipHeader:Boolean, headerForm:Boolean, headerDialog:Boolean,
@@ -867,15 +878,15 @@ Vue.component('form-list', {
         '<m-form v-if="multi && !skipForm" :name="idVal" :id="idVal" :action="action">' +
             '<input type="hidden" name="moquiFormName" :value="name"><input type="hidden" name="_isMulti" value="true">' +
             '<template v-for="(fields, rowIndex) in rowList"><slot name="rowForm" :fields="fields"></slot></template></m-form>' +
-        '<form-link v-if="!skipHeader && headerForm && !headerDialog" :name="idVal+\'_header\'" :id="idVal+\'_header\'" :action="$root.currentLinkPath">' +
+        '<m-form-link v-if="!skipHeader && headerForm && !headerDialog" :name="idVal+\'_header\'" :id="idVal+\'_header\'" :action="$root.currentLinkPath">' +
             '<input v-if="searchObj && searchObj.orderByField" type="hidden" name="orderByField" :value="searchObj.orderByField">' +
-            '<slot name="headerForm"  :search="searchObj"></slot></form-link>' +
+            '<slot name="headerForm"  :search="searchObj"></slot></m-form-link>' +
         '<div class="q-table__container q-table__card q-table--horizontal-separator q-table--dense q-table--flat"><table class="q-table" :id="idVal+\'_table\'"><thead>' +
             '<tr class="form-list-nav-row"><th :colspan="columns?columns:\'100\'"><nav class="form-list-nav">' +
                 '<button v-if="savedFinds || headerDialog" :id="idVal+\'_hdialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_hdialog\'" data-original-title="Find Options" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> Find Options</button>' +
                 '<button v-if="selectColumns" :id="idVal+\'_SelColsDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_SelColsDialog\'" data-original-title="Columns" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> Columns</button>' +
-                '<form-paginate :paginate="paginate" :form-list="this"></form-paginate>' +
-                '<form-go-page :id-val="idVal" :form-list="this"></form-go-page>' +
+                '<m-form-paginate :paginate="paginate" :form-list="this"></m-form-paginate>' +
+                '<m-form-go-page :id-val="idVal" :form-list="this"></m-form-go-page>' +
                 '<a v-if="csvButton" :href="csvUrl" class="btn btn-default">CSV</a>' +
                 '<button v-if="textButton" :id="idVal+\'_TextDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_TextDialog\'" data-original-title="Text" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> Text</button>' +
                 '<button v-if="pdfButton" :id="idVal+\'_PdfDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_PdfDialog\'" data-original-title="PDF" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> PDF</button>' +
@@ -928,7 +939,8 @@ Vue.component('form-list', {
 });
 
 /* ========== form field widget components ========== */
-Vue.component('date-time', {
+Vue.component('m-date-time', {
+    name: "mDateTime",
     props: { id:String, name:{type:String,required:true}, value:String, type:{type:String,'default':'date-time'}, label:String,
         size:String, format:String, tooltip:String, form:String, required:String, autoYear:String, minuteStep:{type:Number,'default':5} },
     template:
@@ -1032,23 +1044,25 @@ moqui.dateOffsets = [{id:'0',text:'This'},{id:'-1',text:'Last'},{id:'1',text:'Ne
 moqui.datePeriods = [{id:'day',text:'Day'},{id:'7d',text:'7 Days'},{id:'30d',text:'30 Days'},{id:'week',text:'Week'},{id:'weeks',text:'Weeks'},
     {id:'month',text:'Month'},{id:'months',text:'Months'},{id:'quarter',text:'Quarter'},{id:'year',text:'Year'},{id:'7r',text:'+/-7d'},{id:'30r',text:'+/-30d'}];
 moqui.emptyOpt = {id:'',text:'\u00a0'};
-Vue.component('date-period', {
+Vue.component('m-date-period', {
+    name: "mDatePeriod",
     props: { name:{type:String,required:true}, id:String, allowEmpty:Boolean, offset:String, period:String, date:String,
         fromDate:String, thruDate:String, fromThruType:{type:String,'default':'date'}, form:String },
     data: function() { return { fromThruMode:false, dateOffsets:moqui.dateOffsets.slice(), datePeriods:moqui.datePeriods.slice() } },
     template:
-    '<div v-if="fromThruMode"><date-time :name="name+\'_from\'" :id="id+\'_from\'" :form="form" :type="fromThruType" :value="fromDate"/> - ' +
-        '<date-time :name="name+\'_thru\'" :id="id+\'_thru\'" :form="form" :type="fromThruType" :value="thruDate"/>' +
+    '<div v-if="fromThruMode"><m-date-time :name="name+\'_from\'" :id="id+\'_from\'" :form="form" :type="fromThruType" :value="fromDate"/> - ' +
+        '<m-date-time :name="name+\'_thru\'" :id="id+\'_thru\'" :form="form" :type="fromThruType" :value="thruDate"/>' +
         ' <i @click="toggleMode" class="fa fa-arrows-v"></i></div>' +
     '<div v-else class="date-period" :id="id">' +
-        '<drop-down :name="name+\'_poffset\'" :options="dateOffsets" :value="offset" :allow-empty="allowEmpty" :form="form"></drop-down> ' +
-        '<drop-down :name="name+\'_period\'" :options="datePeriods" :value="period" :allow-empty="allowEmpty" :form="form"></drop-down> ' +
-        '<date-time :name="name+\'_pdate\'" :id="id+\'_pdate\'" :form="form" type="date" :value="date"/>' +
+        '<m-drop-down :name="name+\'_poffset\'" :options="dateOffsets" :value="offset" :allow-empty="allowEmpty" :form="form"></m-drop-down> ' +
+        '<m-drop-down :name="name+\'_period\'" :options="datePeriods" :value="period" :allow-empty="allowEmpty" :form="form"></m-drop-down> ' +
+        '<m-date-time :name="name+\'_pdate\'" :id="id+\'_pdate\'" :form="form" type="date" :value="date"/>' +
         ' <i @click="toggleMode" class="fa fa-arrows-h"></i></div>',
     methods: { toggleMode: function() { this.fromThruMode = !this.fromThruMode; } },
     beforeMount: function() { if (((this.fromDate && this.fromDate.length) || (this.thruDate && this.thruDate.length))) this.fromThruMode = true; }
 });
-Vue.component('drop-down', {
+Vue.component('m-drop-down', {
+    name: "mDropDown",
     props: { value:[Array,String], options:{type:Array,'default':[]}, combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
         serverSearch:{type:Boolean,'default':false}, serverDelay:{type:Number,'default':300}, serverMinLength:{type:Number,'default':1},
         optionsParameters:Object, labelField:{type:String,'default':'label'}, valueField:{type:String,'default':'value'},
@@ -1085,7 +1099,7 @@ Vue.component('drop-down', {
                 if (this.serverSearch && val.length < this.serverMinLength) { abortFn(); return; }
                 this.populateFromUrl({term:val}, doneFn, abortFn);
             } else {
-                console.error("drop-down " + this.name + " has no options and is no options-url");
+                console.error("m-drop-down " + this.name + " has no options and is no options-url");
                 abortFn();
             }
         },
@@ -1110,7 +1124,7 @@ Vue.component('drop-down', {
                 var doParmJqEl = $('#' + dependsOnMap[doParm]);
                 var doValue = doParmJqEl.val();
                 if (!doValue) doValue = doParmJqEl.find('select').val();
-                // TODO: support other ways of getting values for other form fields like by 'fields' Object from m-form and form-link
+                // TODO: support other ways of getting values for other form fields like by 'fields' Object from m-form and m-form-link
                 if (!doValue) { hasAllParms = false; } else { reqData[doParm] = doValue; }
             }}
             if (params) { reqData.term = params.term || ''; reqData.pageIndex = (params.page || 1) - 1; }
@@ -1133,12 +1147,12 @@ Vue.component('drop-down', {
             console.log("populateFromUrl 1 " + this.optionsUrl + " reqData.hasAllParms " + reqData.hasAllParms + " dependsOptional " + this.dependsOptional);
             console.log(reqData);
             if (!this.optionsUrl || !this.optionsUrl.length) {
-                console.warn("In drop-down tried to populateFromUrl but no optionsUrl");
+                console.warn("In m-drop-down tried to populateFromUrl but no optionsUrl");
                 if (abortFn) abortFn();
                 return;
             }
             if (!reqData.hasAllParms && !this.dependsOptional) {
-                console.warn("In drop-down tried to populateFromUrl but not hasAllParms and not dependsOptional");
+                console.warn("In m-drop-down tried to populateFromUrl but not hasAllParms and not dependsOptional");
                 this.curOptions = [];
                 if (abortFn) abortFn();
                 return;
@@ -1171,7 +1185,7 @@ Vue.component('drop-down', {
         // TODO: handle combo somehow: if (this.combo) { opts.tags = true; opts.tokenSeparators = [',',' ']; }
 
         if (this.serverSearch) {
-            if (!this.optionsUrl) console.error("drop-down in form " + this.form + " has no options-url but has server-search=true");
+            if (!this.optionsUrl) console.error("m-drop-down in form " + this.form + " has no options-url but has server-search=true");
         }
         if (this.optionsUrl && this.optionsUrl.length > 0) {
             var dependsOnMap = this.dependsOn;
@@ -1193,7 +1207,7 @@ Vue.component('drop-down', {
     },
     watch: {
         // curVal: function(value) { this.$emit('input', value); },
-        // value: function(newVal) { console.trace("drop-down new value " + newVal); },
+        // value: function(newVal) { console.trace("m-drop-down new value " + newVal); },
         options: function(options) { this.curOptions = options; },
         curOptions: function(options) {
             // save the lastVal if there is one to remember what was selected even if new options don't have it, just in case options change again
@@ -1221,7 +1235,8 @@ Vue.component('drop-down', {
 });
 
 /* ========== webrootVue - root Vue component with router ========== */
-Vue.component('subscreens-tabs', {
+Vue.component('m-subscreens-tabs', {
+    name: "mSubscreensTabs",
     data: function() { return { pathIndex:-1 }},
     // TODO: how to handle tab.active?
     template:
@@ -1247,10 +1262,11 @@ Vue.component('subscreens-tabs', {
             return activeName;
         }
     },
-    // this approach to get pathIndex won't work if the subscreens-active tag comes before subscreens-tabs
+    // this approach to get pathIndex won't work if the m-subscreens-active tag comes before m-subscreens-tabs
     mounted: function() { this.pathIndex = this.$root.activeSubscreens.length; }
 });
-Vue.component('subscreens-active', {
+Vue.component('m-subscreens-active', {
+    name: "mSubscreensActive",
     data: function() { return { activeComponent:moqui.EmptyComponent, pathIndex:-1, pathName:null } },
     template: '<component :is="activeComponent"></component>',
     // method instead of a watch on pathName so that it runs even when newPath is the same for non-static reloading
@@ -1263,14 +1279,14 @@ Vue.component('subscreens-active', {
         var pathChanged = (this.pathName !== newPath);
         this.pathName = newPath;
         if (!newPath || newPath.length === 0) {
-            console.info("in subscreens-active newPath is empty, loading EmptyComponent and returning true");
+            console.info("in m-subscreens-active newPath is empty, loading EmptyComponent and returning true");
             this.activeComponent = moqui.EmptyComponent;
             return true;
         }
         var fullPath = root.basePath + '/' + curPathList.slice(0, pathIndex + 1).join('/');
         if (!pathChanged && moqui.componentCache.containsKey(fullPath)) {
             // no need to reload component
-            // console.info("in subscreens-active returning false because pathChanged is false and componentCache contains " + fullPath);
+            // console.info("in m-subscreens-active returning false because pathChanged is false and componentCache contains " + fullPath);
             return false;
         }
         var urlInfo = { path:fullPath };
@@ -1283,7 +1299,7 @@ Vue.component('subscreens-active', {
         urlInfo.bodyParameters = root.bodyParameters;
         var navMenuItem = root.navMenuList[pathIndex + root.basePathSize];
         if (navMenuItem && navMenuItem.renderModes) urlInfo.renderModes = navMenuItem.renderModes;
-        console.info('subscreens-active loadActive pathIndex ' + pathIndex + ' pathName ' + vm.pathName + ' urlInfo ' + JSON.stringify(urlInfo));
+        console.info('m-subscreens-active loadActive pathIndex ' + pathIndex + ' pathName ' + vm.pathName + ' urlInfo ' + JSON.stringify(urlInfo));
         root.loading++;
         root.currentLoadRequest = moqui.loadComponent(urlInfo, function(comp) {
             root.currentLoadRequest = null;
@@ -1337,7 +1353,7 @@ moqui.webrootVue = new Vue({
                 if (!screenUrl || screenUrl.length === 0) return;
                 console.info("current URL changing to " + screenUrl);
                 this.lastNavTime = Date.now();
-                // TODO: somehow only clear out activeContainers that are in subscreens actually reloaded? may cause issues if any but last screen have dynamic-container
+                // TODO: somehow only clear out activeContainers that are in subscreens actually reloaded? may cause issues if any but last screen have m-dynamic-container
                 this.activeContainers = {};
 
                 // update menu, which triggers update of screen/subscreen components
@@ -1366,7 +1382,7 @@ moqui.webrootVue = new Vue({
             var pathIdx = this.activeSubscreens.length;
             // console.info('addSubscreen idx ' + pathIdx + ' pathName ' + this.currentPathList[pathIdx]);
             saComp.pathIndex = pathIdx;
-            // setting pathName here handles initial load of subscreens-active; this may be undefined if we have more activeSubscreens than currentPathList items
+            // setting pathName here handles initial load of m-subscreens-active; this may be undefined if we have more activeSubscreens than currentPathList items
             saComp.loadActive();
             this.activeSubscreens.push(saComp);
         },
