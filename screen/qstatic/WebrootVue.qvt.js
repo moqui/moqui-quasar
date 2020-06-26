@@ -1051,7 +1051,10 @@ Vue.component('drop-down', {
                 ' stack-label :label="label" :loading="loading" :options="curOptions">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
             '<template v-slot:no-option><q-item><q-item-section class="text-grey">No results</q-item-section></q-item></template>' +
-        '<slot></slot></q-select>',
+            '<template v-slot:before><slot name="before"></slot></template><template v-slot:prepend><slot name="prepend"></slot></template>' +
+            '<template v-slot:append><slot name="append"></slot></template><template v-slot:after><slot name="after"></slot></template>' +
+            '<slot></slot>' +
+        '</q-select>',
     methods: {
         filterFn: function(val, doneFn, abortFn) {
             if (this.options && this.options.length) {

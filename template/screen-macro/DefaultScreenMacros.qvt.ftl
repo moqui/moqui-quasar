@@ -589,6 +589,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
 
 <#macro paginationHeader formListInfo formId isHeaderDialog>
     <#assign formNode = formListInfo.getFormNode()>
+    <#assign listName = formNode["@list"]>
     <#assign allColInfoList = formListInfo.getAllColInfo()>
     <#assign mainColInfoList = formListInfo.getMainColInfo()>
     <#assign numColumns = (mainColInfoList?size)!100>
@@ -726,27 +727,15 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                                 </#if>
                             </#if></#list>
                         </#assign>
-                        <#assign orderByFieldStr = "">
-                        <#assign curOrderByField = ec.getContext().orderByField!>
-                        <#if curOrderByField?has_content>
-                            <#if curOrderByField?contains(",")>
-                                <#assign orderByFieldStr><#list curOrderByField?split(",") as curField>'${curField}'<#sep>,</#list></#assign>
-                            <#else>
-                                <#assign orderByFieldStr = curOrderByField>
-                            </#if>
-                        </#if>
                         <form-link name="${headerFormId}" id="${headerFormId}" action="${curUrlInstance.path}" v-slot:default="formProps"<#rt>
-                                <#t> :fields-initial="{<#if formListFindId?has_content>formListFindId:'${formListFindId}',</#if>
-                                    <#t><#if context[listName + "PageSize"]??>pageSize:'${context[listName + "PageSize"]?c}',</#if>
-                                    <#t>orderByField:[${orderByFieldStr}],
-                                    <#t><#list hiddenParameterKeys as hiddenParameterKey>'${hiddenParameterKey}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(hiddenParameterMap.get(hiddenParameterKey)!)}',</#list>
-                                <#t>}">
+                                <#t> :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(sri.getFormListHeaderValues(.node))}">
                             <q-btn dense outline no-caps name="clearParameters" @click.prevent="formProps.clearForm" label="${ec.getL10n().localize("Clear Parameters")}"></q-btn>
 
                             <#-- Always add an orderByField to select one or more columns to order by -->
                             <q-select dense outlined options-dense multiple clearable emit-value map-options v-model="formProps.fields.orderByField"
                                     name="orderByField" id="${headerFormId}_orderByField" stack-label label="${ec.getL10n().localize("Order By")}"
                                     :options="[${orderByOptions}]"></q-select>
+
                             <#t>${sri.pushSingleFormMapContext("")}
                             <#list formNode["field"] as fieldNode><#if fieldNode["header-field"]?has_content && fieldNode["header-field"][0]?children?has_content>
                                 <#assign headerFieldNode = fieldNode["header-field"][0]>
@@ -1760,10 +1749,13 @@ a => A, d => D, y => Y
                     <#t><#list (options.keySet())! as key>{value:'<#if key?has_content>${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(key)}</#if>',label:'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(options.get(key)!)}'}<#sep>,</#list>]"
             <#lt>>
             <#-- support <#if .node["@current"]! == "first-in-list"> again? -->
+            <#if ec.getResource().expandNoL10n(.node["@show-not"]!, "") == "true">
+            <template v-slot:after>
+                <q-checkbox name="${name}_not" label="${ec.getL10n().localize("Not")}"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
+                    <#t><#if fieldsJsName?has_content> val="Y" v-model="${fieldsJsName}.${name}_not"<#else> value="Y"<#if ec.getWeb().parameters.get(name + "_not")! == "Y"> checked="checked"</#if></#if>></q-checkbox>
+            </template>
+            </#if>
     </drop-down>
-    <#if ec.getResource().expandNoL10n(.node["@show-not"]!, "") == "true"><span><input type="checkbox" class="form-control" name="${name}_not" value="Y"<#if ec.getWeb().parameters.get(name + "_not")! == "Y"> checked="checked"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>&nbsp;${ec.getL10n().localize("Not")}</span></#if>
-    <#-- <span>[${currentValue}]; <#list currentValueList as curValue>[${curValue!''}], </#list></span> -->
-    <#if allowMultiple><input type="hidden" id="${tlId}_op" name="${name}_op" value="in"></#if>
 </#macro>
 
 <#macro file><input type="file" class="form-control" name="<@fieldName .node/>" value="${sri.getFieldValueString(.node)?html}" size="${.node.@size!"30"}"<#if .node.@maxlength?has_content> maxlength="${.node.@maxlength}"</#if><#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>></#macro>
@@ -1920,30 +1912,33 @@ a => A, d => D, y => Y
 </#macro>
 
 <#macro "text-find">
-<span class="form-text-find">
-    <#assign defaultOperator = .node["@default-operator"]!"contains">
+<span class="row">
     <#assign curFieldName><@fieldName .node/></#assign>
     <#assign fieldLabel><@fieldTitle .node?parent/></#assign>
-    <#if .node["@hide-options"]! != "true" && .node["@hide-options"]! != "operator">
-        <span><input type="checkbox" class="form-control" name="${curFieldName}_not" value="Y"<#if ec.getWeb().parameters.get(curFieldName + "_not")! == "Y"> checked="checked"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>&nbsp;${ec.getL10n().localize("Not")}</span>
-        <select name="${curFieldName}_op" class="form-control"<#if ownerForm?has_content> form="${ownerForm}"</#if>>
-            <option value="equals"<#if defaultOperator == "equals"> selected="selected"</#if>>${ec.getL10n().localize("Equals")}</option>
-            <option value="like"<#if defaultOperator == "like"> selected="selected"</#if>>${ec.getL10n().localize("Like")}</option>
-            <option value="contains"<#if defaultOperator == "contains"> selected="selected"</#if>>${ec.getL10n().localize("Contains")}</option>
-            <option value="begins"<#if defaultOperator == "begins"> selected="selected"</#if>>${ec.getL10n().localize("Begins With")}</option>
-            <option value="empty"<#rt/><#if defaultOperator == "empty"> selected="selected"</#if>>${ec.getL10n().localize("Empty")}</option>
-        </select>
-    </#if>
     <q-input dense outlined<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> name="${curFieldName}"<#rt>
             <#t> size="${.node.@size!"30"}"<#if .node.@maxlength?has_content> maxlength="${.node.@maxlength}"</#if> id="<@fieldId .node/>"
             <#t><#if ownerForm?has_content> form="${ownerForm}"</#if>
-            <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${name}"<#else> value="${sri.getFieldValueString(.node)?html}"</#if>>
+            <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curFieldName}"<#else> value="${sri.getFieldValueString(.node)?html}"</#if>>
         <#if .node["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(.node["@tooltip"], "")}</q-tooltip></#if>
+        <template v-slot:before>
+        <#if .node["@hide-options"]! != "true" && .node["@hide-options"]! != "operator">
+            <#assign defaultOperator = .node["@default-operator"]!"contains">
+            <q-checkbox class="on-left" name="${curFieldName}_not" label="${ec.getL10n().localize("Not")}"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
+                <#t><#if fieldsJsName?has_content> val="Y" v-model="${fieldsJsName}.${curFieldName}_not"<#else>
+                <#t> value="Y"<#if ec.getWeb().parameters.get(curFieldName + "_not")! == "Y"> checked="checked"</#if></#if>></q-checkbox>
+            <q-select class="on-left" dense outlined options-dense emit-value map-options name="${curFieldName}_op"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
+                <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curFieldName}_op"<#else> value="${ec.web.parameters.get(curFieldName + "_op")!defaultOperator!""}"</#if>
+                <#t> :options="[{value:'equals',label:'${ec.getL10n().localize("Equals")}'},{value:'like',label:'${ec.getL10n().localize("Like")}'},{value:'contains',label:'${ec.getL10n().localize("Contains")}'},{value:'begins',label:'${ec.getL10n().localize("Begins With")}'},{value:'empty',label:'${ec.getL10n().localize("Empty")}'}]"></q-select>
+        </#if>
+        </template>
+        <template v-slot:after>
+        <#if .node["@hide-options"]! != "true" && .node["@hide-options"]! != "ignore-case">
+            <#assign ignoreCase = (ec.getWeb().parameters.get(curFieldName + "_ic")! == "Y") || !(.node["@ignore-case"]?has_content) || (.node["@ignore-case"] == "true")>
+            <q-checkbox name="${curFieldName}_ic" label="${ec.getL10n().localize("Ignore Case")}"<#if ownerForm?has_content> form="${ownerForm}"</#if><#rt>
+                <#t><#if fieldsJsName?has_content> val="Y" v-model="${fieldsJsName}.${curFieldName}_ic"<#else> value="Y"<#if ignoreCase> checked="checked"</#if></#if>></q-checkbox>
+        </#if>
+        </template>
     </q-input>
-    <#assign ignoreCase = (ec.getWeb().parameters.get(curFieldName + "_ic")! == "Y") || !(.node["@ignore-case"]?has_content) || (.node["@ignore-case"] == "true")>
-    <#if .node["@hide-options"]! != "true" && .node["@hide-options"]! != "ignore-case">
-        <span><input type="checkbox" class="form-control" name="${curFieldName}_ic" value="Y"<#if ignoreCase> checked="checked"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>&nbsp;${ec.getL10n().localize("Ignore Case")}</span>
-    </#if>
 </span>
 </#macro>
 
