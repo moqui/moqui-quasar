@@ -131,16 +131,27 @@ moqui.handleAjaxError = function(jqXHR, textStatus, errorThrown) {
     console.warn('ajax ' + textStatus + ' (' + jqXHR.status + '), message ' + errorThrown /*+ '; response: ' + resp*/);
     // console.error('respObj: ' + JSON.stringify(respObj));
     var notified = false;
-    if (respObj && moqui.isPlainObject(respObj)) { notified = moqui.notifyMessages(respObj.messageInfos, respObj.errors, respObj.validationErrors); }
-    else if (resp && moqui.isString(resp) && resp.length) { notified = moqui.notifyMessages(resp); }
+    if (jqXHR.status === 401) {
+        notified = moqui.notifyMessages(null, "No user authenticated");
+    } else {
+        if (respObj && moqui.isPlainObject(respObj)) {
+            notified = moqui.notifyMessages(respObj.messageInfos, respObj.errors, respObj.validationErrors);
+        } else if (resp && moqui.isString(resp) && resp.length) {
+            notified = moqui.notifyMessages(resp);
+        }
+    }
 
     // reload on 401 (Unauthorized) so server can remember current URL and redirect to login screen
     if (jqXHR.status === 401) {
         if (moqui.webrootVue) { window.location.href = moqui.webrootVue.currentLinkUrl; } else { window.location.reload(true); }
-    } else if (jqXHR.status === 0) { if (errorThrown.indexOf('abort') < 0) { var msg = 'Could not connect to server';
-        moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsError, { message:msg }));
-        moqui.webrootVue.addNotify(msg, 'negative'); }
-    } else if (!notified) { var errMsg = 'Error: ' + errorThrown + ' (' + textStatus + ')';
+    } else if (jqXHR.status === 0) {
+        if (errorThrown.indexOf('abort') < 0) {
+            var msg = 'Could not connect to server';
+            moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsError, { message:msg }));
+            moqui.webrootVue.addNotify(msg, 'negative');
+        }
+    } else if (!notified) {
+        var errMsg = 'Error: ' + errorThrown + ' (' + textStatus + ')';
         moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsError, { message:errMsg }));
         moqui.webrootVue.addNotify(errMsg, 'negative');
     }
