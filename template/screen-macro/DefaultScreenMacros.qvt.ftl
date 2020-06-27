@@ -1503,27 +1503,34 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
       <m-date-time id="<@fieldId .node/>_from" name="${curFieldName}_from" value="${fieldValueFrom?html}" type="${.node["@type"]!""}" size="${.node["@size"]!""}"<#rt>
           <#t> :label="${curFieldTitle} ${ec.getL10n().localize("From")}"
           <#t><#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if>
-          <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if javaFormat?has_content> format="<@getMomentDateFormat javaFormat/>"</#if>/>
+          <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if javaFormat?has_content> format="<@getMomentDateFormat javaFormat/>"</#if>></m-date-time>
     </span>
     <span class="form-date-find">
       <m-date-time id="<@fieldId .node/>_thru" name="${curFieldName}_thru" value="${fieldValueThru?html}" type="${.node["@type"]!""}" size="${.node["@size"]!""}"<#rt>
           <#t> :label="${curFieldTitle} ${ec.getL10n().localize("Thru")}"
           <#t><#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if>
-          <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if javaFormat?has_content> format="<@getMomentDateFormat javaFormat/>"</#if>/>
+          <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if javaFormat?has_content> format="<@getMomentDateFormat javaFormat/>"</#if>></m-date-time>
     </span>
 </#macro>
 
 <#macro "date-period">
-    <#assign tlId><@fieldId .node/></#assign><#assign curFieldName><@fieldName .node/></#assign>
-    <#assign fvOffset = ec.getContext().get(curFieldName + "_poffset")!>
-    <#assign fvPeriod = ec.getContext().get(curFieldName + "_period")!?lower_case>
-    <#assign fvDate = ec.getContext().get(curFieldName + "_pdate")!"">
-    <#assign fvFromDate = ec.getContext().get(curFieldName + "_from")!"">
-    <#assign fvThruDate = ec.getContext().get(curFieldName + "_thru")!"">
+    <#assign tlId><@fieldId .node/></#assign>
+    <#assign curFieldName><@fieldName .node/></#assign>
+    <#assign curFieldTitle><@fieldTitle .node?parent/></#assign>
     <#assign allowEmpty = .node["@allow-empty"]!"true">
     <#if .node["@time"]! == "true"><#assign fromThruType = "date-time"><#else><#assign fromThruType = "date"></#if>
-    <m-date-period name="${curFieldName}" id="${tlId}" :allow-empty="${allowEmpty}" offset="${fvOffset}" period="${fvPeriod}" from-thru-type="${fromThruType}"
-         date="${fvDate}" from-date="${fvFromDate}" thru-date="${fvThruDate}" <#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>/>
+    <m-date-period name="${curFieldName}" id="${tlId}" :allow-empty="${allowEmpty}" from-thru-type="${fromThruType}" label="${curFieldTitle}"
+        <#if fieldsJsName?has_content>
+            :fields="${fieldsJsName}"
+        <#else>
+            <#assign fvOffset = ec.getContext().get(curFieldName + "_poffset")!>
+            <#assign fvPeriod = ec.getContext().get(curFieldName + "_period")!?lower_case>
+            <#assign fvDate = ec.getContext().get(curFieldName + "_pdate")!"">
+            <#assign fvFromDate = ec.getContext().get(curFieldName + "_from")!"">
+            <#assign fvThruDate = ec.getContext().get(curFieldName + "_thru")!"">
+            :fields="{'${curFieldName}_poffset':'${fvOffset}','${curFieldName}_period':'${fvPeriod}','${curFieldName}_pdate':'${fvDate}','${curFieldName}_from':'${fvFromDate}','${curFieldName}_thru':'${fvThruDate}'}"
+        </#if>
+        <#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>></m-date-period>
 </#macro>
 
 <#--

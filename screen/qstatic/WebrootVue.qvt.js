@@ -950,18 +950,19 @@ Vue.component('m-date-time', {
             ' :mask="inputMask" fill-mask :id="id" :name="name" :form="form">' +
         '<template v-slot:prepend v-if="type==\'date\' || type==\'date-time\' || !type">' +
             '<q-icon name="event" class="cursor-pointer">' +
-                '<q-popup-proxy transition-show="scale" transition-hide="scale">' +
-                    '<q-date v-bind:value="value" v-on:input="$emit(\'input\', $event)" :mask="formatVal"></q-date>' +
+                '<q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">' +
+                    '<q-date v-bind:value="value" v-on:input="$emit(\'input\', $event)" :mask="formatVal" @input="function(){$refs.qDateProxy.hide()}"></q-date>' +
                 '</q-popup-proxy>' +
             '</q-icon>' +
         '</template>' +
         '<template v-slot:append v-if="type==\'time\' || type==\'date-time\' || !type">' +
             '<q-icon name="access_time" class="cursor-pointer">' +
-                '<q-popup-proxy transition-show="scale" transition-hide="scale">' +
-                    '<q-time v-bind:value="value" v-on:input="$emit(\'input\', $event)" :mask="formatVal" format24h></q-time>' +
+                '<q-popup-proxy ref="qTimeProxy" transition-show="scale" transition-hide="scale">' +
+                    '<q-time v-bind:value="value" v-on:input="$emit(\'input\', $event)" :mask="formatVal" format24h @input="function(){$refs.qTimeProxy.hide()}"></q-time>' +
                 '</q-popup-proxy>' +
             '</q-icon>' +
         '</template>' +
+        '<template v-slot:before><slot name="before"></slot></template><template v-slot:after><slot name="after"></slot></template>' +
     '</q-input>',
     // TODO handle required (:required="required == 'required' ? true : false")
     methods: {
@@ -1039,26 +1040,54 @@ Vue.component('m-date-time', {
         // TODO if (format === "YYYY-MM-DD HH:mm") { jqEl.find('input').inputmask("yyyy-mm-dd hh:mm", { clearIncomplete:false, clearMaskOnLostFocus:true, showMaskOnFocus:true, showMaskOnHover:false, removeMaskOnSubmit:false }); }
     }
 });
-moqui.dateOffsets = [{id:'0',text:'This'},{id:'-1',text:'Last'},{id:'1',text:'Next'},
-    {id:'-2',text:'-2'},{id:'2',text:'+2'},{id:'-3',text:'-3'},{id:'-4',text:'-4'},{id:'-6',text:'-6'},{id:'-12',text:'-12'}];
-moqui.datePeriods = [{id:'day',text:'Day'},{id:'7d',text:'7 Days'},{id:'30d',text:'30 Days'},{id:'week',text:'Week'},{id:'weeks',text:'Weeks'},
-    {id:'month',text:'Month'},{id:'months',text:'Months'},{id:'quarter',text:'Quarter'},{id:'year',text:'Year'},{id:'7r',text:'+/-7d'},{id:'30r',text:'+/-30d'}];
-moqui.emptyOpt = {id:'',text:'\u00a0'};
+moqui.dateOffsets = [{value:'0',label:'This'},{value:'-1',label:'Last'},{value:'1',label:'Next'},
+    {value:'-2',label:'-2'},{value:'2',label:'+2'},{value:'-3',label:'-3'},{value:'-4',label:'-4'},{value:'-6',label:'-6'},{value:'-12',label:'-12'}];
+moqui.datePeriods = [{value:'day',label:'Day'},{value:'7d',label:'7 Days'},{value:'30d',label:'30 Days'},{value:'week',label:'Week'},{value:'weeks',label:'Weeks'},
+    {value:'month',label:'Month'},{value:'months',label:'Months'},{value:'quarter',label:'Quarter'},{value:'year',label:'Year'},{value:'7r',label:'+/-7d'},{value:'30r',label:'+/-30d'}];
+moqui.emptyOpt = {value:'',label:''};
 Vue.component('m-date-period', {
     name: "mDatePeriod",
-    props: { name:{type:String,required:true}, id:String, allowEmpty:Boolean, offset:String, period:String, date:String,
-        fromDate:String, thruDate:String, fromThruType:{type:String,'default':'date'}, form:String },
+    props: { fields:{type:Object,required:true}, name:{type:String,required:true}, id:String, allowEmpty:Boolean,
+        fromThruType:{type:String,'default':'date'}, form:String, tooltip:String, label:String },
     data: function() { return { fromThruMode:false, dateOffsets:moqui.dateOffsets.slice(), datePeriods:moqui.datePeriods.slice() } },
     template:
-    '<div v-if="fromThruMode"><m-date-time :name="name+\'_from\'" :id="id+\'_from\'" :form="form" :type="fromThruType" :value="fromDate"/> - ' +
-        '<m-date-time :name="name+\'_thru\'" :id="id+\'_thru\'" :form="form" :type="fromThruType" :value="thruDate"/>' +
-        ' <i @click="toggleMode" class="fa fa-arrows-v"></i></div>' +
-    '<div v-else class="date-period" :id="id">' +
-        '<m-drop-down :name="name+\'_poffset\'" :options="dateOffsets" :value="offset" :allow-empty="allowEmpty" :form="form"></m-drop-down> ' +
-        '<m-drop-down :name="name+\'_period\'" :options="datePeriods" :value="period" :allow-empty="allowEmpty" :form="form"></m-drop-down> ' +
-        '<m-date-time :name="name+\'_pdate\'" :id="id+\'_pdate\'" :form="form" type="date" :value="date"/>' +
-        ' <i @click="toggleMode" class="fa fa-arrows-h"></i></div>',
-    methods: { toggleMode: function() { this.fromThruMode = !this.fromThruMode; } },
+    '<div v-if="fromThruMode" class="row">' +
+        '<m-date-time :name="name+\'_from\'" :id="id+\'_from\'" :label="label+\' From\'" :form="form" :type="fromThruType" v-model="fields[name+\'_from\']"></m-date-time>' +
+        '<q-icon class="q-my-auto" name="remove"></q-icon>' +
+        '<m-date-time :name="name+\'_thru\'" :id="id+\'_thru\'" :label="label+\' Thru\'" :form="form" :type="fromThruType" v-model="fields[name+\'_thru\']">' +
+            '<template v-slot:after>' +
+                '<q-btn dense flat icon="calendar_view_day" @click="toggleMode"><q-tooltip>Period Select Mode</q-tooltip></q-btn>' +
+                '<q-btn dense flat icon="clear" @click="clearAll"><q-tooltip>Clear All</q-tooltip></q-btn>' +
+            '</template>' +
+        '</m-date-time>' +
+    '</div>' +
+    '<q-input v-else dense outlined stack-label :label="label" v-model="fields[name+\'_pdate\']" mask="####-##-##" fill-mask :id="id" :name="name+\'_pdate\'" :form="form">' +
+        '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
+        '<template v-slot:before>' +
+            '<q-select class="q-pr-xs" dense outlined options-dense emit-value map-options v-model="fields[name+\'_poffset\']" :name="name+\'_poffset\'"' +
+                ' stack-label label="Offset" :options="dateOffsets" :form="form"></q-select>' +
+            '<q-select dense outlined options-dense emit-value map-options v-model="fields[name+\'_period\']" :name="name+\'_period\'"' +
+                ' stack-label label="Period" :options="datePeriods" :form="form"></q-select>' +
+        '</template>' +
+        '<template v-slot:prepend>' +
+            '<q-icon name="event" class="cursor-pointer">' +
+                '<q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">' +
+                    '<q-date v-model="fields[name+\'_pdate\']" mask="YYYY-MM-DD" @input="function(){$refs.qDateProxy.hide()}"></q-date>' +
+                '</q-popup-proxy>' +
+            '</q-icon>' +
+        '</template>' +
+        '<template v-slot:after>' +
+            '<q-btn dense flat icon="date_range" @click="toggleMode"><q-tooltip>Date Range Mode</q-tooltip></q-btn>' +
+            '<q-btn dense flat icon="clear" @click="clearAll"><q-tooltip>Clear All</q-tooltip></q-btn>' +
+        '</template>' +
+    '</q-input>',
+    methods: {
+        toggleMode: function() { this.fromThruMode = !this.fromThruMode; },
+        clearAll: function() {
+            this.fields[this.name+'_pdate'] = null; this.fields[this.name+'_poffset'] = null; this.fields[this.name+'_period'] = null;
+            this.fields[this.name+'_from'] = null; this.fields[this.name+'_thru'] = null;
+        }
+    },
     beforeMount: function() { if (((this.fromDate && this.fromDate.length) || (this.thruDate && this.thruDate.length))) this.fromThruMode = true; }
 });
 Vue.component('m-drop-down', {
