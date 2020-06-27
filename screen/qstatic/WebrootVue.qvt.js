@@ -741,7 +741,7 @@ Vue.component('m-form-link', {
             }
 
             var formData = new FormData(this.$refs.qForm.$el);
-            $.each(this.fields, function (key, value) { formData.set(key, value); });
+            $.each(this.fields, function (key, value) { if (value) formData.set(key, value); });
 
             var extraList = [];
             var plainKeyList = [];
