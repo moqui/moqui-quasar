@@ -962,8 +962,9 @@ Vue.component('m-date-time', {
                 '</q-popup-proxy>' +
             '</q-icon>' +
         '</template>' +
-        '<template v-slot:before><slot name="before"></slot></template><template v-slot:after><slot name="after"></slot></template>' +
+        '<template v-slot:after><slot name="after"></slot></template>' +
     '</q-input>',
+    // TODO: how to add before slot pass through without the small left margin when nothing in the slot? <template v-slot:before><slot name="before"></slot></template>
     // TODO handle required (:required="required == 'required' ? true : false")
     methods: {
         focusDate: function(event) {
@@ -1105,10 +1106,11 @@ Vue.component('m-drop-down', {
                 ' stack-label :label="label" :loading="loading" :options="curOptions">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
             '<template v-slot:no-option><q-item><q-item-section class="text-grey">No results</q-item-section></q-item></template>' +
-            '<template v-slot:before><slot name="before"></slot></template><template v-slot:prepend><slot name="prepend"></slot></template>' +
+            '<template v-slot:prepend><slot name="prepend"></slot></template>' +
             '<template v-slot:append><slot name="append"></slot></template><template v-slot:after><slot name="after"></slot></template>' +
             '<slot></slot>' +
         '</q-select>',
+        // TODO: how to add before slot pass through without the small left margin when nothing in the slot? <template v-slot:before><slot name="before"></slot></template>
     methods: {
         filterFn: function(val, doneFn, abortFn) {
             if (this.options && this.options.length) {
