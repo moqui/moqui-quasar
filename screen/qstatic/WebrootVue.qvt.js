@@ -618,10 +618,14 @@ Vue.component('m-form', {
                 $btn.prop('disabled', true);
                 setTimeout(function() { $btn.prop('disabled', false); }, 3000);
             }
-            var formData = new FormData(this.$refs.qForm.$el);
+            var formData = Object.keys(this.fields).length ? new FormData() : new FormData(this.$refs.qForm.$el);
             formData.set('moquiSessionToken', this.$root.moquiSessionToken);
-            // NOTE: was using FormData.append() but with 'proper' fields
-            $.each(this.fields, function (key, value) { formData.set(key, value); });
+            $.each(this.fields, function (key, value) { if (value) {
+                // NOTE: this shouldn't happen as when not getting from FormData q-input with mask should have null value when empty, but just in case skip String values that are unfilled masks
+                // NOTE: with q-input mask place holder is underscore, look for 2; this will cause issues if a valid user input starts with 2 underscores, may need better approach here and in m-form-link
+                if (moqui.isString(value) && value.startsWith("__")) return;
+                formData.set(key, value);
+            } });
             if (btnName) { formData.set(btnName, btnValue); }
 
             // console.info('m-form parameters ' + JSON.stringify(formData));
@@ -740,8 +744,19 @@ Vue.component('m-form-link', {
                 setTimeout(function() { $btn.prop('disabled', false); }, 3000);
             }
 
-            var formData = new FormData(this.$refs.qForm.$el);
-            $.each(this.fields, function (key, value) { if (value) formData.set(key, value); });
+            var formData = Object.keys(this.fields).length ? new FormData() : new FormData(this.$refs.qForm.$el);
+            /*
+            formData.forEach(function(value, key, parent) {
+                console.warn("m-form-link submit FormData key " + key + " value " + value + " is mask placeholder " + (moqui.isString(value) && value.startsWith("__")));
+            });
+             */
+            $.each(this.fields, function (key, value) { if (value) {
+                // NOTE: this shouldn't happen as when not getting from FormData q-input with mask should have null value when empty, but just in case skip String values that are unfilled masks
+                // NOTE: with q-input mask place holder is underscore, look for 2; this will cause issues if a valid user input starts with 2 underscores, may need better approach here and in m-form
+                // console.warn("m-form-link submit fields key " + key + " value " + value + " is mask placeholder " + (moqui.isString(value) && value.startsWith("__")));
+                if (moqui.isString(value) && value.startsWith("__")) return;
+                formData.set(key, value);
+            } });
 
             var extraList = [];
             var plainKeyList = [];
