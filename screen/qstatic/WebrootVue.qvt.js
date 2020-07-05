@@ -1111,8 +1111,9 @@ Vue.component('m-drop-down', {
     props: { value:[Array,String], options:{type:Array,'default':[]}, combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
         serverSearch:{type:Boolean,'default':false}, serverDelay:{type:Number,'default':300}, serverMinLength:{type:Number,'default':1},
         optionsParameters:Object, labelField:{type:String,'default':'label'}, valueField:{type:String,'default':'value'},
-        dependsOn:Object, dependsOptional:Boolean, optionsLoadInit:Boolean, form:String, tooltip:String, label:String, name:String, id:String },
-    data: function() { return { curOptions:null, lastVal:null, loading:false, fields:this.$parent.fields } },
+        dependsOn:Object, dependsOptional:Boolean, optionsLoadInit:Boolean, form:String, fields:{type:Object},
+        tooltip:String, label:String, name:String, id:String },
+    data: function() { return { curOptions:this.options, allOptions:this.options, lastVal:null, loading:false } },
     template:
         '<q-select ref="qSelect" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
                 ' dense outlined options-dense use-input fill-input hide-selected :name="name" :id="id" :form="form"' +
@@ -1128,24 +1129,33 @@ Vue.component('m-drop-down', {
         // TODO: how to add before slot pass through without the small left margin when nothing in the slot? <template v-slot:before><slot name="before"></slot></template>
     methods: {
         filterFn: function(val, doneFn, abortFn) {
-            if (this.options && this.options.length) {
+            if (this.serverSearch) {
+                if (this.serverMinLength && ((val ? val.length : 0) < this.serverMinLength)) {
+                    doneFn();
+                } else {
+                    this.populateFromUrl({term:val}, doneFn, abortFn);
+                }
+            } else if (this.allOptions && this.allOptions.length) {
                 var vm = this;
-                doneFn(function() {
-                    if (val && val.length) {
+                if (val && val.length) {
+                    doneFn(function() {
                         var needle = val.toLowerCase();
-                        vm.curOptions = vm.options.filter(function (v) {
+                        vm.curOptions = vm.allOptions.filter(function (v) {
                             return v.label && v.label.toLowerCase().indexOf(needle) > -1;
                         });
+                    });
+                } else {
+                    if ((vm.curOptions ? vm.curOptions.length : 0) === (vm.allOptions ? vm.allOptions.length : 0)) {
+                        doneFn();
                     } else {
-                        vm.curOptions = vm.options;
+                        doneFn(function() { vm.curOptions = vm.allOptions; });
                     }
-                });
+                }
             } else if (this.optionsUrl && this.optionsUrl.length) {
-                console.log("filterFn calling populateFromUrl" + val);
-                if (this.serverSearch && val.length < this.serverMinLength) { abortFn(); return; }
-                this.populateFromUrl({term:val}, doneFn, abortFn);
+                // no current options, get from server
+                this.populateFromUrl({}, doneFn, abortFn);
             } else {
-                console.error("m-drop-down " + this.name + " has no options and is no options-url");
+                console.error("m-drop-down " + this.name + " has no options and no options-url");
                 abortFn();
             }
         },
@@ -1167,10 +1177,14 @@ Vue.component('m-drop-down', {
             var reqData = { moquiSessionToken: this.$root.moquiSessionToken };
             for (var parmName in parmMap) { if (parmMap.hasOwnProperty(parmName)) reqData[parmName] = parmMap[parmName]; }
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
-                var doParmJqEl = $('#' + dependsOnMap[doParm]);
-                var doValue = doParmJqEl.val();
-                if (!doValue) doValue = doParmJqEl.find('select').val();
-                // TODO: support other ways of getting values for other form fields like by 'fields' Object from m-form and m-form-link
+                var doValue;
+                if (this.fields) {
+                    doValue = this.fields[doParm];
+                } else {
+                    var doParmJqEl = $('#' + dependsOnMap[doParm]);
+                    doValue = doParmJqEl.val();
+                    if (!doValue) doValue = doParmJqEl.find('select').val();
+                }
                 if (!doValue) { hasAllParms = false; } else { reqData[doParm] = doValue; }
             }}
             if (params) { reqData.term = params.term || ''; reqData.pageIndex = (params.page || 1) - 1; }
@@ -1190,8 +1204,8 @@ Vue.component('m-drop-down', {
         },
         populateFromUrl: function(params, doneFn, abortFn) {
             var reqData = this.serverData(params);
-            console.log("populateFromUrl 1 " + this.optionsUrl + " reqData.hasAllParms " + reqData.hasAllParms + " dependsOptional " + this.dependsOptional);
-            console.log(reqData);
+            // console.log("populateFromUrl 1 " + this.optionsUrl + " reqData.hasAllParms " + reqData.hasAllParms + " dependsOptional " + this.dependsOptional);
+            // console.log(reqData);
             if (!this.optionsUrl || !this.optionsUrl.length) {
                 console.warn("In m-drop-down tried to populateFromUrl but no optionsUrl");
                 if (abortFn) abortFn();
@@ -1200,6 +1214,7 @@ Vue.component('m-drop-down', {
             if (!reqData.hasAllParms && !this.dependsOptional) {
                 console.warn("In m-drop-down tried to populateFromUrl but not hasAllParms and not dependsOptional");
                 this.curOptions = [];
+                this.allOptions = [];
                 if (abortFn) abortFn();
                 return;
             }
@@ -1208,23 +1223,54 @@ Vue.component('m-drop-down', {
             $.ajax({ type:"POST", url:this.optionsUrl, data:reqData, dataType:"json", headers:{Accept:'application/json'},
                 error:function(jqXHR, textStatus, errorThrown) {
                     vm.loading = false;
-                    if (abortFn) abortFn();
                     moqui.handleAjaxError(jqXHR, textStatus, errorThrown);
+                    if (abortFn) abortFn();
                 },
                 success: function(data) {
+                    vm.loading = false;
                     var list = moqui.isArray(data) ? data : data.options;
                     var procList = vm.processOptionList(list, null, (params ? params.term : null));
                     if (list) {
                         if (doneFn) {
-                            doneFn(function() { vm.curOptions = procList; })
+                            doneFn(function() {
+                                vm.curOptions = procList;
+                                vm.allOptions = procList;
+                                vm.checkCurrentValue(procList);
+                            });
                         } else {
                             vm.curOptions = procList;
+                            vm.allOptions = procList;
+                            vm.checkCurrentValue(procList);
                             vm.$refs.qSelect.refresh();
-                            vm.$refs.qSelect.updateInputValue();
+                            // NOTE: don't want to do this, was mistakenly used before, use only if setting the input value string to an explicit value otherwise clears it and calls filter again: vm.$refs.qSelect.updateInputValue();
                         }
                     }
-                    vm.loading = false;
-                }});
+                }
+            });
+        },
+        checkCurrentValue: function(options) {
+            // if cur value not in new options either clear it or set it to the new first option in list if !allowEmpty
+            var isInNewOptions = false;
+            var valIsArray = moqui.isArray(this.value);
+            if (this.value && this.value.length && options) for (var i=0; i<options.length; i++) {
+                var curObj = options[i];
+                if (valIsArray ? $.inArray(curObj.value, this.value) : curObj.value === this.value) {
+                    isInNewOptions = true;
+                    break;
+                }
+            }
+
+            // console.warn("curOptions updated " + this.name + " allowEmpty " + this.allowEmpty + " value '" + this.value + "' " + " isInNewOptions " + isInNewOptions + ": " + JSON.stringify(options));
+            if (!isInNewOptions) {
+                if (!this.allowEmpty && options && options.length && options[0].value) {
+                    // simulate normal select behavior with no empty option (not allowEmpty) where first value is selected by default
+                    // console.warn("setting " + this.name + " to " + options[0].value);
+                    this.$emit('input', options[0].value);
+                } else {
+                    // console.warn("setting " + this.name + " to null");
+                    this.$emit('input', null);
+                }
+            }
         }
     },
     mounted: function() {
@@ -1236,48 +1282,32 @@ Vue.component('m-drop-down', {
         if (this.optionsUrl && this.optionsUrl.length > 0) {
             var dependsOnMap = this.dependsOn;
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
-                var doJqEl = $('#' + dependsOnMap[doParm]);
-                var doSelectJqEl = doJqEl.find("select");
-                if (doSelectJqEl && doSelectJqEl.length) {
-                    doSelectJqEl.on('input-value', function() { this.populateFromUrl({term:this.value}); });
+                if (this.fields) {
+                    this.$watch('fields.' + doParm, function() { this.populateFromUrl({term:this.value}); });
                 } else {
-                    doJqEl.on('change', function() { this.populateFromUrl({term:this.value}); });
+                    // TODO: if no fields passed, use some sort of DOM-based value like jQuery val()?
                 }
             } }
             // do initial populate if not a serverSearch or for serverSearch if we have an initial value do the search so we don't display the ID
             if (this.optionsLoadInit) {
                 if (!this.serverSearch) { this.populateFromUrl(); }
                 else if (this.value && this.value.length && moqui.isString(this.value)) { this.populateFromUrl({term:this.value}); }
+            } else {
+                // simulate normal select behavior with no empty option (not allowEmpty) where first value is selected by default
+                if (!this.allowEmpty && (!this.value || !this.value.length) && this.options && this.options.length && this.options[0].value) {
+                    this.$emit('input', this.options[0].value);
+                }
             }
         }
     },
     watch: {
-        // curVal: function(value) { this.$emit('input', value); },
-        // value: function(newVal) { console.trace("m-drop-down new value " + newVal); },
-        options: function(options) { this.curOptions = options; },
-        curOptions: function(options) {
+        // need to watch for change to options prop? options: function(options) { this.curOptions = options; },
+        curOptionsFoo: function(options) {
             // save the lastVal if there is one to remember what was selected even if new options don't have it, just in case options change again
             if (this.value && this.value.length) this.lastVal = this.value;
 
-            var jqEl = $(this.$el);
-            var vm = this;
-            // TODO: maybe change this to nextTick()
-            setTimeout(function() {
-                var setVal = vm.lastVal;
-                if (!setVal || !setVal.length) { setVal = vm.value; }
-                if (setVal) {
-                    var isInList = false;
-                    var setValIsArray = moqui.isArray(setVal);
-                    $.each(options, function(idx, curObj) {
-                        if (setValIsArray ? $.inArray(curObj.value, setVal) : curObj.value === setVal) isInList = true; });
-                    // for v-model approach don't set vm.value directly, instead emit input signal
-                    if (isInList) vm.$emit('input', setVal);
-                }
-                // TODO needed? jqEl.trigger('change');
-            }, 50);
         }
-    },
-    destroyed: function() { /* $(this.$el).off().select2('destroy'); */ }
+    }
 });
 
 /* ========== webrootVue - root Vue component with router ========== */

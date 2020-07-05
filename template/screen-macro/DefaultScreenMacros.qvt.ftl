@@ -1742,7 +1742,7 @@ a => A, d => D, y => Y
     <#assign fieldLabel><@fieldTitle ddSubFieldNode/></#assign>
     <m-drop-down name="${name}" id="${tlId}"<#if fieldLabel?has_content> label="${fieldLabel}"</#if><#rt>
             <#t> class="<#if isDynamicOptions>dynamic-options</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if><#if validationClasses?has_content> ${validationClasses}</#if>"<#rt>
-            <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${name}"<#else><#if allowMultiple> :value="[<#list currentValueList as curVal><#if curVal?has_content>'${curVal}',</#if></#list>]"<#else> value="${currentValue!}"</#if></#if>
+            <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${name}" :fields="${fieldsJsName}"<#else><#if allowMultiple> :value="[<#list currentValueList as curVal><#if curVal?has_content>'${curVal}',</#if></#list>]"<#else> value="${currentValue!}"</#if></#if>
             <#t><#if allowMultiple> :multiple="true"</#if><#if allowEmpty> :allow-empty="true"</#if><#if .node["@combo-box"]! == "true"> :combo="true"</#if>
             <#t><#if .node?parent["@tooltip"]?has_content> tooltip="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if>
             <#t><#if ownerForm?has_content> form="${ownerForm}"</#if><#if .node["@size"]?has_content> size="${.node["@size"]}"</#if>
@@ -1753,7 +1753,7 @@ a => A, d => D, y => Y
                 <#t><#if doNode["@min-length"]?has_content> :server-min-length="${doNode["@min-length"]}"</#if>
                 <#t><#if (.node?children?size > 1)> :options-load-init="true"</#if>
             <#t></#if>
-                :options="[<#if currentValue?has_content && !allowMultiple && !optionsHasCurrent>{id:'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentValue)}',text:'<#if currentDescription?has_content>${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentDescription!)}<#else>${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentValue)}</#if>'},</#if><#rt>
+                :options="[<#if currentValue?has_content && !allowMultiple && !optionsHasCurrent>{value:'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentValue)}',label:'<#if currentDescription?has_content>${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentDescription!)}<#else>${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentValue)}</#if>'},</#if><#rt>
                     <#t><#list (options.keySet())! as key>{value:'<#if key?has_content>${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(key)}</#if>',label:'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(options.get(key)!)}'}<#sep>,</#list>]"
             <#lt>>
             <#-- support <#if .node["@current"]! == "first-in-list"> again? -->
