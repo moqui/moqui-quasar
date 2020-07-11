@@ -36,7 +36,7 @@ form.q-form { width:100%; }
 /* move drop-down input up 6px; this padding-top defaults to 14px, have to move up 12px to handle wrapped field padding */
 .q-field--auto-height.q-field--dense.q-field--labeled .q-field__control-container { padding-top:0; }
 /* fix blue focus border on top of label instead of behind */
-.q-field--focused .q-field__label { z-index:10; }
+.q-field__label { z-index:10; }
 
 .q-field__marginal .q-checkbox__label { font-size:10px; } /* orig from q-field__marginal 24px */
 
