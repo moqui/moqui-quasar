@@ -20,7 +20,7 @@ along with this software (see the LICENSE.md file). If not, see
         // if user not logged in save current path and params then redirect to Login
         if (!ec.user.userId) { ec.web.saveScreenLastInfo(null, null); sri.sendRedirectAndStopRender('/Login') }
 
-        String quasarVersion = "1.12.10"
+        String quasarVersion = "1.12.11"
 
         // TODO move stylesheets to the STT_INTERNAL_QUASAR theme (QuasarThemeData.xml), once stabilized
 
