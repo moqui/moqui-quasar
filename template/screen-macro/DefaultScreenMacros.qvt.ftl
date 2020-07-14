@@ -1080,34 +1080,12 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         </template>
     </m-form-list>
 <#else><#-- server rendered, non-static -->
-    <#assign listObject = formListInfo.getListObject(true)!>
+    <#-- old approach, raw data only: <#assign listObject = formListInfo.getListObject(true)!> -->
+    <#-- new approach: transformed and auto values filled in based on field defs -->
+    <#assign listObject = sri.getFormListRowValues(formListInfo)!>
     <#assign listHasContent = listObject?has_content>
 
-    <#-- all form elements outside table element and referred to with input/etc.@form attribute for proper HTML -->
-    <#if !(isMulti || skipForm) && listHasContent><#list listObject as listEntry>
-        ${sri.startFormListRow(formListInfo, listEntry, listEntry_index, listEntry_has_next)}
-        <m-form name="${formId}_${listEntry_index}" id="${formId}_${listEntry_index}" action="${formListUrlInfo.path}">
-            <input type="hidden" name="pageIndex" value="${pageIndex!"0"}">
-            <#if orderByField?has_content><input type="hidden" name="orderByField" value="${orderByField}"></#if>
-            <#list hiddenParameterKeys as hiddenParameterKey><input type="hidden" name="${hiddenParameterKey}" value="${hiddenParameterMap.get(hiddenParameterKey)!""}"></#list>
-            <#assign listEntryIndex = listEntry_index>
-            <#-- hidden fields -->
-            <#assign hiddenFieldList = formListInfo.getListHiddenFieldList()>
-            <#list hiddenFieldList as hiddenField><@formListSubField hiddenField true false isMulti false/></#list>
-            <#assign listEntryIndex = "">
-        </m-form>
-        ${sri.endFormListRow()}
-    </#list></#if>
     <#if !skipStart>
-        <#if needHeaderForm && !isHeaderDialog>
-            <#assign headerUrlInstance = sri.getCurrentScreenUrl()>
-            <m-form-link name="${headerFormId}" id="${headerFormId}" action="${headerUrlInstance.path}">
-                <#if orderByField?has_content><input type="hidden" name="orderByField" value="${orderByField}"></#if>
-                <#list hiddenParameterKeys as hiddenParameterKey><input type="hidden" name="${hiddenParameterKey}" value="${hiddenParameterMap.get(hiddenParameterKey)!""}"></#list>
-                <#assign hiddenFieldList = formListInfo.getListHeaderHiddenFieldList()>
-                <#list hiddenFieldList as hiddenField><#recurse hiddenField["header-field"][0]/></#list>
-            </m-form-link>
-        </#if>
         <#if formListInfo.isFirstRowForm()>
             <#t>${sri.pushSingleFormMapContext(formNode["@map-first-row"]!"")}
             <#assign listEntryIndex = "first">
@@ -1169,17 +1147,30 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         </m-form>
         </#if>
 
-        <div class="q-table__container q-table__card q-table--horizontal-separator q-table--dense q-table--flat"><table class="q-table ${tableStyle}" id="${formId}_table">
+        <div class="q-table__container q-table__card q-table--horizontal-separator q-table--dense q-table--flat"><div class="table q-table ${tableStyle}" id="${formId}_table">
         <#if !skipHeader>
-            <thead>
+            <div class="thead">
                 <@paginationHeader formListInfo formId isHeaderDialog/>
                 <#assign ownerForm = headerFormId>
-                <tr>
-                    <#list mainColInfoList as columnFieldList><th class="text-left"><#list columnFieldList as fieldNode>
+                <div class="tr">
+                    <#if needHeaderForm && !isHeaderDialog>
+                        <#assign fieldsJsName = "formProps.fields">
+                        <#assign headerUrlInstance = sri.getCurrentScreenUrl()>
+                        <m-form-link name="${headerFormId}" id="${headerFormId}" action="${headerUrlInstance.path}" v-slot:default="formProps"<#rt>
+                                <#t> :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(sri.getFormListHeaderValues(formNode))}">
+                    </#if>
+
+                    <#list mainColInfoList as columnFieldList><div class="th text-left"><#list columnFieldList as fieldNode>
                         <div><@formListHeaderField fieldNode isHeaderDialog/></div>
-                    </#list></th></#list>
-                </tr>
+                    </#list></div><#-- /th --></#list>
+
+                    <#if needHeaderForm && !isHeaderDialog>
+                        <#assign fieldsJsName = "">
+                        </m-form-link>
+                    </#if>
+                </div><#-- /tr -->
                 <#if hasSubColumns>
+                    <#-- TODO: per-row form and sub-columns used together will result in invalid html -->
                     <tr><td colspan="${numColumns}" class="form-list-sub-row-cell"><div class="form-list-sub-rows"><table class="table table-striped table-hover table-condensed${tableStyle}"><thead>
                         <#list subColInfoList as subColFieldList><th class="text-left">
                             <#list subColFieldList as fieldNode>
@@ -1189,9 +1180,9 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                     </thead></table></div></td></tr>
                 </#if>
                 <#assign ownerForm = "">
-            </thead>
+            </div><#-- /thead -->
         </#if>
-        <#if !isServerStatic><tbody></#if>
+        <div class="tbody">
         <#assign ownerForm = formId>
     </#if>
     <#-- first-row fields -->
@@ -1234,15 +1225,31 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         <#assign listEntryIndex = listEntry_index>
         <#-- NOTE: the form-list.@list-entry attribute is handled in the ScreenForm class through this call: -->
         <#t>${sri.startFormListRow(formListInfo, listEntry, listEntry_index, listEntry_has_next)}
-        <tr>
-        <#if !(isMulti || skipForm)><#assign ownerForm = formId + "_" + listEntry_index></#if>
+        <div class="tr">
+
+        <#if !(isMulti || skipForm)>
+            <#assign ownerForm = formId + "_" + listEntry_index>
+            <#assign fieldsJsName = "formProps.fields">
+
+            <m-form name="${formId}_${listEntry_index}" id="${formId}_${listEntry_index}" action="${formListUrlInfo.path}" v-slot:default="formProps"
+                    :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(listEntry)}">
+                <input type="hidden" name="pageIndex" value="${pageIndex!"0"}">
+                <#if orderByField?has_content><input type="hidden" name="orderByField" value="${orderByField}"></#if>
+                <#list hiddenParameterKeys as hiddenParameterKey><input type="hidden" name="${hiddenParameterKey}" value="${hiddenParameterMap.get(hiddenParameterKey)!""}"></#list>
+                <#assign listEntryIndex = listEntry_index>
+                <#-- hidden fields -->
+                <#assign hiddenFieldList = formListInfo.getListHiddenFieldList()>
+                <#list hiddenFieldList as hiddenField><@formListSubField hiddenField true false isMulti false/></#list>
+                <#assign listEntryIndex = "">
+        </#if>
+
         <#-- actual columns -->
         <#list mainColInfoList as columnFieldList>
-            <td>
+            <div class="td">
             <#list columnFieldList as fieldNode>
                 <@formListSubField fieldNode true false isMulti false/>
             </#list>
-            </td>
+            </div>
         </#list>
         <#if hasSubColumns><#assign aggregateSubList = listEntry["aggregateSubList"]!><#if aggregateSubList?has_content>
             </tr>
@@ -1258,8 +1265,14 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                 </tr></#list>
             </table></div></td><#-- note no /tr, let following blocks handle it -->
         </#if></#if>
-        </tr>
-        <#if !(isMulti || skipForm)><#assign ownerForm = ""></#if>
+
+        <#if !(isMulti || skipForm)>
+            <#assign ownerForm = "">
+            <#assign fieldsJsName = "">
+            </m-form>
+        </#if>
+
+        </div><#-- /tr -->
         <#t>${sri.endFormListRow()}
     </#list></#if>
     <#assign listEntryIndex = "">
@@ -1269,15 +1282,15 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         <#t>${sri.pushSingleFormMapContext(formNode["@map-last-row"]!"")}
         <#assign ownerForm = formId + "_last">
         <#assign listEntryIndex = "last">
-        <tr class="last">
+        <div class="tr last">
             <#list mainColInfoList as columnFieldList>
-                <td>
+                <div class="td">
                     <#list columnFieldList as fieldNode>
                             <@formListSubLast fieldNode true/>
                         </#list>
-                </td>
+                </div>
             </#list>
-        </tr>
+        </div>
         <#assign ownerForm = formId>
         <#assign listEntryIndex = "">
         <#t>${sri.popContext()}<#-- context was pushed for the form so pop here at the end -->
@@ -1309,9 +1322,9 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                     <#lt> pageRangeLow:${context[listName + "PageRangeLow"]?c}, pageRangeHigh:${context[listName + "PageRangeHigh"]?c} }"></m-form-paginate>
             </q-bar></th></tr>
         </#if>
-        <#if !isServerStatic></tbody></#if>
+        </div><#-- /tbody -->
         <#assign ownerForm = "">
-        </table></div>
+        </div></div><#-- /table -->
     </#if>
     <#if formNode["@focus-field"]?has_content>
         <m-script>$("#${formId}_table").find('[name="${formNode["@focus-field"]}<#if isMulti && !formListInfo.hasFirstRow()>_0</#if>"][form="${formId}<#if formListInfo.hasFirstRow()>_first<#elseif !isMulti>_0</#if>"]').addClass('default-focus').focus();</m-script>

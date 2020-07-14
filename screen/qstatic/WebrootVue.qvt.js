@@ -619,13 +619,14 @@ Vue.component('m-form', {
                 setTimeout(function() { $btn.prop('disabled', false); }, 3000);
             }
             var formData = Object.keys(this.fields).length ? new FormData() : new FormData(this.$refs.qForm.$el);
-            formData.set('moquiSessionToken', this.$root.moquiSessionToken);
-            $.each(this.fields, function (key, value) { if (value) {
+            $.each(this.fields, function(key, value) { if (value) { formData.set(key, value); } });
+            for (var fieldName of formData.keys()) {
                 // NOTE: this shouldn't happen as when not getting from FormData q-input with mask should have null value when empty, but just in case skip String values that are unfilled masks
                 // NOTE: with q-input mask place holder is underscore, look for 2; this will cause issues if a valid user input starts with 2 underscores, may need better approach here and in m-form-link
-                if (moqui.isString(value) && value.startsWith("__")) return;
-                formData.set(key, value);
-            } });
+                var fieldValue = formData.get(fieldName);
+                if (moqui.isString(fieldValue) && fieldValue.startsWith("__")) formData.delete(fieldName);
+            }
+            formData.set('moquiSessionToken', this.$root.moquiSessionToken);
             if (btnName) { formData.set(btnName, btnValue); }
 
             // console.info('m-form parameters ' + JSON.stringify(formData));
@@ -872,14 +873,15 @@ Vue.component('m-form-go-page', {
         }
     }}
 });
+// TODO: m-form-list still needs a LOT of work, full re-implementation of form-list FTL macros for full client rendering so that component is fully static and data driven
 Vue.component('m-form-list', {
     name: "mFormList",
     // rows can be a full path to a REST service or transition, a plain form name on the current screen, or a JS Array with the actual rows
     props: { name:{type:String,required:true}, id:String, rows:{type:[String,Array],required:true}, search:{type:Object},
-            action:String, multi:Boolean, skipForm:Boolean, skipHeader:Boolean, headerForm:Boolean, headerDialog:Boolean,
-            savedFinds:Boolean, selectColumns:Boolean, allButton:Boolean, csvButton:Boolean, textButton:Boolean, pdfButton:Boolean,
-            columns:[String,Number] },
-    data: function() { return { rowList:[], fields:{}, paginate:null, searchObj:null, moqui:moqui } },
+        action:String, multi:Boolean, skipForm:Boolean, skipHeader:Boolean, headerForm:Boolean, headerDialog:Boolean,
+        savedFinds:Boolean, selectColumns:Boolean, allButton:Boolean, csvButton:Boolean, textButton:Boolean, pdfButton:Boolean,
+        columns:[String,Number] },
+    data: function() { return { rowList:[], paginate:null, searchObj:null, moqui:moqui } },
     // slots (props): headerForm (search), header (search), nav (), rowForm (fields), row (fields)
     // TODO: QuickSavedFind drop-down
     // TODO: change find options form to update searchObj and run fetchRows instead of changing main page and reloading
@@ -895,9 +897,9 @@ Vue.component('m-form-list', {
             '<template v-for="(fields, rowIndex) in rowList"><slot name="rowForm" :fields="fields"></slot></template></m-form>' +
         '<m-form-link v-if="!skipHeader && headerForm && !headerDialog" :name="idVal+\'_header\'" :id="idVal+\'_header\'" :action="$root.currentLinkPath">' +
             '<input v-if="searchObj && searchObj.orderByField" type="hidden" name="orderByField" :value="searchObj.orderByField">' +
-            '<slot name="headerForm"  :search="searchObj"></slot></m-form-link>' +
+            '<slot name="headerForm" :search="searchObj"></slot></m-form-link>' +
         '<div class="q-table__container q-table__card q-table--horizontal-separator q-table--dense q-table--flat"><table class="q-table" :id="idVal+\'_table\'"><thead>' +
-            '<tr class="form-list-nav-row"><th :colspan="columns?columns:\'100\'"><nav class="form-list-nav">' +
+            '<tr class="form-list-nav-row"><th :colspan="columns?columns:\'100\'"><q-bar>' +
                 '<button v-if="savedFinds || headerDialog" :id="idVal+\'_hdialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_hdialog\'" data-original-title="Find Options" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> Find Options</button>' +
                 '<button v-if="selectColumns" :id="idVal+\'_SelColsDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_SelColsDialog\'" data-original-title="Columns" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> Columns</button>' +
                 '<m-form-paginate :paginate="paginate" :form-list="this"></m-form-paginate>' +
@@ -906,7 +908,7 @@ Vue.component('m-form-list', {
                 '<button v-if="textButton" :id="idVal+\'_TextDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_TextDialog\'" data-original-title="Text" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> Text</button>' +
                 '<button v-if="pdfButton" :id="idVal+\'_PdfDialog_button\'" type="button" data-toggle="modal" :data-target="\'#\'+idVal+\'_PdfDialog\'" data-original-title="PDF" data-placement="bottom" class="btn btn-default"><i class="fa fa-share"></i> PDF</button>' +
                 '<slot name="nav"></slot>' +
-            '</nav></th></tr>' +
+            '</q-bar></th></tr>' +
             '<slot name="header" :search="searchObj"></slot>' +
         '</thead><tbody><tr v-for="(fields, rowIndex) in rowList"><slot name="row" :fields="fields" :row-index="rowIndex" :moqui="moqui"></slot></tr>' +
         '</tbody></table></div>' +
@@ -914,7 +916,7 @@ Vue.component('m-form-list', {
     computed: {
         idVal: function() { if (this.id && this.id.length > 0) { return this.id; } else { return this.name; } },
         csvUrl: function() { return this.$root.currentPath + '?' + moqui.objToSearch($.extend({}, this.searchObj,
-                { renderMode:'csv', pageNoLimit:'true', lastStandalone:'true', saveFilename:(this.name + '.csv') })); }
+            { renderMode:'csv', pageNoLimit:'true', lastStandalone:'true', saveFilename:(this.name + '.csv') })); }
     },
     methods: {
         fetchRows: function() {
@@ -924,19 +926,19 @@ Vue.component('m-form-list', {
             var url = this.rows; if (url.indexOf('/') === -1) { url = this.$root.currentPath + '/actions/' + url; }
             console.info("Fetching rows with url " + url + " searchObj " + JSON.stringify(searchObj));
             $.ajax({ type:"GET", url:url, data:searchObj, dataType:"json", headers:{Accept:'application/json'},
-                     error:moqui.handleAjaxError, success: function(list, status, jqXHR) {
-                if (list && moqui.isArray(list)) {
-                    var getHeader = jqXHR.getResponseHeader;
-                    var count = Number(getHeader("X-Total-Count"));
-                    if (count && !isNaN(count)) {
-                        vm.paginate = { count:Number(count), pageIndex:Number(getHeader("X-Page-Index")),
-                            pageSize:Number(getHeader("X-Page-Size")), pageMaxIndex:Number(getHeader("X-Page-Max-Index")),
-                            pageRangeLow:Number(getHeader("X-Page-Range-Low")), pageRangeHigh:Number(getHeader("X-Page-Range-High")) };
+                error:moqui.handleAjaxError, success: function(list, status, jqXHR) {
+                    if (list && moqui.isArray(list)) {
+                        var getHeader = jqXHR.getResponseHeader;
+                        var count = Number(getHeader("X-Total-Count"));
+                        if (count && !isNaN(count)) {
+                            vm.paginate = { count:Number(count), pageIndex:Number(getHeader("X-Page-Index")),
+                                pageSize:Number(getHeader("X-Page-Size")), pageMaxIndex:Number(getHeader("X-Page-Max-Index")),
+                                pageRangeLow:Number(getHeader("X-Page-Range-Low")), pageRangeHigh:Number(getHeader("X-Page-Range-High")) };
+                        }
+                        vm.rowList = list;
+                        console.info("Fetched " + list.length + " rows, paginate: " + JSON.stringify(vm.paginate));
                     }
-                    vm.rowList = list;
-                    console.info("Fetched " + list.length + " rows, paginate: " + JSON.stringify(vm.paginate));
-                }
-            }});
+                }});
         },
         setPageIndex: function(newIndex) {
             if (!this.searchObj) { this.searchObj = { pageIndex:newIndex }} else { this.searchObj.pageIndex = newIndex; }
