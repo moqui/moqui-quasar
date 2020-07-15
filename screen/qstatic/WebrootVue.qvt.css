@@ -40,7 +40,9 @@ form.q-form { width:100%; }
 
 .q-field__marginal .q-checkbox__label { font-size:10px; } /* orig from q-field__marginal 24px */
 
-h4, .text-h4 { font-size: 1.5rem; margin-block-start:0.25em; margin-block-end:0.25em; }
+.q-item__section--avatar { min-width:30px; } /* orig 56px */
+
+h4, .text-h4 { font-size:1.5rem; margin-block-start:0.25em; margin-block-end:0.25em; }
 .text-success { color:var(--q-color-positive); }
 .text-danger { color:var(--q-color-negative); }
 

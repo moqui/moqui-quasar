@@ -20,6 +20,7 @@ along with this software (see the LICENSE.md file). If not, see
     <input type="hidden" id="confUserId" value="${ec.user.userId!''}">
     <input type="hidden" id="confLocale" value="${ec.user.locale.toLanguageTag()}">
     <input type="hidden" id="confOuterStyle" value="${ec.user.getPreference("OUTER_STYLE_QUASAR")!"body--light"}">
+    <input type="hidden" id="confLeftOpen" value="${ec.user.getPreference("QUASAR_LEFT_OPEN")!"false"}">
     <#assign navbarCompList = sri.getThemeValues("STRT_HEADER_NAVBAR_COMP")>
     <#list navbarCompList! as navbarCompUrl><input type="hidden" class="confNavPluginUrl" value="${navbarCompUrl}"></#list>
 
@@ -28,7 +29,7 @@ along with this software (see the LICENSE.md file). If not, see
     <q-layout view="hHh LpR fFf">
 
         <q-header reveal bordered class="bg-black text-white" id="top"><q-toolbar style="font-size:15px;">
-            <q-btn dense flat icon="menu" @click="leftOpen = !leftOpen"></q-btn>
+            <q-btn dense flat icon="menu" @click="toggleLeftOpen()"></q-btn>
 
             <#assign headerLogoList = sri.getThemeValues("STRT_HEADER_LOGO")>
             <#if headerLogoList?has_content>
@@ -44,7 +45,7 @@ along with this software (see the LICENSE.md file). If not, see
             <#-- NOTE: tried using q-breadcrumbs but last item with q-breadcrumbs--last class makes never clickable! -->
             <template v-for="(navMenuItem, menuIndex) in navMenuList"><template v-if="menuIndex < (navMenuList.length - 1)">
                 <m-link v-if="navMenuItem.hasTabMenu" :href="getNavHref(menuIndex)">{{navMenuItem.title}}</m-link>
-                <div v-else-if="navMenuItem.subscreens && navMenuItem.subscreens.length > 1" class="cursor-pointer">
+                <div v-else-if="navMenuItem.subscreens && navMenuItem.subscreens.length" class="cursor-pointer">
                     {{navMenuItem.title}}
                     <q-menu anchor="bottom left" self="top left"><q-list dense style="min-width: 200px">
                         <q-item v-for="subscreen in navMenuItem.subscreens" :key="subscreen.name" :class="{'bg-primary':subscreen.active, 'text-white':subscreen.active}" clickable v-close-popup><q-item-section>
@@ -132,8 +133,8 @@ along with this software (see the LICENSE.md file). If not, see
                 <q-tooltip>${ec.l10n.localize("Logout")} ${(ec.user.userAccount.userFullName)!''}</q-tooltip></q-btn>
         </q-toolbar></q-header>
 
-        <q-drawer v-model="leftOpen" side="left" overlay bordered>
-            <p>Nothing to see here... yet.</p>
+        <q-drawer v-model="leftOpen" side="left" bordered><#-- no 'overlay', for those who want to keep it open better to compress main area -->
+            <q-list dense padding><m-menu-nav-item :menu-index="0"></m-menu-nav-item></q-list>
         </q-drawer>
 
         <q-page-container class="q-ma-sm"><q-page>
@@ -147,7 +148,6 @@ along with this software (see the LICENSE.md file). If not, see
                 <@footerItemTemplate/>
             </#list>
         </q-footer>
-
     </q-layout>
 </div>
 

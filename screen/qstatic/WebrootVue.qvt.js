@@ -1389,6 +1389,53 @@ Vue.component('m-subscreens-active', {
     mounted: function() { this.$root.addSubscreen(this); }
 });
 
+Vue.component('m-menu-nav-item', {
+    name: "mMenuNavItem",
+    props: { menuIndex:Number },
+    template:
+    '<q-expansion-item v-if="navMenuItem && navMenuItem.subscreens && navMenuItem.subscreens.length" :value="true" :content-inset-level="0.3"' +
+            ' switch-toggle-side dense dense-toggle expanded-icon="expand_more" :to="navMenuItem.pathWithParams">' +
+        '<template v-slot:header><m-menu-item-content :menu-item="navMenuItem" :active="true"></m-menu-item-content></template>' +
+        '<template v-slot:default><m-menu-subscreen-item v-for="(subscreen, ssIndex) in navMenuItem.subscreens" :key="subscreen.name" :menu-index="menuIndex" :subscreen-index="ssIndex"></m-menu-subscreen-item></template>' +
+    '</q-expansion-item>' +
+    '<q-expansion-item v-else-if="menuIndex < (navMenuLength - 1)" :value="true" :content-inset-level="0.3"' +
+            ' switch-toggle-side dense dense-toggle expanded-icon="expand_more" :to="navMenuItem.pathWithParams">' +
+        '<template v-slot:header><m-menu-item-content :menu-item="navMenuItem" :active="true"></m-menu-item-content></template>' +
+        '<template v-slot:default><m-menu-nav-item :menu-index="menuIndex + 1"></m-menu-nav-item></template>' +
+    '</q-expansion-item>' +
+    '<q-expansion-item v-else-if="navMenuItem" :value="false" switch-toggle-side dense dense-toggle expand-icon="chevron_right" :to="navMenuItem.pathWithParams">' +
+        '<template v-slot:header><m-menu-item-content :menu-item="navMenuItem" :active="true"></m-menu-item-content></template>' +
+    '</q-expansion-item>',
+    computed: {
+        navMenuItem: function() { return this.$root.navMenuList[this.menuIndex]; },
+        navMenuLength: function() { return this.$root.navMenuList.length; }
+    }
+});
+Vue.component('m-menu-subscreen-item', {
+    name: "mMenuSubscreenItem",
+    props: { menuIndex:Number, subscreenIndex:Number },
+    template:
+    '<m-menu-nav-item v-if="subscreen.active" :menu-index="menuIndex + 1"></m-menu-nav-item>' +
+    '<q-expansion-item v-else :value="false" switch-toggle-side dense dense-toggle expand-icon="chevron_right" :to="subscreen.pathWithParams">' +
+        '<template v-slot:header><m-menu-item-content :menu-item="subscreen"></m-menu-item-content></template>' +
+    '</q-expansion-item>',
+    computed: {
+        subscreen: function() { return this.$root.navMenuList[this.menuIndex].subscreens[this.subscreenIndex]; },
+    }
+});
+Vue.component('m-menu-item-content', {
+    name: "mMenuItemContent",
+    props: { menuItem:Object, active:Boolean },
+    template:
+    '<div class="q-item__section column q-item__section--main justify-center"><div class="q-item__label">' +
+        '<i v-if="menuItem.image && menuItem.imageType === \'icon\'" :class="menuItem.image" style="padding-right: 8px;"></i>' +
+        /* TODO: images don't line up vertically, padding-top and margin-top do nothing, very annoying layout stuff, for another time... */
+        '<span v-else-if="menuItem.image" style="padding-right:8px;"><img :src="menuItem.image" :alt="menuItem.title" height="14" class="invertible"></span>' +
+        '<span :class="{\'text-primary\':active}">{{menuItem.title}}</span>' +
+    '</div></div>'
+});
+
+
 moqui.webrootVue = new Vue({
     el: '#apps-root',
     data: { basePath:"", linkBasePath:"", currentPathList:[], extraPathList:[], activeSubscreens:[], currentParameters:{}, bodyParameters:null,
@@ -1518,6 +1565,11 @@ moqui.webrootVue = new Vue({
             $.ajax({ type:'POST', url:(this.appRootPath + '/apps/setPreference'), error:moqui.handleAjaxError,
                 data:{ moquiSessionToken:this.moquiSessionToken, preferenceKey:'OUTER_STYLE_QUASAR', preferenceValue:currentStyle } });
         },
+        toggleLeftOpen: function() {
+            this.leftOpen = !this.leftOpen;
+            $.ajax({ type:'POST', url:(this.appRootPath + '/apps/setPreference'), error:moqui.handleAjaxError,
+                data:{ moquiSessionToken:this.moquiSessionToken, preferenceKey:'QUASAR_LEFT_OPEN', preferenceValue:(this.leftOpen ? 'true' : 'false') } });
+        },
         showScreenDocDialog: function(docIndex) {
             $("#screen-document-dialog").modal("show");
             $("#screen-document-dialog-body").load(this.currentPath + '/screenDoc?docIndex=' + docIndex);
@@ -1639,6 +1691,7 @@ moqui.webrootVue = new Vue({
         this.basePath = $("#confBasePath").val(); this.linkBasePath = $("#confLinkBasePath").val();
         this.userId = $("#confUserId").val();
         this.locale = $("#confLocale").val(); if (moqui.localeMap[this.locale]) this.locale = moqui.localeMap[this.locale];
+        this.leftOpen = $("#confLeftOpen").val() === 'true';
 
         var confOuterStyle = $("#confOuterStyle").val();
         if (confOuterStyle) {
