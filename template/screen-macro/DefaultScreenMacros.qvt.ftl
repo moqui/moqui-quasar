@@ -1194,6 +1194,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         <#t>${sri.popContext()}<#-- context was pushed for the form so pop here at the end -->
     </#if>
     <#if listHasContent><#list listObject as listEntry>
+        <#assign listEntryIndex = listEntry_index>
         <#-- NOTE: the form-list.@list-entry attribute is handled in the ScreenForm class through this call: -->
         <#t>${sri.startFormListRow(formListInfo, listEntry, listEntry_index, listEntry_has_next)}
         <div class="tr">
@@ -1206,7 +1207,6 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
         </#if>
         <#if isMulti>
             <#assign ownerForm = formId>
-            <#assign listEntryIndex = listEntry_index>
             <#assign fieldsJsName = "formProps.fields">
         </#if>
 
@@ -1239,12 +1239,12 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
             </m-form>
         </#if>
         <#if isMulti>
-            <#assign listEntryIndex = "">
             <#assign fieldsJsName = "">
         </#if>
 
         </div><#-- /tr -->
         <#t>${sri.endFormListRow()}
+        <#assign listEntryIndex = "">
     </#list></#if>
     ${sri.safeCloseList(listObject)}<#-- if listObject is an EntityListIterator, close it -->
 
