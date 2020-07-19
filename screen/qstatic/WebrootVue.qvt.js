@@ -181,20 +181,21 @@ moqui.loadComponent = function(urlInfo, callback, divId) {
         bodyParameters = urlInfo.bodyParameters; renderModes = urlInfo.renderModes;
     }
 
-    /* CACHE DISABLED: issue with more recent Vue JS where cached components don't re-render when assigned so screens don't load
+    /* NOTE DEJ 20200718: uncommented componentCache but leaving comment in place in case remains an issue (makes user experience much smoother):
+     * CACHE DISABLED: issue with more recent Vue JS where cached components don't re-render when assigned so screens don't load
      * to reproduce: make a screen like a dashboad slow loading with a Thread.sleep(5000), from another screen select it
      * in the menu and before it loads click on a link for another screen, won't load and gets into a bad state where
      * nothing in the same path will load, need to somehow force it to re-render;
      * note that vm.$forceUpdate() in m-subscreens-active component before return false did not work
     // check cache
     // console.info('component lru ' + JSON.stringify(moqui.componentCache.lruList));
+    */
     var cachedComp = moqui.componentCache.get(path);
     if (cachedComp) {
         console.info('found cached component for path ' + path + ': ' + JSON.stringify(cachedComp));
         callback(cachedComp);
         return;
     }
-    */
 
     // prep url
     var url = path;
