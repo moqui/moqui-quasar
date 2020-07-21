@@ -1593,6 +1593,8 @@ a => A, d => D, y => Y
     <#assign dispAlign = dispFieldNode["@align"]!"left">
     <#assign dispHidden = (!.node["@also-hidden"]?has_content || .node["@also-hidden"] == "true") && !(skipForm!false)>
     <#assign dispDynamic = .node["@dynamic-transition"]?has_content>
+    <#assign labelWrapper = dispFormNode?node_name == "form-single">
+    <#assign fieldLabel><@fieldTitle dispSubFieldNode/></#assign>
     <#assign fieldValue = "">
     <#if fieldsJsName?has_content>
         <#assign format = .node["@format"]!>
@@ -1612,71 +1614,36 @@ a => A, d => D, y => Y
         <#else>
             <#assign fieldValue = sri.getFieldValueString(.node)>
         </#if>
+        <#if dispDynamic && !fieldValue?has_content><#assign fieldValue><@widgetTextValue .node true/></#assign></#if>
     </#if>
-    <#-- TODO handle dispDynamic -->
-    <#if dispDynamic && !fieldValue?has_content><#assign fieldValue><@widgetTextValue .node true/></#assign></#if>
-    <#if dispFormNode?node_name == "form-single">
-        <#assign fieldLabel><@fieldTitle dispSubFieldNode/></#assign>
-        <#t><q-input dense outlined readonly<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> id="${dispFieldId}_display"
-                <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${dispFieldName}_display"</#if>
-                <#t>class="${sri.getFieldValueClass(dispFieldNode)}<#if .node["@currency-unit-field"]?has_content> currency</#if><#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
-            <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
-            <#-- TODO not sure if this will be used, might be for plain forms (not m-form or m-form-link) but need to find way to display like v-model as this ends up looking funny -->
-            <#t><#if !fieldsJsName?has_content && fieldValue?has_content><#if .node["@encode"]! == "false">${fieldValue}<#else>${fieldValue?html?replace("\n", "<br>")}</#if><#else>&nbsp;</#if>
-        <#t></q-input>
-    <#else>
-        <#t><span id="${dispFieldId}_display" class="text-inline ${sri.getFieldValueClass(dispFieldNode)}<#if .node["@currency-unit-field"]?has_content> currency</#if><#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
-            <#if dispSubFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}</q-tooltip></#if>
-            <#t><#if fieldValue?has_content><#if .node["@encode"]! == "false">${fieldValue}<#else>${fieldValue?html?replace("\n", "<br>")}</#if><#else>&nbsp;</#if>
-        <#t></span>
+
+    <#if dispDynamic>
+        <#assign defUrlInfo = sri.makeUrlByType(.node["@dynamic-transition"], "transition", .node, "false")>
+        <#assign defUrlParameterMap = defUrlInfo.getParameterMap()>
+        <#assign depNodeList = .node["depends-on"]>
     </#if>
-    <#if dispHidden>
-        <#-- TODO handle dispDynamic -->
+
+    <m-display name="${dispFieldName}" id="${dispFieldId}_display"<#if fieldLabel?has_content> label="${fieldLabel}"</#if><#if labelWrapper> label-wrapper</#if><#rt>
+            <#t><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${dispFieldName}" :display="${fieldsJsName}.${dispFieldName}_display" :fields="${fieldsJsName}"
+                <#t><#elseif fieldValue?has_content> display="<#if .node["@encode"]! == "false">${fieldValue}<#else>${fieldValue?html?replace("\n", "<br>")}</#if>"</#if>
+            <#t><#if dispSubFieldNode["@tooltip"]?has_content> tooltip="${ec.getResource().expand(dispSubFieldNode["@tooltip"], "")}"</#if>
+            <#if dispDynamic> value-url="${defUrlInfo.url}" <#if .node["@depends-optional"]! == "true"> :depends-optional="true"</#if>
+                <#t> :depends-on="{<#list depNodeList as depNode><#local depNodeField = depNode["@field"]>'${depNode["@parameter"]!depNodeField}':'<@fieldIdByName depNodeField/>'<#sep>, </#list>}"
+                <#t> :value-parameters="{<#list defUrlParameterMap.keySet() as parameterKey><#if defUrlParameterMap.get(parameterKey)?has_content>'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(parameterKey)}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(defUrlParameterMap.get(parameterKey))}', </#if></#list>}"
+            <#t></#if>
+            class="${sri.getFieldValueClass(dispFieldNode)}<#if .node["@currency-unit-field"]?has_content> currency</#if><#if dispAlign == "center"> text-center<#elseif dispAlign == "right"> text-right</#if><#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>">
+    </m-display>
+
+    <#if dispHidden && !fieldsJsName?has_content>
         <#if dispDynamic>
             <#assign hiddenValue><@widgetTextValue .node true "value"/></#assign>
             <input type="hidden" id="${dispFieldId}" name="${dispFieldName}" value="${hiddenValue}"<#if ownerForm?has_content> form="${ownerForm}"</#if>>
-        <#elseif !fieldsJsName?has_content>
+        <#else>
             <#-- use getFieldValuePlainString() and not getFieldValueString() so we don't do timezone conversions, etc -->
             <#-- don't default to fieldValue for the hidden input value, will only be different from the entry value if @text is used, and we don't want that in the hidden value -->
             <input type="hidden" id="${dispFieldId}" name="${dispFieldName}" <#if fieldsJsName?has_content>:value="${fieldsJsName}.${dispFieldName}"<#else>value="${sri.getFieldValuePlainString(dispFieldNode, "")?html}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>
         </#if>
     </#if>
-    <#-- TODO handle dispDynamic
-    <#if dispDynamic>
-        <#assign defUrlInfo = sri.makeUrlByType(.node["@dynamic-transition"], "transition", .node, "false")>
-        <#assign defUrlParameterMap = defUrlInfo.getParameterMap()>
-        <#assign depNodeList = .node["depends-on"]>
-        <m-script>
-            function populate_${dispFieldId}() {
-                <#if .node["@depends-optional"]! != "true">
-                    var hasAllParms = true;
-                    <#list depNodeList as depNode>if (!$('#<@fieldIdByName depNode["@field"]/>').val()) { hasAllParms = false; } </#list>
-                    if (!hasAllParms) {  return; }
-                </#if>
-                $.ajax({ type:"POST", url:"${defUrlInfo.url}", data:{ moquiSessionToken: "${(ec.getWeb().sessionToken)!}"<#rt>
-                    <#t><#list depNodeList as depNode><#local depNodeField = depNode["@field"]><#local depNodeParm = depNode["@parameter"]!depNodeField><#local _void = defUrlParameterMap.remove(depNodeParm)!>, "${depNodeParm}": $("#<@fieldIdByName depNodeField/>").val()</#list>
-                    <#t><#list defUrlParameterMap.keySet() as parameterKey><#if defUrlParameterMap.get(parameterKey)?has_content>, "${parameterKey}":"${defUrlParameterMap.get(parameterKey)}"</#if></#list>
-                    <#t>}, dataType:"text" }).done(function(defaultText) { if (defaultText && defaultText.length) {
-                        var label = '', value = '';
-                        try {
-                            var response = JSON.parse(defaultText);
-                            if ($.isArray(response) && response.length) { response = response[0]; }
-                            else if ($.isPlainObject(response) && response.hasOwnProperty('options') && response.options.length) { response = response.options[0]; }
-                            if (response.hasOwnProperty('label')) { label = response.label; }
-                            if (response.hasOwnProperty('value')) { value = response.value; }
-                        } catch(e) { }
-                        if (!label || !label.length) label = defaultText;
-                        if (!value || !value.length) value = defaultText;
-                        $('#${dispFieldId}_display').html(label);
-                        <#if dispHidden>$('#${dispFieldId}').val(value);</#if>
-                    }});
-            }
-            <#list depNodeList as depNode>
-            $("#<@fieldIdByName depNode["@field"]/>").on('change', function() { populate_${dispFieldId}(); });
-            </#list>
-        </m-script>
-    </#if>
-    -->
 </#macro>
 <#macro "display-entity">
     <#assign dispFieldId><@fieldId .node/></#assign>
