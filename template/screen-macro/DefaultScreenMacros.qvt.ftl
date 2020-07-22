@@ -411,7 +411,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
             <#t><#if formNode["@background-message"]?has_content> submit-message="${formNode["@background-message"]?html}"</#if>
             <#t><#if formNode["@background-reload-id"]?has_content> submit-reload-id="${formNode["@background-reload-id"]}"</#if>
             <#lt><#if formNode["@background-hide-id"]?has_content> submit-hide-id="${formNode["@background-hide-id"]}"</#if>
-            <#if fieldsJsName?has_content> v-slot:default="formProps" :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(sri.getFormFieldValues(.node))}"</#if>>
+            <#if fieldsJsName?has_content> v-slot:default="formProps" :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(sri.getFormFieldValues(formNode))}"</#if>>
     </#if>
     <#if formNode["field-layout"]?has_content>
         <#recurse formNode["field-layout"][0]/>
