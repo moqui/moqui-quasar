@@ -50,6 +50,8 @@ along with this software (see the LICENSE.md file). If not, see
             /* ========== Production Mode ========== */
             // Vue JS
             footer_scripts.add('/libs/vue/vue.js') // TODO change to vue.min.js
+            // http-vue-loader
+            footer_scripts.add('/js/http-vue-loader/httpVueLoader.js')
             // Quasar
             footer_scripts.add("https://cdn.jsdelivr.net/npm/quasar@${quasarVersion}/dist/quasar.umd.min.js")
             // Webroot Quasar-Vue instance, in footer so runs after page loaded
@@ -58,6 +60,8 @@ along with this software (see the LICENSE.md file). If not, see
             /* ========== Dev Mode ========== */
             // Vue JS
             footer_scripts.add('/libs/vue/vue.js')
+            // http-vue-loader
+            footer_scripts.add('/js/http-vue-loader/httpVueLoader.js')
             // Quasar
             footer_scripts.add("https://cdn.jsdelivr.net/npm/quasar@${quasarVersion}/dist/quasar.umd.min.js")
             // Webroot Quasar-Vue instance, in footer so runs after page loaded
