@@ -5,6 +5,14 @@ a { color:var(--q-color-primary); text-decoration:none; }
 
 form, fieldset { border:none; display:contents; }
 
+/* Quasar styles have huge h? sizes by default, trim down to something reasonable */
+h1 { font-size:2.5rem; line-height:2.5rem; letter-spacing:initial; }
+h2 { font-size:2rem; line-height:2rem; letter-spacing:initial; }
+h3 { font-size:1.8rem; line-height:1.8rem; letter-spacing:initial; }
+h4 { font-size:1.6rem; line-height:1.6rem; letter-spacing:initial; }
+h5 { font-size:1.4rem; line-height:1.4rem; letter-spacing:initial; }
+h6 { font-size:1.2rem; line-height:1.2rem; letter-spacing:initial; }
+
 body.dev #top { background: #0c1b29!important; }
 body.test #top { background: #224422!important; }
 
