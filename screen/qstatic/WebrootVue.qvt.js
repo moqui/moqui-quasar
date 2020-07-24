@@ -387,7 +387,7 @@ Vue.component('m-dialog', {
     data: function() { return { isShown:false }; },
     template:
     '<q-dialog v-bind:value="value" v-on:input="$emit(\'input\', $event)" :id="id" @show="onShow" @hide="onHide">' +
-        '<q-card ref="dialogCard" flat bordered :style="{\'min-width\':((width||200)+\'px\')}">' +
+        '<q-card ref="dialogCard" flat bordered :style="{width:((width||760)+\'px\')}" style="max-width:90vw;">' +
             '<q-card-actions ref="dialogHeader" :style="{cursor:(draggable?\'move\':\'default\')}">' +
                 '<h5 class="q-pl-sm non-selectable">{{title}}</h5><q-space></q-space>' +
                 '<q-btn icon="close" flat round dense v-close-popup></q-btn>' +
