@@ -1161,7 +1161,7 @@ Vue.component('m-display', {
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
                 var doValue;
                 if (this.fields) {
-                    doValue = this.fields[doParm];
+                    doValue = this.fields[dependsOnMap[doParm]];
                 } else {
                     var doParmJqEl = $('#' + dependsOnMap[doParm]);
                     doValue = doParmJqEl.val();
@@ -1308,12 +1308,13 @@ Vue.component('m-drop-down', {
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
                 var doValue;
                 if (this.fields) {
-                    doValue = this.fields[doParm];
+                    doValue = this.fields[dependsOnMap[doParm]];
                 } else {
                     var doParmJqEl = $('#' + dependsOnMap[doParm]);
                     doValue = doParmJqEl.val();
                     if (!doValue) doValue = doParmJqEl.find('select').val();
                 }
+                // console.warn("do " + doParm + ":" + dependsOnMap[doParm] + " val " + doValue);
                 if (!doValue) { hasAllParms = false; } else { reqData[doParm] = doValue; }
             }}
             if (params) { reqData.term = params.term || ''; reqData.pageIndex = (params.page || 1) - 1; }
