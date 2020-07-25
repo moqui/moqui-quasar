@@ -36,6 +36,7 @@ body.test #top { background: #224422!important; }
 
 form.q-form { width:100%; }
 
+/* BEGIN q-field label move up to overlay outline */
 /* need small (6px) top margin so floating label does not overlap elements above, but to make all q-field consistent apply too all (not just .q-field--labeled.q-field--dense) */
 .q-field--dense { margin:6px 0 6px 0; }
 /* move field lable up to 'notch' in outline (like https://material.io/components/text-fields) */
@@ -49,7 +50,10 @@ form.q-form { width:100%; }
 .q-field--auto-height.q-field--dense.q-field--labeled .q-field__control-container { padding-top:0; }
 /* fix blue focus border on top of label instead of behind */
 .q-field__label { z-index:10; }
+/* END q-field label move */
 
+.q-field--dense .q-field__marginal { height:auto; min-height:40px; }
+.q-field__prepend { max-width:75%; }
 .q-field__marginal .q-checkbox__label { font-size:10px; } /* orig from q-field__marginal 24px */
 
 .q-item__section--avatar { min-width:30px; } /* orig 56px */
