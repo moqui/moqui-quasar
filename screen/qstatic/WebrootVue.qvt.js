@@ -1252,7 +1252,7 @@ Vue.component('m-drop-down', {
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
             '<template v-slot:no-option><q-item><q-item-section class="text-grey">No results</q-item-section></q-item></template>' +
             '<template v-if="multiple" v-slot:prepend><div>' +
-                '<q-chip v-for="valueEntry in value" dense size="md" class="q-my-xs" removable @remove="removeValue(valueEntry)">{{optionLabel(valueEntry)}}</q-chip>' +
+                '<q-chip v-for="valueEntry in value" :key="valueEntry" dense size="md" class="q-my-xs" removable @remove="removeValue(valueEntry)">{{optionLabel(valueEntry)}}</q-chip>' +
             '</div></template>' +
             '<template v-slot:append><slot name="append"></slot></template><template v-slot:after><slot name="after"></slot></template>' +
             '<slot></slot>' +
@@ -1374,7 +1374,7 @@ Vue.component('m-drop-down', {
                             vm.curOptions = procList;
                             vm.allOptions = procList;
                             vm.checkCurrentValue(procList);
-                            vm.$refs.qSelect.refresh();
+                            if (vm.$refs.qSelect) vm.$refs.qSelect.refresh();
                             // NOTE: don't want to do this, was mistakenly used before, use only if setting the input value string to an explicit value otherwise clears it and calls filter again: vm.$refs.qSelect.updateInputValue();
                         }
                     }
