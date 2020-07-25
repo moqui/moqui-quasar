@@ -1407,7 +1407,7 @@ Vue.component('m-drop-down', {
             }
         },
         optionLabel: function(value) {
-            var options = this.curOptions;
+            var options = this.allOptions;
             if (!options || !options.length) return "";
             for (var i=0; i < options.length; i++) {
                 var curOption = options[i];
