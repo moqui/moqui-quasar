@@ -1247,11 +1247,13 @@ Vue.component('m-drop-down', {
         '<q-select ref="qSelect" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
                 ' dense outlined options-dense use-input :fill-input="!multiple" hide-selected :name="name" :id="id" :form="form"' +
                 ' input-debounce="500" @filter="filterFn" :clearable="allowEmpty"' +
-                ' :multiple="multiple" :use-chips="multiple" emit-value map-options' +
+                ' :multiple="multiple" emit-value map-options' +
                 ' stack-label :label="label" :loading="loading" :options="curOptions">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
             '<template v-slot:no-option><q-item><q-item-section class="text-grey">No results</q-item-section></q-item></template>' +
-            '<template v-slot:prepend><slot name="prepend"></slot></template>' +
+            '<template v-if="multiple" v-slot:prepend><div>' +
+                '<q-chip v-for="valueEntry in value" dense size="md" class="q-my-xs" removable @remove="removeValue(valueEntry)">{{optionLabel(valueEntry)}}</q-chip>' +
+            '</div></template>' +
             '<template v-slot:append><slot name="append"></slot></template><template v-slot:after><slot name="after"></slot></template>' +
             '<slot></slot>' +
         '</q-select>',
@@ -1403,6 +1405,25 @@ Vue.component('m-drop-down', {
                     this.$emit('input', null);
                 }
             }
+        },
+        optionLabel: function(value) {
+            var options = this.curOptions;
+            if (!options || !options.length) return "";
+            for (var i=0; i < options.length; i++) {
+                var curOption = options[i];
+                if (value === curOption.value) return curOption.label;
+            }
+            return "";
+        },
+        removeValue: function(value) {
+            var curValueArr = this.value;
+            if (!moqui.isArray(curValueArr)) { console.warn("Tried to remove value from m-drop-down multiple " + this.name + " but value is not an Array"); return; }
+            var newValueArr = [];
+            for (var i = 0; i < curValueArr.length; i++) {
+                var valueEntry = curValueArr[i];
+                if (valueEntry !== value) newValueArr.push(valueEntry);
+            }
+            if (curValueArr.length !== newValueArr.length) this.$emit('input', newValueArr);
         }
     },
     mounted: function() {
