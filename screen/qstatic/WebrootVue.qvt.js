@@ -1242,10 +1242,10 @@ Vue.component('m-drop-down', {
         optionsParameters:Object, labelField:{type:String,'default':'label'}, valueField:{type:String,'default':'value'},
         dependsOn:Object, dependsOptional:Boolean, optionsLoadInit:Boolean, form:String, fields:{type:Object},
         tooltip:String, label:String, name:String, id:String },
-    data: function() { return { curOptions:this.options, allOptions:this.options, lastVal:null, loading:false } },
+    data: function() { return { curOptions:this.options, allOptions:this.options, lastVal:null, lastSearch:null, loading:false } },
     template:
         '<q-select ref="qSelect" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
-                ' dense outlined options-dense use-input fill-input hide-selected :name="name" :id="id" :form="form"' +
+                ' dense outlined options-dense use-input :fill-input="!multiple" hide-selected :name="name" :id="id" :form="form"' +
                 ' input-debounce="500" @filter="filterFn" :clearable="allowEmpty"' +
                 ' :multiple="multiple" :use-chips="multiple" emit-value map-options' +
                 ' stack-label :label="label" :loading="loading" :options="curOptions">' +
@@ -1257,18 +1257,19 @@ Vue.component('m-drop-down', {
         '</q-select>',
         // TODO: how to add before slot pass through without the small left margin when nothing in the slot? <template v-slot:before><slot name="before"></slot></template>
     methods: {
-        filterFn: function(val, doneFn, abortFn) {
+        filterFn: function(search, doneFn, abortFn) {
             if (this.serverSearch) {
-                if (this.serverMinLength && ((val ? val.length : 0) < this.serverMinLength)) {
+                if ((this.lastSearch === search) || (this.serverMinLength && ((search ? search.length : 0) < this.serverMinLength))) {
                     doneFn();
                 } else {
-                    this.populateFromUrl({term:val}, doneFn, abortFn);
+                    this.lastSearch = search;
+                    this.populateFromUrl({term:search}, doneFn, abortFn);
                 }
             } else if (this.allOptions && this.allOptions.length) {
                 var vm = this;
-                if (val && val.length) {
+                if (search && search.length) {
                     doneFn(function() {
-                        var needle = val.toLowerCase();
+                        var needle = search.toLowerCase();
                         vm.curOptions = vm.allOptions.filter(function (v) {
                             return v.label && v.label.toLowerCase().indexOf(needle) > -1;
                         });
@@ -1384,7 +1385,8 @@ Vue.component('m-drop-down', {
             var valIsArray = moqui.isArray(this.value);
             if (this.value && this.value.length && options) for (var i=0; i<options.length; i++) {
                 var curObj = options[i];
-                if (valIsArray ? $.inArray(curObj.value, this.value) : curObj.value === this.value) {
+                // console.warn("option val " + curObj.value + " cur value " + JSON.stringify(this.value) + " valIsArray " + valIsArray + " is in value " + (valIsArray ? this.value.includes(curObj.value) : curObj.value === this.value));
+                if (valIsArray ? this.value.includes(curObj.value) : curObj.value === this.value) {
                     isInNewOptions = true;
                     break;
                 }
@@ -1392,7 +1394,7 @@ Vue.component('m-drop-down', {
 
             // console.warn("curOptions updated " + this.name + " allowEmpty " + this.allowEmpty + " value '" + this.value + "' " + " isInNewOptions " + isInNewOptions + ": " + JSON.stringify(options));
             if (!isInNewOptions) {
-                if (!this.allowEmpty && options && options.length && options[0].value) {
+                if (!this.allowEmpty && !this.multiple && options && options.length && options[0].value) {
                     // simulate normal select behavior with no empty option (not allowEmpty) where first value is selected by default
                     // console.warn("setting " + this.name + " to " + options[0].value);
                     this.$emit('input', options[0].value);
@@ -1413,7 +1415,8 @@ Vue.component('m-drop-down', {
             var dependsOnMap = this.dependsOn;
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
                 if (this.fields) {
-                    this.$watch('fields.' + doParm, function() { this.populateFromUrl({term:this.value}); });
+                    var vm = this;
+                    this.$watch('fields.' + dependsOnMap[doParm], function() { vm.populateFromUrl({term:vm.lastSearch}); });
                 } else {
                     // TODO: if no fields passed, use some sort of DOM-based value like jQuery val()?
                 }
