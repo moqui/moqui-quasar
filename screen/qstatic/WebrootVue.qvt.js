@@ -1366,20 +1366,34 @@ Vue.component('m-drop-down', {
                     if (list) {
                         if (doneFn) {
                             doneFn(function() {
-                                vm.curOptions = procList;
-                                vm.allOptions = procList;
-                                vm.checkCurrentValue(procList);
+                                vm.setNewOptions(procList);
                             });
                         } else {
-                            vm.curOptions = procList;
-                            vm.allOptions = procList;
-                            vm.checkCurrentValue(procList);
+                            vm.setNewOptions(procList);
                             if (vm.$refs.qSelect) vm.$refs.qSelect.refresh();
                             // NOTE: don't want to do this, was mistakenly used before, use only if setting the input value string to an explicit value otherwise clears it and calls filter again: vm.$refs.qSelect.updateInputValue();
                         }
                     }
                 }
             });
+        },
+        setNewOptions: function(options) {
+            this.curOptions = options;
+            if (this.multiple && this.allOptions && this.allOptions.length && this.value && this.value.length && moqui.isArray(this.value)) {
+                // for multiple retain current value(s) in allOptions, at end of Array, so that in most cases already selected values are retained
+                var newAllOptions = options.slice();
+                for (var vi = 0; vi < this.value.length; vi++) {
+                    var curValue = this.value[vi];
+                    for (var oi = 0; oi < this.allOptions.length; oi++) {
+                        var curOption = this.allOptions[oi];
+                        if (curValue === curOption.value) newAllOptions.push(curOption);
+                    }
+                }
+                this.allOptions = newAllOptions;
+            } else {
+                this.allOptions = options;
+                this.checkCurrentValue(this.allOptions);
+            }
         },
         checkCurrentValue: function(options) {
             // if cur value not in new options either clear it or set it to the new first option in list if !allowEmpty
@@ -1437,7 +1451,11 @@ Vue.component('m-drop-down', {
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
                 if (this.fields) {
                     var vm = this;
-                    this.$watch('fields.' + dependsOnMap[doParm], function() { vm.populateFromUrl({term:vm.lastSearch}); });
+                    this.$watch('fields.' + dependsOnMap[doParm], function() {
+                        // in the case of dependency change clear current value
+                        vm.$emit('input', null);
+                        vm.populateFromUrl({term:vm.lastSearch});
+                    });
                 } else {
                     // TODO: if no fields passed, use some sort of DOM-based value like jQuery val()?
                 }
