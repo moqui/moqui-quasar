@@ -1858,7 +1858,7 @@ a => A, d => D, y => Y
         <#if .node["@ac-initial-text"]?has_content><#assign valueText = ec.getResource().expand(.node["@ac-initial-text"]!, "")>
             <#else><#assign valueText = fieldValue></#if>
         <#assign depNodeList = .node["depends-on"]>
-        <strong>text-line with @ac-transition is deprecated, use drop-down with dynamic-options.@server-search</strong>
+        <strong class="text-negative">text-line with @ac-transition is not supported, use drop-down with dynamic-options.@server-search</strong>
         <#--
         <text-autocomplete id="${tlId}" name="${name}" url="${acUrlInfo.url}" value="${fieldValue?html}" value-text="${valueText?html}"<#rt>
                 <#t> type="<#if validationClasses?contains("email")>email<#elseif validationClasses?contains("url")>url<#else>text</#if>" size="${.node.@size!"30"}"
@@ -1878,22 +1878,31 @@ a => A, d => D, y => Y
     <#else>
         <#assign tlAlign = tlFieldNode["@align"]!"left">
         <#assign fieldLabel><@fieldTitle tlSubFieldNode/></#assign>
-        <#t><q-input dense outlined<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> id="${tlId}" type="<#if validationClasses?contains("email")>email<#elseif validationClasses?contains("url")>url<#else>text</#if>"
-                <#t> name="${name}" <#if fieldsJsName?has_content>v-model="${fieldsJsName}.${name}"<#else><#if fieldValue?html == fieldValue>value="${fieldValue}"<#else>:value="'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(fieldValue)}'"</#if></#if>
-                <#t> <#if .node.@size?has_content>size="${.node.@size}"<#else>style="width:100%;"</#if><#if .node.@maxlength?has_content> maxlength="${.node.@maxlength}"</#if>
+        <#if .node["@default-transition"]?has_content>
+            <#assign defUrlInfo = sri.makeUrlByType(.node["@default-transition"], "transition", .node, "false")>
+            <#assign defUrlParameterMap = defUrlInfo.getParameterMap()>
+            <#assign depNodeList = .node["depends-on"]>
+        </#if>
+        <m-text-line dense outlined<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if> id="${tlId}" type="<#if validationClasses?contains("email")>email<#elseif validationClasses?contains("url")>url<#else>text</#if>"<#rt>
+                <#t> name="${name}" <#if fieldsJsName?has_content>v-model="${fieldsJsName}.${name}" :fields="${fieldsJsName}"<#else><#if fieldValue?html == fieldValue>value="${fieldValue}"<#else>:value="'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(fieldValue)}'"</#if></#if>
+                <#t><#if .node.@size?has_content> size="${.node.@size}"<#else> style="width:100%;"</#if><#if .node.@maxlength?has_content> maxlength="${.node.@maxlength}"</#if>
                 <#t><#if ec.getResource().condition(.node.@disabled!"false", "")> disabled="disabled"</#if>
                 <#t> class="<#if validationClasses?has_content>${validationClasses}</#if><#if tlAlign == "center"> text-center<#elseif tlAlign == "right"> text-right</#if>"
                 <#t><#if validationClasses?contains("required")> required</#if><#if regexpInfo?has_content> pattern="${regexpInfo.regexp}" data-msg-pattern="${regexpInfo.message!"Invalid format"}"</#if>
-                <#t><#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if>
+                <#if .node["@default-transition"]?has_content> default-url="${defUrlInfo.path}" :default-load-init="true"
+                    <#if .node["@depends-optional"]! == "true"> :depends-optional="true"</#if>
+                    <#t> :depends-on="{<#list depNodeList as depNode><#local depNodeField = depNode["@field"]>'${depNode["@parameter"]!depNodeField}':'${depNodeField}'<#sep>, </#list>}"
+                    <#t> :default-parameters="{<#list defUrlParameterMap.keySet() as parameterKey><#if defUrlParameterMap.get(parameterKey)?has_content>'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(parameterKey)}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(defUrlParameterMap.get(parameterKey))}', </#if></#list>}"
+                <#t></#if>
                 <#t><#if ownerForm?has_content> form="${ownerForm}"</#if>>
             <#if tlFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(tlFieldNode["@tooltip"], "")}</q-tooltip></#if>
-        </q-input>
+        </m-text-line>
         <#assign expandedMask = ec.getResource().expandNoL10n(.node["@mask"], "")!>
         <#if expandedMask?has_content>mask not yet supported - ${expandedMask}</#if>
         <#-- TODO handle @mask:
         <#if expandedMask?has_content><m-script>$('#${tlId}').inputmask("${expandedMask}");</m-script></#if>
         -->
-        <#if .node["@default-transition"]?has_content>default-transition not yet supported - ${.node["@default-transition"]}</#if>
+
         <#-- TODO handle @default-transition:
         <#if .node["@default-transition"]?has_content>
             <#assign defUrlInfo = sri.makeUrlByType(.node["@default-transition"], "transition", .node, "false")>

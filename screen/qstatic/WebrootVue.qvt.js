@@ -1138,13 +1138,14 @@ Vue.component('m-date-period', {
     },
     beforeMount: function() { if (((this.fromDate && this.fromDate.length) || (this.thruDate && this.thruDate.length))) this.fromThruMode = true; }
 });
+
 Vue.component('m-display', {
     name: "mDisplay",
     props: { value:String, display:String, valueUrl:String, valueParameters:Object, dependsOn:Object, dependsOptional:Boolean, valueLoadInit:Boolean,
         fields:{type:Object}, tooltip:String, label:String, labelWrapper:Boolean, name:String, id:String },
     data: function() { return { curDisplay:this.display, loading:false } },
     template:
-        '<q-input v-if="labelWrapper" dense outlined readonly stack-label :value="displayValue" :label="label" :id="id">' +
+        '<q-input v-if="labelWrapper" dense outlined readonly stack-label :value="displayValue" :label="label" :id="id" :name="name" :loading="loading">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
         '</q-input>' +
         '<span v-else :id="id">' +
@@ -1172,18 +1173,16 @@ Vue.component('m-display', {
             reqData.hasAllParms = hasAllParms;
             return reqData;
         },
-        populateFromUrl: function(params, doneFn, abortFn) {
+        populateFromUrl: function(params) {
             var reqData = this.serverData(params);
-            console.log("m-display populateFromUrl 1 " + this.valueUrl + " reqData.hasAllParms " + reqData.hasAllParms + " dependsOptional " + this.dependsOptional);
-            console.log(reqData);
+            // console.log("m-display populateFromUrl 1 " + this.valueUrl + " reqData.hasAllParms " + reqData.hasAllParms + " dependsOptional " + this.dependsOptional);
+            // console.log(reqData);
             if (!this.valueUrl || !this.valueUrl.length) {
                 console.warn("In m-display tried to populateFromUrl but no valueUrl");
-                if (abortFn) abortFn();
                 return;
             }
             if (!reqData.hasAllParms && !this.dependsOptional) {
                 console.warn("In m-display tried to populateFromUrl but not hasAllParms and not dependsOptional");
-                if (abortFn) abortFn();
                 return;
             }
             var vm = this;
@@ -1192,7 +1191,6 @@ Vue.component('m-display', {
                 error:function(jqXHR, textStatus, errorThrown) {
                     vm.loading = false;
                     moqui.handleAjaxError(jqXHR, textStatus, errorThrown);
-                    if (abortFn) abortFn();
                 },
                 success: function(defaultText) {
                     vm.loading = false;
@@ -1221,7 +1219,7 @@ Vue.component('m-display', {
         displayValue: function() { return this.curDisplay && this.curDisplay.length ? this.curDisplay : this.value; }
     },
     mounted: function() {
-        if (this.valueUrl && this.valueUrl.length > 0) {
+        if (this.valueUrl && this.valueUrl.length) {
             var dependsOnMap = this.dependsOn;
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
                 if (this.fields) {
@@ -1231,10 +1229,11 @@ Vue.component('m-display', {
                 }
             } }
             // do initial populate if not a serverSearch or for serverSearch if we have an initial value do the search so we don't display the ID
-            if (this.optionsLoadInit) { this.populateFromUrl(); }
+            if (this.valueLoadInit) { this.populateFromUrl(); }
         }
     }
 });
+
 Vue.component('m-drop-down', {
     name: "mDropDown",
     props: { value:[Array,String], options:{type:Array,'default':[]}, combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
@@ -1446,7 +1445,7 @@ Vue.component('m-drop-down', {
         if (this.serverSearch) {
             if (!this.optionsUrl) console.error("m-drop-down in form " + this.form + " has no options-url but has server-search=true");
         }
-        if (this.optionsUrl && this.optionsUrl.length > 0) {
+        if (this.optionsUrl && this.optionsUrl.length) {
             var dependsOnMap = this.dependsOn;
             for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
                 if (this.fields) {
@@ -1478,6 +1477,78 @@ Vue.component('m-drop-down', {
             // save the lastVal if there is one to remember what was selected even if new options don't have it, just in case options change again
             if (this.value && this.value.length) this.lastVal = this.value;
 
+        }
+    }
+});
+
+Vue.component('m-text-line', {
+    name: "mTextLine",
+    props: { value:String, type:String, name:String, id:String, fields:{type:Object}, label:String, tooltip:String,
+        defaultUrl:String, defaultParameters:Object, dependsOn:Object, dependsOptional:Boolean, defaultLoadInit:Boolean },
+    data: function() { return { loading:false } },
+    template:
+        '<q-input dense outlined stack-label :label="label" v-bind:value="value" v-on:input="$emit(\'input\', $event)" :type="type" :id="id" :name="name" :loading="loading">' +
+            '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
+        '</q-input>',
+    methods: {
+        serverData: function() {
+            var hasAllParms = true;
+            var dependsOnMap = this.dependsOn;
+            var parmMap = this.defaultParameters;
+            var reqData = { moquiSessionToken: this.$root.moquiSessionToken };
+            for (var parmName in parmMap) { if (parmMap.hasOwnProperty(parmName)) reqData[parmName] = parmMap[parmName]; }
+            for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
+                var doValue;
+                if (this.fields) {
+                    doValue = this.fields[dependsOnMap[doParm]];
+                } else {
+                    var doParmJqEl = $('#' + dependsOnMap[doParm]);
+                    doValue = doParmJqEl.val();
+                    if (!doValue) doValue = doParmJqEl.find('select').val();
+                }
+                if (!doValue) { hasAllParms = false; } else { reqData[doParm] = doValue; }
+            }}
+            reqData.hasAllParms = hasAllParms;
+            return reqData;
+        },
+        populateFromUrl: function(params) {
+            var reqData = this.serverData(params);
+            // console.log("m-text-line populateFromUrl 1 " + this.defaultUrl + " reqData.hasAllParms " + reqData.hasAllParms + " dependsOptional " + this.dependsOptional);
+            // console.log(reqData);
+            if (!this.defaultUrl || !this.defaultUrl.length) {
+                console.warn("In m-text-line tried to populateFromUrl but no defaultUrl");
+                return;
+            }
+            if (!reqData.hasAllParms && !this.dependsOptional) {
+                console.warn("In m-text-line tried to populateFromUrl but not hasAllParms and not dependsOptional");
+                return;
+            }
+            var vm = this;
+            this.loading = true;
+            $.ajax({ type:"POST", url:this.defaultUrl, data:reqData, dataType:"text",
+                error:function(jqXHR, textStatus, errorThrown) {
+                    vm.loading = false;
+                    moqui.handleAjaxError(jqXHR, textStatus, errorThrown);
+                },
+                success: function(defaultText) {
+                    vm.loading = false;
+                    if (defaultText && defaultText.length) vm.$emit('input', defaultText);
+                }
+            });
+        },
+    },
+    mounted: function() {
+        if (this.defaultUrl && this.defaultUrl.length) {
+            var dependsOnMap = this.dependsOn;
+            for (var doParm in dependsOnMap) { if (dependsOnMap.hasOwnProperty(doParm)) {
+                if (this.fields) {
+                    this.$watch('fields.' + doParm, function() { this.populateFromUrl({term:this.value}); });
+                } else {
+                    // TODO: if no fields passed, use some sort of DOM-based value like jQuery val()?
+                }
+            } }
+            // do initial populate if not a serverSearch or for serverSearch if we have an initial value do the search so we don't display the ID
+            if (this.defaultLoadInit) { this.populateFromUrl(); }
         }
     }
 });
