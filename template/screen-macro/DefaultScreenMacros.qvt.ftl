@@ -1898,33 +1898,9 @@ a => A, d => D, y => Y
             <#if tlFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(tlFieldNode["@tooltip"], "")}</q-tooltip></#if>
         </m-text-line>
         <#assign expandedMask = ec.getResource().expandNoL10n(.node["@mask"], "")!>
-        <#if expandedMask?has_content>mask not yet supported - ${expandedMask}</#if>
+        <#if expandedMask?has_content><strong class="text-negative">mask not yet supported - ${expandedMask}</strong></#if>
         <#-- TODO handle @mask:
         <#if expandedMask?has_content><m-script>$('#${tlId}').inputmask("${expandedMask}");</m-script></#if>
-        -->
-
-        <#-- TODO handle @default-transition:
-        <#if .node["@default-transition"]?has_content>
-            <#assign defUrlInfo = sri.makeUrlByType(.node["@default-transition"], "transition", .node, "false")>
-            <#assign defUrlParameterMap = defUrlInfo.getParameterMap()>
-            <#assign depNodeList = .node["depends-on"]>
-            <m-script>
-                function populate_${tlId}() {
-                    // if ($('#${tlId}').val()) return;
-                    var hasAllParms = true;
-                    <#list depNodeList as depNode>if (!$('#<@fieldIdByName depNode["@field"]/>').val()) { hasAllParms = false; } </#list>
-                    if (!hasAllParms) { <#- - alert("not has all parms"); - -> return; }
-                    $.ajax({ type:"POST", url:"${defUrlInfo.url}", data:{ moquiSessionToken: "${(ec.getWeb().sessionToken)!}"<#rt>
-                            <#t><#list depNodeList as depNode><#local depNodeField = depNode["@field"]><#local _void = defUrlParameterMap.remove(depNodeField)!>, "${depNode["@parameter"]!depNodeField}": $("#<@fieldIdByName depNodeField/>").val()</#list>
-                            <#t><#list defUrlParameterMap.keySet() as parameterKey><#if defUrlParameterMap.get(parameterKey)?has_content>, "${parameterKey}":"${defUrlParameterMap.get(parameterKey)}"</#if></#list>
-                            <#t>}, dataType:"text", success:function(defaultText) {   $('#${tlId}').val(defaultText);  } });
-                }
-                <#list depNodeList as depNode>
-                $("#<@fieldIdByName depNode["@field"]/>").on('change', function() { populate_${tlId}(); });
-                </#list>
-                populate_${tlId}();
-            </m-script>
-        </#if>
         -->
     </#if>
 </#macro>
