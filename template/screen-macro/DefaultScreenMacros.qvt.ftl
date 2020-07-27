@@ -1102,7 +1102,8 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                     :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(sri.makeFormListMultiMap(formListInfo, listObject, formListUrlInfo))}">
         </#if>
 
-        <div class="q-table__container q-table__card q-table--horizontal-separator q-table--dense q-table--flat"><div class="table q-table ${tableStyle}" id="${formId}_table">
+        <div class="q-table__container q-table__card q-table--horizontal-separator q-table--dense q-table--flat" :class="{'q-table--dark':$q.dark.isActive, 'q-table__card--dark':$q.dark.isActive, 'q-dark':$q.dark.isActive,}">
+        <div class="table q-table ${tableStyle}" id="${formId}_table">
         <#if !skipHeader>
             <div class="thead">
                 <@paginationHeader formListInfo formId isHeaderDialog/>
@@ -1320,7 +1321,8 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
             </q-bar></th></tr>
         </#if>
         </div><#-- /tbody -->
-        </div></div><#-- /table -->
+        </div><#-- /table -->
+        </div><#-- /table wrapper -->
 
         <#if isMulti>
             <#assign ownerForm = "">

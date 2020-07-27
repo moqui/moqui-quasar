@@ -1730,10 +1730,9 @@ moqui.webrootVue = new Vue({
             this.notifyHistoryList = histList;
         },
         switchDarkLight: function() {
-            var jqBody = $("body"); jqBody.toggleClass("body--light"); jqBody.toggleClass("body--dark");
-            var currentStyle = jqBody.hasClass("body--dark") ? "body--dark" : "body--light";
+            this.$q.dark.toggle();
             $.ajax({ type:'POST', url:(this.appRootPath + '/apps/setPreference'), error:moqui.handleAjaxError,
-                data:{ moquiSessionToken:this.moquiSessionToken, preferenceKey:'OUTER_STYLE_QUASAR', preferenceValue:currentStyle } });
+                data:{ moquiSessionToken:this.moquiSessionToken, preferenceKey:'QUASAR_DARK', preferenceValue:(this.$q.dark.isActive ? 'true' : 'false') } });
         },
         toggleLeftOpen: function() {
             this.leftOpen = !this.leftOpen;
@@ -1863,12 +1862,8 @@ moqui.webrootVue = new Vue({
         this.locale = $("#confLocale").val(); if (moqui.localeMap[this.locale]) this.locale = moqui.localeMap[this.locale];
         this.leftOpen = $("#confLeftOpen").val() === 'true';
 
-        var confOuterStyle = $("#confOuterStyle").val();
-        if (confOuterStyle) {
-            var jqBody = $("body");
-            var currentStyle = jqBody.hasClass("body--dark") ? "body--dark" : "body--light";
-            if (currentStyle !== confOuterStyle) { jqBody.removeClass(currentStyle); jqBody.addClass(confOuterStyle); }
-        }
+        var confDarkMode = $("#confDarkMode").val();
+        this.$q.dark.set(confDarkMode === "true");
 
         this.notificationClient = new moqui.NotificationClient((location.protocol === 'https:' ? 'wss://' : 'ws://') + this.appHost + this.appRootPath + "/notws");
 
