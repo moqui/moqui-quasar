@@ -903,6 +903,90 @@ Vue.component('m-form-go-page', {
         }
     }}
 });
+Vue.component('m-form-column-config', {
+    name: "mFormColumnConfig",
+    // column entry Object fields: id, label, children[]
+    props: { id:String, action:String, columnsInitial:{type:Array,required:true}, formLocation:{type:String,required:true}, findParameters:Object },
+    data: function() { return { columns:moqui.deepCopy(this.columnsInitial) } },
+    template:
+        '<m-form ref="mForm" :id="id" :action="action">' +
+            '<q-list v-for="(column, columnIdx) in columns" :key="column.id" bordered dense>' +
+                '<q-item-label header>{{column.label}}</q-item-label>' +
+                '<q-item v-for="(field, fieldIdx) in column.children" :key="field.id">' +
+                    '<q-item-section side v-if="columnIdx !== 0">' +
+                        '<q-btn dense flat icon="cancel" @click="hideField(columnIdx, fieldIdx)"><q-tooltip>Hide</q-tooltip></q-btn>' +
+                    '</q-item-section>' +
+                    '<q-item-section><q-item-label>{{field.label}}</q-item-label></q-item-section>' +
+                    '<q-item-section v-if="columnIdx === 0" side>' +
+                        '<q-btn-dropdown dense no-caps label="Display"><q-list dense>' +
+                            '<q-item v-for="(toColumn, toColumnIdx) in columns.slice(1)" :key="toColumn.id" clickable>' +
+                                '<q-item-section @click="moveToCol(columnIdx, fieldIdx, toColumnIdx+1)">{{toColumn.label}}</q-item-section></q-item>' +
+                        '</q-list></q-btn-dropdown>' +
+                    '</q-item-section>' +
+                    '<q-item-section v-else side><q-btn-group flat>' +
+                        '<q-btn :disabled="columnIdx <= 1" dense flat icon="north" @click="moveToCol(columnIdx, fieldIdx, columnIdx-1)"></q-btn>' +
+                        '<q-btn :disabled="fieldIdx === 0" dense flat icon="expand_less" @click="moveInCol(columnIdx, fieldIdx, fieldIdx-1)"></q-btn>' +
+                        '<q-btn :disabled="(fieldIdx + 1) === column.children.length" dense flat icon="expand_more" @click="moveInCol(columnIdx, fieldIdx, fieldIdx+1)"></q-btn>' +
+                        '<q-btn dense flat icon="south" @click="moveToCol(columnIdx, fieldIdx, columnIdx+1)"></q-btn>' +
+                    '</q-btn-group></q-item-section>' +
+                '</q-item>' +
+            '</q-list>' +
+            '<div class="q-my-md">' +
+                '<q-btn dense outline no-caps @click.prevent="saveColumns()" label="Save Changes"></q-btn>' +
+                '<q-btn dense outline no-caps @click.prevent="resetColumns()" label="Undo Changes"></q-btn>' +
+                '<q-btn dense outline no-caps @click.prevent="resetToDefault()" label="Reset to Default"></q-btn>' +
+            '</div>' +
+        '</m-form>',
+    methods: {
+        moveInCol: function(columnIdx, fieldIdx, newFieldIdx) {
+            var children = this.columns[columnIdx].children;
+            var fieldObj = children.splice(fieldIdx, 1)[0];
+            children.splice(newFieldIdx, 0, fieldObj);
+        },
+        moveToCol: function(columnIdx, fieldIdx, newColumnIdx) {
+            var columnObj = this.columns[columnIdx];
+            var newColumnObj = newColumnIdx >= this.columns.length ? this.addColumn() : this.columns[newColumnIdx];
+            var fieldObj = columnObj.children.splice(fieldIdx, 1)[0];
+            newColumnObj.children.push(fieldObj);
+        },
+        addColumn: function() {
+            var oldLength = this.columns.length;
+            var lastCol = this.columns[oldLength-1];
+            var newId = lastCol.id.split("_")[0] + "_" + oldLength;
+            var newLabel = lastCol.label.split(" ")[0] + " " + oldLength;
+            // NOTE: push and get so reactive
+            this.columns.push({id:newId,label:newLabel,children:[]});
+            return this.columns[oldLength];
+        },
+        hideField: function(columnIdx, fieldIdx) {
+            if (columnIdx === 0) return;
+            var hiddenObj = this.columns[0];
+            var columnObj = this.columns[columnIdx];
+            var fieldObj = columnObj.children.splice(fieldIdx, 1)[0];
+            hiddenObj.children.push(fieldObj);
+        },
+        resetColumns: function() { this.columns = moqui.deepCopy(this.columnsInitial); },
+        saveColumns: function() {
+            this.generalFormFields();
+            var fields = this.$refs.mForm.fields;
+            fields.SaveColumns = "SaveColumns";
+            fields.columnsTree = JSON.stringify(this.columns);
+            this.$refs.mForm.submitGo();
+        },
+        resetToDefault: function() {
+            this.generalFormFields();
+            this.$refs.mForm.fields.ResetColumns = "ResetColumns";
+            this.$refs.mForm.submitGo();
+        },
+        generalFormFields() {
+            var fields = this.$refs.mForm.fields;
+            fields.formLocation = this.formLocation;
+            if (this.findParameters) for (var curKey in Object.keys(this.findParameters))
+                fields[curKey] = this.findParameters[curKey];
+        }
+    }
+});
+
 // TODO: m-form-list still needs a LOT of work, full re-implementation of form-list FTL macros for full client rendering so that component is fully static and data driven
 Vue.component('m-form-list', {
     name: "mFormList",

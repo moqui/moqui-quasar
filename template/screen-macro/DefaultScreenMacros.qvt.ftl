@@ -776,65 +776,31 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                 <#assign selectColumnsDialogId = formId + "_SelColsDialog">
                 <#assign selectColumnsSortableId = formId + "_SelColsSortable">
                 <#assign fieldsNotInColumns = formListInfo.getFieldsNotReferencedInFormListColumn()>
+                <#assign hiddenChildren>
+                    <#list fieldsNotInColumns as fieldNode>
+                        <#assign fieldSubNode = (fieldNode["header-field"][0])!(fieldNode["default-field"][0])!>
+                        <#assign curFieldTitle><@fieldTitle fieldSubNode/></#assign>
+                        <#t>{id:'${fieldNode["@name"]}',label:'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(curFieldTitle)}'}
+                    <#sep>,</#list>
+                </#assign>
+                <#assign columnFieldInfo>
+                    <#list allColInfoList as columnFieldList>
+                        <#t>{id:'column_${columnFieldList_index}',label:'${ec.l10n.localize("Column")} ${columnFieldList_index + 1}',children:[
+                        <#list columnFieldList as fieldNode>
+                            <#assign fieldSubNode = (fieldNode["header-field"][0])!(fieldNode["default-field"][0])!>
+                            <#assign curFieldTitle><@fieldTitle fieldSubNode/></#assign>
+                            <#t>{id:'${fieldNode["@name"]}',label:'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(curFieldTitle)}'}
+                        <#sep>,</#list>
+                        <#t>]}
+                    <#sep>,</#list>
+                </#assign>
                 <m-container-dialog id="${selectColumnsDialogId}" button-text="${ec.getL10n().localize("Columns")}" title="${ec.l10n.localize("Column Fields")}">
-                    <p>${ec.getL10n().localize("Drag fields to the desired column or do not display")}</p>
-                    <ul id="${selectColumnsSortableId}">
-                        <li id="hidden"><div>${ec.l10n.localize("Do Not Display")}</div>
-                            <#if fieldsNotInColumns?has_content>
-                                <ul>
-                                    <#list fieldsNotInColumns as fieldNode>
-                                        <#assign fieldSubNode = (fieldNode["header-field"][0])!(fieldNode["default-field"][0])!>
-                                        <li id="${fieldNode["@name"]}"><div><@fieldTitle fieldSubNode/></div></li>
-                                    </#list>
-                                </ul>
-                            </#if>
-                        </li>
-                        <#list allColInfoList as columnFieldList>
-                            <li id="column_${columnFieldList_index}"><div>${ec.l10n.localize("Column")} ${columnFieldList_index + 1}</div><ul>
-                                    <#list columnFieldList as fieldNode>
-                                        <#assign fieldSubNode = (fieldNode["header-field"][0])!(fieldNode["default-field"][0])!>
-                                        <li id="${fieldNode["@name"]}"><div><@fieldTitle fieldSubNode/></div></li>
-                                    </#list>
-                                </ul></li>
-                        </#list>
-                        <#list allColInfoList?size..(allColInfoList?size + 2) as ind><#-- always add 3 more columns for flexibility -->
-                            <li id="column_${ind}"><div>${ec.getL10n().localize("Column")} ${ind + 1}</div></li>
-                        </#list>
-                    </ul>
-                    <m-form class="form-inline" id="${formId}_SelColsForm" action="${sri.buildUrl("formSelectColumns").path}">
-                        <input type="hidden" name="formLocation" value="${formListInfo.getFormLocation()}">
-                        <input type="hidden" id="${formId}_SelColsForm_columnsTree" name="columnsTree" value="">
-                        <#if currentFindUrlParms?has_content><#list currentFindUrlParms.keySet() as parmName>
-                            <input type="hidden" name="${parmName}" value="${currentFindUrlParms.get(parmName)!?html}">
-                        </#list></#if>
-                        <input type="submit" name="SaveColumns" value="${ec.getL10n().localize("Save Columns")}" class="btn btn-success btn-sm"/>
-                        <input type="submit" name="ResetColumns" value="${ec.getL10n().localize("Reset to Default")}" class="btn btn-danger btn-sm"/>
-                    </m-form>
+                    <m-form-column-config id="${formId}_SelColsForm" action="${sri.buildUrl("formSelectColumns").path}"
+                        <#if currentFindUrlParms?has_content> :find-parameters="{<#list currentFindUrlParms.keySet() as parmName>'${parmName}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(currentFindUrlParms.get(parmName)!)}'<#sep>,</#list>}"</#if>
+                        :columns-initial="[{id:'hidden', label:'${ec.l10n.localize("Do Not Display")}', children:[${hiddenChildren}]},${columnFieldInfo}]"
+                        form-location="${formListInfo.getFormLocation()}">
+                    </m-form-column-config>
                 </m-container-dialog>
-                <#-- TODO: implement replacement for sortableLists() (from jquery-sortable-lists library)
-                <m-script>$('#${selectColumnsDialogId}').on('shown.bs.modal', function() {
-                    $("#${selectColumnsSortableId}").sortableLists({
-                    isAllowed: function(currEl, hint, target) {
-                    <#- - don't allow hidden and column items to be moved; only allow others to be under hidden or column items - ->
-                    if (currEl.attr('id') === 'hidden' || currEl.attr('id').startsWith('column_')) {
-                    if (!target.attr('id') || (target.attr('id') != 'hidden' && !currEl.attr('id').startsWith('column_'))) { hint.css('background-color', '#99ff99'); return true; }
-                    else { hint.css('background-color', '#ff9999'); return false; }
-                    }
-                    if (target.attr('id') && (target.attr('id') === 'hidden' || target.attr('id').startsWith('column_'))) { hint.css('background-color', '#99ff99'); return true; }
-                    else { hint.css('background-color', '#ff9999'); return false; }
-                    },
-                    placeholderCss: {'background-color':'#999999'}, insertZone: 50,
-                    <#- - jquery-sortable-lists currently logs an error if opener.as is not set to html or class - ->
-                    opener: { active:false, as:'html', close:'', open:'' },
-                    onChange: function(cEl) {
-                    var sortableHierarchy = $('#${selectColumnsSortableId}').sortableListsToHierarchy();
-                    // console.log(sortableHierarchy); console.log(JSON.stringify(sortableHierarchy));
-                    $("#${formId}_SelColsForm_columnsTree").val(JSON.stringify(sortableHierarchy));
-                    }
-                    });
-                    $("#${formId}_SelColsForm_columnsTree").val(JSON.stringify($('#${selectColumnsSortableId}').sortableListsToHierarchy()));
-                })</m-script>
-                -->
             </#if>
 
             <#if formNode["@show-csv-button"]! == "true">
@@ -1102,7 +1068,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                     :fields-initial="${Static["org.moqui.util.WebUtilities"].fieldValuesEncodeHtmlJsSafe(sri.makeFormListMultiMap(formListInfo, listObject, formListUrlInfo))}">
         </#if>
 
-        <div class="q-table__container q-table__card q-table--horizontal-separator q-table--dense q-table--flat" :class="{'q-table--dark':$q.dark.isActive, 'q-table__card--dark':$q.dark.isActive, 'q-dark':$q.dark.isActive,}">
+        <div class="q-my-sm q-table__container q-table__card q-table--horizontal-separator q-table--dense q-table--flat" :class="{'q-table--dark':$q.dark.isActive, 'q-table__card--dark':$q.dark.isActive, 'q-dark':$q.dark.isActive,}">
         <div class="table q-table ${tableStyle}" id="${formId}_table">
         <#if !skipHeader>
             <div class="thead">
