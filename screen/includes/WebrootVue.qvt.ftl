@@ -68,9 +68,7 @@ along with this software (see the LICENSE.md file). If not, see
 
             <q-space></q-space>
 
-            <span class="text-warning">PRE-ALPHA PREVIEW<q-tooltip>For current production-ready UI go to /vapps</q-tooltip></span>
-
-            <q-space></q-space>
+            <span class="text-warning on-left">PRE-ALPHA PREVIEW<q-tooltip>For current production-ready UI go to /vapps</q-tooltip></span>
 
             <#-- spinner, usually hidden -->
             <q-circular-progress indeterminate size="20px" color="light-blue" class="q-ma-xs" :class="{ hidden: loading < 1 }"></q-circular-progress>
