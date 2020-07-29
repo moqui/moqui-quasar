@@ -1526,12 +1526,11 @@ Vue.component('m-drop-down', {
             if (this.optionsLoadInit) {
                 if (!this.serverSearch) { this.populateFromUrl(); }
                 else if (this.value && this.value.length && moqui.isString(this.value)) { this.populateFromUrl({term:this.value}); }
-            } else {
-                // simulate normal select behavior with no empty option (not allowEmpty) where first value is selected by default
-                if (!this.allowEmpty && (!this.value || !this.value.length) && this.options && this.options.length && this.options[0].value) {
-                    this.$emit('input', this.options[0].value);
-                }
             }
+        }
+        // simulate normal select behavior with no empty option (not allowEmpty) where first value is selected by default
+        if (!this.multiple && !this.allowEmpty && (!this.value || !this.value.length) && this.options && this.options.length) {
+            this.$emit('input', this.options[0].value);
         }
     },
     watch: {
