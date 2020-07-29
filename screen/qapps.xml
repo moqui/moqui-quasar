@@ -37,7 +37,6 @@ along with this software (see the LICENSE.md file). If not, see
         html_scripts.add('/libs/moment.js/moment-with-locales.min.js')
         // TODO: can we get away with not using jQuery?
         html_scripts.add('/libs/jquery/jquery.min.js')
-        html_scripts.add('/js/MoquiLib.min.js')
 
         // TODO: use jQuery + jquery-validate (not a good option) or alternative to this in q-form validation?
         // jquery-validate locale specific scripts
@@ -48,6 +47,7 @@ along with this software (see the LICENSE.md file). If not, see
         String instancePurpose = System.getProperty("instance_purpose")
         if (!instancePurpose || instancePurpose == 'production') {
             /* ========== Production Mode ========== */
+            html_scripts.add('/js/MoquiLib.min.js')
             // Vue JS
             footer_scripts.add('/libs/vue/vue.js') // TODO change to vue.min.js
             // http-vue-loader
@@ -58,6 +58,7 @@ along with this software (see the LICENSE.md file). If not, see
             footer_scripts.add('/qstatic/WebrootVue.qvt.js')
         } else {
             /* ========== Dev Mode ========== */
+            html_scripts.add('/js/MoquiLib.js')
             // Vue JS
             footer_scripts.add('/libs/vue/vue.js')
             // http-vue-loader

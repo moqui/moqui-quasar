@@ -8,27 +8,6 @@ if (!window.define) window.define = function(name, deps, callback) {
     if (!moqui.isArray(deps)) { callback = deps; deps = null; }
     if (moqui.isFunction(callback)) { return callback(); } else { return callback }
 };
-// map locale to a locale that exists in moment-with-locales.js
-moqui.localeMap = { 'zh':'zh-cn' };
-moqui.objToSearch = function(obj) {
-    var search = '';
-    if (moqui.isPlainObject(obj)) $.each(obj, function (key, value) { search = search + (search.length > 0 ? '&' : '') + key + '=' + value; });
-    return search;
-};
-moqui.searchToObj = function(search) {
-    if (!search || search.length === 0) { return {}; }
-    var newParams = {};
-    var parmList = search.split("&");
-    for (var i=0; i<parmList.length; i++) {
-        var parm = parmList[i]; var ps = parm.split("=");
-        if (ps.length > 1) {
-            var key = ps[0]; var value = ps[1]; var exVal = newParams[key];
-            if (exVal) { if (moqui.isArray(exVal)) { exVal.push(value); } else { newParams[key] = [exVal, value]; } }
-            else { newParams[key] = value; }
-        }
-    }
-    return newParams;
-};
 Vue.filter('decodeHtml', moqui.htmlDecode);
 Vue.filter('format', moqui.format);
 
@@ -1641,7 +1620,11 @@ Vue.component('m-text-line', {
 Vue.component('m-subscreens-tabs', {
     name: "mSubscreensTabs",
     data: function() { return { pathIndex:-1 }},
-    // TODO: how to handle tab.active?
+    /* NOTE DEJ 20200729 In theory could use q-route-tab and show active automatically, attempted to mimic Vue Router sufficiently for this to work but no luck yet:
+    '<div v-if="subscreens.length > 0"><q-tabs dense no-caps align="left" active-color="primary" indicator-color="primary">' +
+        '<q-route-tab v-for="tab in subscreens" :key="tab.name" :name="tab.name" :label="tab.title" :disable="tab.disableLink" :to="tab.pathWithParams"></q-route-tab>' +
+    '</q-tabs><q-separator class="q-mb-md"></q-separator></div>',
+     */
     template:
     '<div v-if="subscreens.length > 0"><q-tabs dense no-caps align="left" active-color="primary" indicator-color="primary" :value="activeTab">' +
         '<q-tab v-for="tab in subscreens" :key="tab.name" :name="tab.name" :label="tab.title" :disable="tab.disableLink" @click.prevent="goTo(tab.pathWithParams)"></q-tab>' +
@@ -1767,9 +1750,7 @@ moqui.webrootVue = new Vue({
         navMenuList:[], navHistoryList:[], navPlugins:[], notifyHistoryList:[], lastNavTime:Date.now(), loading:0, currentLoadRequest:null, activeContainers:{},
         moquiSessionToken:"", appHost:"", appRootPath:"", userId:"", locale:"en", notificationClient:null, qzVue:null, leftOpen:false },
     methods: {
-        setUrl: function(url, bodyParameters) {
-            // make sure any open modals are closed before setting current URL
-            // TODO replace if needed: $('.modal.in').modal('hide');
+        setUrl: function(url, bodyParameters, onComplete) {
             // cancel current load if needed
             if (this.currentLoadRequest) {
                 console.log("Aborting current page load currentLinkUrl " + this.currentLinkUrl + " url " + url);
@@ -1783,20 +1764,15 @@ moqui.webrootVue = new Vue({
             // console.info('setting url ' + url + ', cur ' + this.currentLinkUrl);
             if (this.currentLinkUrl === url && url !== this.linkBasePath) {
                 this.reloadSubscreens(); /* console.info('reloading, same url ' + url); */
+                if (onComplete) this.callOnComplete(onComplete, this.currentPath);
             } else {
-                var href = url;
-                var ssIdx = href.indexOf('://');
-                if (ssIdx >= 0) {
-                    var slIdx = href.indexOf('/', ssIdx + 3);
-                    if (slIdx === -1) return;
-                    href = href.slice(slIdx);
-                }
-                var splitHref = href.split("?");
+                var redirectedFrom = this.currentPath;
+                var urlInfo = moqui.parseHref(url);
                 // clear out extra path, to be set from nav menu data if needed
                 this.extraPathList = [];
                 // set currentSearch before currentPath so that it is available when path updates
-                if (splitHref.length > 1 && splitHref[1].length > 0) { this.currentSearch = splitHref[1]; } else { this.currentSearch = ""; }
-                this.currentPath = splitHref[0];
+                this.currentSearch = urlInfo.search;
+                this.currentPath = urlInfo.path;
                 // with url cleaned up through setters now get current screen url for menu
                 var srch = this.currentSearch;
                 var screenUrl = this.currentPath + (srch.length > 0 ? '?' + srch : '');
@@ -1816,6 +1792,7 @@ moqui.webrootVue = new Vue({
                     try { outerList = JSON.parse(outerListText); } catch (e) { console.info("Error parson menu list JSON: " + e); }
                     if (outerList && moqui.isArray(outerList)) {
                         vm.navMenuList = outerList;
+                        if (onComplete) vm.callOnComplete(onComplete, redirectedFrom);
                         /* console.info('navMenuList ' + JSON.stringify(outerList)); */
                     }
                 }});
@@ -1823,6 +1800,16 @@ moqui.webrootVue = new Vue({
                 // set the window URL
                 window.history.pushState(null, this.ScreenTitle, url);
             }
+        },
+        callOnComplete: function(onComplete, redirectedFrom) {
+            if (!onComplete) return;
+            var route = this.getRoute();
+            if (redirectedFrom) route.redirectedFrom = redirectedFrom;
+            onComplete(route);
+        },
+        getRoute: function() {
+            return { name:this.currentPathList[this.currentPathList.length-1], meta:{}, path:this.currentPath,
+                hash:'', query:this.currentParameters, params:this.bodyParameters||{}, fullPath:this.currentLinkUrl, matched:[] };
         },
         setParameters: function(parmObj) {
             if (parmObj) { this.$root.currentParameters = $.extend({}, this.$root.currentParameters, parmObj); }
@@ -2050,8 +2037,23 @@ window.addEventListener('popstate', function() { moqui.webrootVue.setUrl(window.
 
 // NOTE: simulate vue-router so this.$router.resolve() works in a basic form; required for use of q-btn 'to' attribute along with router-link component defined above
 moqui.webrootRouter = {
-    resolve: function(to, current, append) { return to; },
-    replace: function(location, onComplete, onAbort) { moqui.webrootVue.setUrl(location); },
-    push: function(location, onComplete, onAbort) { moqui.webrootVue.setUrl(location); },
+    resolve: function resolve(to, current, append) {
+        var location;
+        if (moqui.isString(to)) { location = moqui.parseHref(to); } else { location = to; }
+        var path = location.path;
+        var lslIdx = path.lastIndexOf("/");
+        var name = lslIdx === -1 ? path : path.slice(lslIdx+1);
+
+        var route = { name:name, meta:{}, path:path,
+            hash:location.hash||"", query:location.query||"", params: {}, fullPath:path, matched:[] };
+        return { location:location, route:route, href:moqui.makeHref(location), normalizedTo:location, resolved:route }
+    },
+    replace: function(location, onComplete, onAbort) { moqui.webrootVue.setUrl(location, null, onComplete); },
+    push: function(location, onComplete, onAbort) { moqui.webrootVue.setUrl(location, null, onComplete); },
 }
-Object.defineProperty(Vue.prototype, '$router', { get: function get () { return moqui.webrootRouter; } });
+Object.defineProperty(Vue.prototype, '$router', {
+    get: function get() { return moqui.webrootRouter; },
+});
+Object.defineProperty(Vue.prototype, '$route', {
+    get: function get() { return moqui.webrootVue.getRoute(); }
+});
