@@ -226,7 +226,8 @@ moqui.loadComponent = function(urlInfo, callback, divId) {
         }
         // console.info(resp);
         if (!resp) { callback(moqui.NotFound); }
-        var isServerStatic = (jqXHR.getResponseHeader("Cache-Control").indexOf("max-age") >= 0);
+        var cacheControl = jqXHR.getResponseHeader("Cache-Control");
+        var isServerStatic = (cacheControl && cacheControl.indexOf("max-age") >= 0);
         if (moqui.isString(resp) && resp.length > 0) {
             if (isJsPath || resp.slice(0,7) === 'define(') {
                 console.info("loaded JS from " + url + (divId ? " id " + divId : ""));
@@ -1879,10 +1880,6 @@ moqui.webrootVue = new Vue({
             this.leftOpen = !this.leftOpen;
             $.ajax({ type:'POST', url:(this.appRootPath + '/apps/setPreference'), error:moqui.handleAjaxError,
                 data:{ moquiSessionToken:this.moquiSessionToken, preferenceKey:'QUASAR_LEFT_OPEN', preferenceValue:(this.leftOpen ? 'true' : 'false') } });
-        },
-        showScreenDocDialog: function(docIndex) {
-            $("#screen-document-dialog").modal("show");
-            $("#screen-document-dialog-body").load(this.currentPath + '/screenDoc?docIndex=' + docIndex);
         },
         stopProp: function (e) { e.stopPropagation(); },
         getNavHref: function(navIndex) {

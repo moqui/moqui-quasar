@@ -79,9 +79,9 @@ along with this software (see the LICENSE.md file). If not, see
             <#-- screen documentation/help -->
             <q-btn dense flat icon="help_outline" color="info" :class="{hidden:!documentMenuList.length}">
                 <q-tooltip>${ec.l10n.localize("Documentation")}</q-tooltip>
-                <q-menu><q-list style="min-width: 300px">
+                <q-menu><q-list dense class="q-my-md">
                     <q-item v-for="screenDoc in documentMenuList" :key="screenDoc.index"><q-item-section>
-                        <q-btn flat no-caps :label="screenDoc.title" @click.prevent="showScreenDocDialog(screenDoc.index)"></q-btn>
+                        <m-dynamic-dialog :url="currentPath + '/screenDoc?docIndex=' + screenDoc.index" :button-text="screenDoc.title" :title="screenDoc.title"></m-dynamic-dialog>
                     </q-item-section></q-item>
                 </q-list></q-menu>
             </q-btn>
@@ -151,21 +151,6 @@ along with this software (see the LICENSE.md file). If not, see
             </#list>
         </q-footer>
     </q-layout>
-</div>
-
-<div id="screen-document-dialog" class="modal dynamic-dialog" aria-hidden="true" style="display: none;" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">${ec.l10n.localize("Documentation")}</h4>
-            </div>
-            <div class="modal-body" id="screen-document-dialog-body">
-                <div class="spinner"><div>&nbsp;</div></div>
-            </div>
-            <div class="modal-footer"><button type="button" class="btn btn-primary" data-dismiss="modal">${ec.l10n.localize("Close")}</button></div>
-        </div>
-    </div>
 </div>
 
 <script>
