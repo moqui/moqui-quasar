@@ -46,6 +46,12 @@ along with this software (see the LICENSE.md file). If not, see
     <!-- <moqui.screen.ScreenThemeResource screenThemeId="DEFAULT_QUASAR" sequenceNum="102" resourceTypeEnumId="STRT_BODY_CLASS"
             resourceValue="bg-light"/> -->
 
+    <!-- TODO: move these to SimpleScreensSetupData.xml after this is moved to moqui-runtime (so ScreenTheme record exists) -->
+    <moqui.screen.ScreenThemeResource screenThemeId="DEFAULT_QUASAR" sequenceNum="130" resourceTypeEnumId="STRT_HEADER_NAVBAR_COMP"
+            resourceValue="/ssstatic/lib/ActiveOrgNav.qvue"/>
+    <moqui.screen.ScreenThemeResource screenThemeId="DEFAULT_QUASAR" sequenceNum="135" resourceTypeEnumId="STRT_HEADER_NAVBAR_COMP"
+            resourceValue="/ssstatic/lib/MyAccountNav.qvue"/>
+
     <!-- Footer items -->
     <moqui.screen.ScreenThemeResource screenThemeId="DEFAULT_QUASAR" sequenceNum="200" resourceTypeEnumId="STRT_FOOTER_ITEM">
         <resourceValue><![CDATA[<div class="col-md-6 text-center q-px-md"><a class="text-grey-1" href="https://www.moqui.org/" target="_blank">${ec.resource.expand('Built on Moqui ${ec.factory.moquiVersion}', '')}</a></div>]]></resourceValue>
