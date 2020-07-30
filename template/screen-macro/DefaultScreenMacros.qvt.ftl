@@ -1718,7 +1718,14 @@ a => A, d => D, y => Y
     </m-drop-down>
 </#macro>
 
-<#macro file><input type="file" class="form-control" name="<@fieldName .node/>" value="${sri.getFieldValueString(.node)?html}" size="${.node.@size!"30"}"<#if .node.@maxlength?has_content> maxlength="${.node.@maxlength}"</#if><#if .node?parent["@tooltip"]?has_content> data-toggle="tooltip" title="${ec.getResource().expand(.node?parent["@tooltip"], "")}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>></#macro>
+<#macro file>
+    <#assign curFieldName><@fieldName .node/></#assign>
+    <#assign fieldLabel><@fieldTitle .node?parent/></#assign>
+    <q-file dense outlined<#if fieldLabel?has_content> stack-label label="${fieldLabel}"</#if><#if fieldsJsName?has_content> v-model="${fieldsJsName}.${curFieldName}"</#if>
+            name="<@fieldName .node/>" size="${.node.@size!"30"}"<#if .node.@maxlength?has_content> maxlength="${.node.@maxlength}"</#if><#if ownerForm?has_content> form="${ownerForm}"</#if>>
+        <#if .node?parent["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(.node?parent["@tooltip"], "")}</q-tooltip></#if>
+    </q-file>
+</#macro>
 
 <#macro hidden>
     <#-- if the form is client rendered don't render anything hidden fields; NOTE: could also render and populate with value, but not needed (unless a need comes up...) -->
