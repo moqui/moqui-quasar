@@ -1053,12 +1053,13 @@ Vue.component('m-form-list', {
 Vue.component('m-date-time', {
     name: "mDateTime",
     props: { id:String, name:{type:String,required:true}, value:String, type:{type:String,'default':'date-time'}, label:String,
-        size:String, format:String, tooltip:String, form:String, required:String, autoYear:String, minuteStep:{type:Number,'default':5} },
+        size:String, format:String, tooltip:String, form:String, required:String, disable:Boolean, autoYear:String,
+        minuteStep:{type:Number,'default':5} },
     template:
     // NOTE: tried :fill-mask="formatVal" but results in all Y, only supports single character for mask placeholder... how to show more helpful date mask?
     // TODO: add back @focus="focusDate" @blur="blurDate" IFF needed given different mask/etc behavior
     '<q-input dense outlined stack-label :label="label" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
-            ' :mask="inputMask" fill-mask :id="id" :name="name" :form="form">' +
+            ' :mask="inputMask" fill-mask :id="id" :name="name" :form="form" :disable="disable">' +
         '<template v-slot:prepend v-if="type==\'date\' || type==\'date-time\' || !type">' +
             '<q-icon name="event" class="cursor-pointer">' +
                 '<q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">' +
@@ -1304,12 +1305,12 @@ Vue.component('m-drop-down', {
         serverSearch:{type:Boolean,'default':false}, serverDelay:{type:Number,'default':300}, serverMinLength:{type:Number,'default':1},
         optionsParameters:Object, labelField:{type:String,'default':'label'}, valueField:{type:String,'default':'value'},
         dependsOn:Object, dependsOptional:Boolean, optionsLoadInit:Boolean, form:String, fields:{type:Object},
-        tooltip:String, label:String, name:String, id:String },
+        tooltip:String, label:String, name:String, id:String, disable:Boolean },
     data: function() { return { curOptions:this.options, allOptions:this.options, lastVal:null, lastSearch:null, loading:false } },
     template:
         '<q-select ref="qSelect" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
                 ' dense outlined options-dense use-input :fill-input="!multiple" hide-selected :name="name" :id="id" :form="form"' +
-                ' input-debounce="500" @filter="filterFn" :clearable="allowEmpty"' +
+                ' input-debounce="500" @filter="filterFn" :clearable="allowEmpty" :disable="disable"' +
                 ' :multiple="multiple" emit-value map-options' +
                 ' stack-label :label="label" :loading="loading" :options="curOptions">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
@@ -1546,11 +1547,11 @@ Vue.component('m-drop-down', {
 
 Vue.component('m-text-line', {
     name: "mTextLine",
-    props: { value:String, type:String, name:String, id:String, fields:{type:Object}, label:String, tooltip:String,
+    props: { value:String, type:String, name:String, id:String, fields:{type:Object}, label:String, tooltip:String, disable:Boolean,
         defaultUrl:String, defaultParameters:Object, dependsOn:Object, dependsOptional:Boolean, defaultLoadInit:Boolean, rules:Array },
     data: function() { return { loading:false } },
     template:
-        '<q-input dense outlined stack-label :label="label" v-bind:value="value" v-on:input="$emit(\'input\', $event)" :type="type" :id="id" :name="name" :loading="loading" lazy-rules :rules="rules">' +
+        '<q-input dense outlined stack-label :label="label" v-bind:value="value" v-on:input="$emit(\'input\', $event)" :type="type" :id="id" :name="name" :loading="loading" lazy-rules :rules="rules" :disable="disable">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
         '</q-input>',
     methods: {

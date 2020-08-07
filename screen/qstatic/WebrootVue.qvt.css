@@ -54,11 +54,17 @@ form.q-form { width:100%; }
 .q-field--auto-height.q-field--dense.q-field--labeled .q-field__control-container { padding-top:0; }
 /* fix blue focus border on top of label instead of behind */
 .q-field__label { z-index:10; }
+/* fix disabled opacity, was 0.6 which caused border to bleed through */
+.q-field--disabled .q-field__control > div { opacity:1 !important; }
 /* END q-field label move */
 
 .q-field--dense .q-field__marginal { height:auto; min-height:40px; }
 .q-field__prepend { max-width:75%; }
 .q-field__marginal .q-checkbox__label { font-size:10px; } /* orig from q-field__marginal 24px */
+
+/* instead of always having 20px bottom area only do when there is an error - may need adjustment for other field bottom uses */
+.q-field--with-bottom { padding-bottom:0; }
+.q-field--with-bottom.q-field--error { padding-bottom:20px; }
 
 .q-item__section--avatar { min-width:30px; } /* orig 56px */
 
