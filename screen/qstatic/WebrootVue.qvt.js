@@ -2012,6 +2012,7 @@ moqui.webrootVue = new Vue({
     },
     mounted: function() {
         var jqEl = $(this.$el);
+        jqEl.css("display", "initial");
         // load the current screen
         this.setUrl(window.location.pathname + window.location.search);
         // init the NotificationClient and register 'displayNotify' as the default listener
