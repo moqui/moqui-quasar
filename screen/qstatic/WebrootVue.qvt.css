@@ -63,8 +63,9 @@ form.q-form { width:100%; }
 .q-field__marginal .q-checkbox__label { font-size:10px; } /* orig from q-field__marginal 24px */
 
 /* instead of always having 20px bottom area only do when there is an error - may need adjustment for other field bottom uses */
-.q-field--with-bottom { padding-bottom:0; }
-.q-field--with-bottom.q-field--error { padding-bottom:20px; }
+.q-field--with-bottom { padding-bottom:4px; }
+.q-field--with-bottom.q-field--error { padding-bottom:16px; }
+.q-field__bottom { padding-top:4px; }
 
 .q-item__section--avatar { min-width:30px; } /* orig 56px */
 
