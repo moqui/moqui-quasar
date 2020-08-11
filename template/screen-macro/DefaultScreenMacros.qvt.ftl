@@ -1007,6 +1007,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
     <#assign formListUrlInfo = sri.makeUrlByType(formNode["@transition"], "transition", null, "false")>
     <#assign listName = formNode["@list"]>
     <#assign isServerStatic = formInstance.isServerStatic(sri.getRenderMode())>
+    <#assign formDisabled = formListUrlInfo.disableLink>
 
 <#if isServerStatic><#-- client rendered, static -->
     <#-- TODO: form-list server-static needs to be revisited still for Quasar -->
