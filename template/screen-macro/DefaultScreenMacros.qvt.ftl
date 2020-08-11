@@ -99,9 +99,13 @@ ${sri.renderSection(.node["@name"])}
 <#macro "container-row">
     <#assign contRowDivId><@nodeId .node/></#assign>
     <#-- was using q-col-gutter-md but causes overlap between rows as uses negative + positive margin approach, one example is Assets link on PopCommerceAdmin/dashboard.xml that gets covered by col in row below it -->
+    <#-- Quasar: xs:<600 sm:600+ md:1024+ lg:1440+ xl:1920+ ==== Bootstrap3: xs:<768 sm:768+ md:992+ lg:1200+ -->
     <div class="row<#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>"<#if contRowDivId?has_content> id="${contRowDivId}"</#if>>
         <#list .node["row-col"] as rowColNode>
-            <div class="q-px-xs <#if rowColNode["@lg"]?has_content> col-lg-${rowColNode["@lg"]}</#if><#if rowColNode["@md"]?has_content> col-md-${rowColNode["@md"]}</#if><#if rowColNode["@sm"]?has_content> col-sm-${rowColNode["@sm"]}</#if><#if rowColNode["@xs"]?has_content> col-xs-${rowColNode["@xs"]}</#if><#if rowColNode["@style"]?has_content> ${ec.getResource().expandNoL10n(rowColNode["@style"], "")}</#if>">
+            <#assign colHasLg = rowColNode["@lg"]?has_content>
+            <#assign colHasMd = rowColNode["@md"]?has_content>
+            <#assign colHasSm = rowColNode["@sm"]?has_content>
+            <div class="q-px-xs <#if colHasLg> col-lg-${rowColNode["@lg"]}</#if><#if colHasMd> col-md-${rowColNode["@md"]}<#elseif colHasLg> col-md-12</#if><#if colHasSm> col-sm-${rowColNode["@sm"]}<#elseif colHasLg || colHasMd> col-sm-12</#if><#if rowColNode["@xs"]?has_content> col-xs-${rowColNode["@xs"]}<#elseif colHasLg || colHasMd || colHasSm> col-xs-12</#if><#if rowColNode["@style"]?has_content> ${ec.getResource().expandNoL10n(rowColNode["@style"], "")}</#if>">
                 <#recurse rowColNode>
             </div>
         </#list>
