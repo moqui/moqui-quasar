@@ -151,8 +151,9 @@ ul.float-plain.condensed li { margin: 0 4px 0 0; padding: 4px; }
     *, *:before, *:after { background: transparent none !important; }
     body { background: white none !important; font-size: 10px; }
 
-    button, a.q-btn { display: none !important; }
     #top, #footer { display: none; }
+    .q-page-container { padding:0!important; }
+    .q-drawer, .q-tabs, .q-btn, .form-list-nav-row { display: none; }
 
-    tbody>tr:nth-child(even)>td { background-color: #EEEEEE !important; }
+    tbody>tr:nth-child(even)>td, .tbody .tr:nth-child(even)>.td { background-color: #EEEEEE !important; }
 }
