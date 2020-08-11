@@ -35,6 +35,10 @@ body.test #top { background: #224422!important; }
 .q-btn { margin:2px; }
 .q-btn--dense .q-btn__wrapper { padding:4px 8px; }
 .q-btn .q-icon, .q-btn .q-spinner { font-size:18px; } /* was 1.715em ~= 24px */
+/* using q-btn flat for link style buttons, reduce margin/padding/height to match inline text */
+.m-link.q-btn--flat { margin:0; }
+.m-link.q-btn--flat .q-btn__wrapper { padding:0 4px; min-height:1.5em; }
+.m-link.q-btn--flat .q-btn__content { line-height:1.5; }
 
 .q-btn-group>.q-btn { margin:0; }
 .q-btn-group>.q-btn--dense.q-btn-item:not(:first-child)>.q-btn__wrapper { padding-left:4px; }
@@ -76,6 +80,7 @@ form.q-form { width:100%; }
 
 .big-row { display:flex; flex-wrap:wrap; justify-content:flex-start; align-content:center; }
 .big-row-item {}
+.big-row-item .q-field { display:inline-flex; }
 
 .q-table--dense .q-table .form-list-nav-row th:first-child { padding:4px 0; }
 .form-list-nav-row .q-bar { background-color:transparent; }

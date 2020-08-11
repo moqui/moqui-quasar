@@ -267,7 +267,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
 
     <#if urlInstance.disableLink>
         <q-btn dense no-caps disabled <#if linkNode["@link-type"]! != "anchor" && linkNode["@link-type"]! != "hidden-form-link">outline<#else>flat</#if><#rt>
-                <#t><#if .node["@style"]?has_content> class="${ec.getResource().expandNoL10n(.node["@style"], "")}"</#if>
+                <#t> class="m-link<#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>"
                 <#t><#if linkFormId?has_content> id="${linkFormId}"</#if>>
             <#if iconClass?has_content><i class="${iconClass}"></i></#if><#if linkNode["image"]?has_content><#visit linkNode["image"][0]><#else>${linkText}</#if>
         </q-btn>
@@ -290,7 +290,7 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                     <#t>>
                     <q-btn dense outline no-caps color="<@getQuasarColor linkNode["@btn-type"]!"primary"/>"<#rt>
                         <#t><#if !linkNode["image"]?has_content> label="${linkText}"</#if>
-                        <#t><#if linkNode["@style"]?has_content> class="${ec.getResource().expandNoL10n(linkNode["@style"], "")}"</#if>>
+                        <#t> class="m-link<#if linkNode["@style"]?has_content> ${ec.getResource().expandNoL10n(linkNode["@style"], "")}</#if>">
                 <#else>
                     <#t> class="<#if linkNode["@style"]?has_content> ${ec.getResource().expandNoL10n(linkNode["@style"], "")}</#if>">
                 </#if>
@@ -302,7 +302,8 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
             <#t></${linkElement}>
         <#else>
             <#if linkFormId?has_content>
-            <#rt><q-btn dense outline no-caps type="submit" form="${linkFormId}" id="${linkFormId}_button" color="<@getQuasarColor linkNode["@btn-type"]!"primary"/>" <#if linkNode["@style"]?has_content>class="${ec.getResource().expandNoL10n(linkNode["@style"], "")}"</#if>
+            <#rt><q-btn dense outline no-caps type="submit" form="${linkFormId}" id="${linkFormId}_button" color="<@getQuasarColor linkNode["@btn-type"]!"primary"/>"
+                    <#t> class="<#if linkNode["@style"]?has_content>${ec.getResource().expandNoL10n(linkNode["@style"], "")}</#if>"
                     <#t><#if confirmationMessage?has_content> onclick="return confirm('${confirmationMessage?js_string}')"</#if>>
                     <#t><#if linkNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(linkNode["@tooltip"], "")}</q-tooltip></#if>
                 <#t><#if iconClass?has_content><i class="${iconClass} q-icon<#if linkText?has_content> on-left</#if>"></i> </#if>
@@ -338,7 +339,8 @@ ${sri.renderIncludeScreen(.node["@location"], .node["@share-scope"]!)}
                     <#assign iconClass = linkNode["@icon"]!>
                     <#if !iconClass?has_content && linkNode["@text"]?has_content><#assign iconClass = sri.getThemeIconClass(linkNode["@text"])!></#if>
                     <#assign badgeMessage = ec.getResource().expand(linkNode["@badge"]!, "")/>
-                    <#rt><q-btn dense no-caps type="submit" <#if linkNode["@link-type"]! == "hidden-form-link">flat<#else>outline</#if> color="<@getQuasarColor linkNode["@btn-type"]!"primary"/>"<#if .node["@style"]?has_content> class="${ec.getResource().expandNoL10n(.node["@style"], "")}"</#if>
+                    <#rt><q-btn dense no-caps type="submit" <#if linkNode["@link-type"]! == "hidden-form-link">flat<#else>outline</#if>
+                            <#t> color="<@getQuasarColor linkNode["@btn-type"]!"primary"/>" class="m-link<#if .node["@style"]?has_content> ${ec.getResource().expandNoL10n(.node["@style"], "")}</#if>"
                             <#t><#if confirmationMessage?has_content> onclick="return confirm('${confirmationMessage?js_string}')"</#if>>
                         <#t><#if linkNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(linkNode["@tooltip"], "")}</q-tooltip></#if>
                         <#t><#if iconClass?has_content><i class="${iconClass} q-icon<#if linkText?has_content> on-left</#if>"></i> </#if>${linkText}
@@ -1876,17 +1878,15 @@ a => A, d => D, y => Y
                 <#t><#if formDisabled! || ec.getResource().condition(.node.@disabled!"false", "")> disable</#if>
                 <#t> class="<#if validationClasses?has_content>${validationClasses}</#if><#if tlAlign == "center"> text-center<#elseif tlAlign == "right"> text-right</#if>"
                 <#t><#if validationClasses?contains("required")> required</#if><#if regexpInfo?has_content> pattern="${regexpInfo.regexp}" data-msg-pattern="${regexpInfo.message!"Invalid format"}"</#if>
-                <#if .node["@default-transition"]?has_content> default-url="${defUrlInfo.path}" :default-load-init="true"
-                    <#if .node["@depends-optional"]! == "true"> :depends-optional="true"</#if>
+                <#t><#if .node["@default-transition"]?has_content>
+                    <#t> default-url="${defUrlInfo.path}" :default-load-init="true"<#if .node["@depends-optional"]! == "true"> :depends-optional="true"</#if>
                     <#t> :depends-on="{<#list depNodeList as depNode><#local depNodeField = depNode["@field"]>'${depNode["@parameter"]!depNodeField}':'${depNodeField}'<#sep>, </#list>}"
                     <#t> :default-parameters="{<#list defUrlParameterMap.keySet() as parameterKey><#if defUrlParameterMap.get(parameterKey)?has_content>'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(parameterKey)}':'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(defUrlParameterMap.get(parameterKey))}', </#if></#list>}"
                 <#t></#if>
-                <#if validationRules?has_content>
-                    :rules="[<#list validationRules as valRule>value => ${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(valRule.expr)}||'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(valRule.message)}'<#sep>,</#list>]"
+                <#t><#if validationRules?has_content>
+                    <#t> :rules="[<#list validationRules as valRule>value => ${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(valRule.expr)}||'${Static["org.moqui.util.WebUtilities"].encodeHtmlJsSafe(valRule.message)}'<#sep>,</#list>]"
                 <#t></#if>
-                <#t><#if ownerForm?has_content> form="${ownerForm}"</#if>>
-            <#if tlFieldNode["@tooltip"]?has_content><q-tooltip>${ec.getResource().expand(tlFieldNode["@tooltip"], "")}</q-tooltip></#if>
-        </m-text-line>
+                <#lt><#if ownerForm?has_content> form="${ownerForm}"</#if><#if tlSubFieldNode["@tooltip"]?has_content> tooltip="${ec.getResource().expand(tlSubFieldNode["@tooltip"], "")?html}"</#if>></m-text-line>
         <#assign expandedMask = ec.getResource().expandNoL10n(.node["@mask"], "")!>
         <#if expandedMask?has_content><strong class="text-negative">mask not yet supported - ${expandedMask}</strong></#if>
         <#-- TODO handle @mask:
