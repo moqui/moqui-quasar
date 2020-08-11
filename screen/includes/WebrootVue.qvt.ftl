@@ -27,7 +27,6 @@ along with this software (see the LICENSE.md file). If not, see
     <#-- for layout options see: https://quasar.dev/layout/layout -->
     <#-- to build a layout use the handy Quasar tool: https://quasar.dev/layout-builder -->
     <q-layout view="hHh LpR fFf">
-
         <q-header reveal bordered class="bg-black text-white" id="top"><q-toolbar style="font-size:15px;">
             <q-btn dense flat icon="menu" @click="toggleLeftOpen()"></q-btn>
 
@@ -68,7 +67,7 @@ along with this software (see the LICENSE.md file). If not, see
 
             <q-space></q-space>
 
-            <span class="text-warning on-left">PRE-ALPHA PREVIEW<q-tooltip>For current production-ready UI go to /vapps</q-tooltip></span>
+            <a :href="currentLinkUrl.replace('/qapps','/vapps')" target="_blank" class="text-warning on-left">ALPHA PREVIEW<q-tooltip>Click for current production-ready UI (/vapps)</q-tooltip></a>
 
             <#-- spinner, usually hidden -->
             <q-circular-progress indeterminate size="20px" color="light-blue" class="q-ma-xs" :class="{ hidden: loading < 1 }"></q-circular-progress>
