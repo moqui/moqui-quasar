@@ -17,6 +17,8 @@ h4, .text-h4 { font-size:1.4rem; line-height:1.4rem; letter-spacing:initial; mar
 h5, .text-h5 { font-size:1.2rem; line-height:1.2rem; letter-spacing:initial; margin-block-start:0.25em; margin-block-end:0.25em; }
 h6, .text-h6 { font-size:1.0rem; line-height:1.0rem; letter-spacing:initial; margin-block-start:0.25em; margin-block-end:0.25em; }
 
+p { margin-bottom:8px; } /* orig 16px */
+
 body.dev #top { background: #0c1b29!important; }
 body.test #top { background: #224422!important; }
 
@@ -30,9 +32,9 @@ body.test #top { background: #224422!important; }
 
 .non-selectable { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
 
-.q-btn { margin: 2px; }
-.q-btn--dense .q-btn__wrapper { padding: 0.285em 0.57em; }
-.q-btn .q-icon, .q-btn .q-spinner { font-size: 18px; } /* was 1.715em ~= 24px */
+.q-btn { margin:2px; }
+.q-btn--dense .q-btn__wrapper { padding:4px 8px; }
+.q-btn .q-icon, .q-btn .q-spinner { font-size:18px; } /* was 1.715em ~= 24px */
 
 .q-btn-group>.q-btn { margin:0; }
 .q-btn-group>.q-btn--dense.q-btn-item:not(:first-child)>.q-btn__wrapper { padding-left:4px; }
@@ -68,6 +70,9 @@ form.q-form { width:100%; }
 .q-field__bottom { padding-top:4px; }
 
 .q-item__section--avatar { min-width:30px; } /* orig 56px */
+
+.q-card__actions { padding:8px 8px 0 8px; }
+.q-card__section--vert { padding:8px; } /* orig 16px */
 
 .big-row { display:flex; flex-wrap:wrap; justify-content:flex-start; align-content:center; }
 .big-row-item {}
