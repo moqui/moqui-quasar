@@ -74,6 +74,7 @@ form.q-form { width:100%; }
 .q-field__bottom { padding-top:4px; }
 
 .q-item__section--avatar { min-width:30px; } /* orig 56px */
+.q-drawer .q-item__section--side { padding-right:4px; } /* orig 16px */
 
 .q-card__actions { padding:8px 8px 0 8px; }
 .q-card__section--vert { padding:8px; } /* orig 16px */

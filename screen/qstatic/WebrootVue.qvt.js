@@ -1703,18 +1703,19 @@ Vue.component('m-menu-nav-item', {
     props: { menuIndex:Number },
     template:
     '<q-expansion-item v-if="navMenuItem && navMenuItem.subscreens && navMenuItem.subscreens.length" :value="true" :content-inset-level="0.3"' +
-            ' switch-toggle-side dense dense-toggle expanded-icon="expand_more" :to="navMenuItem.pathWithParams">' +
-        '<template v-slot:header><m-menu-item-content :menu-item="navMenuItem" :active="true"></m-menu-item-content></template>' +
+            ' switch-toggle-side dense dense-toggle expanded-icon="arrow_drop_down" :to="navMenuItem.pathWithParams" @input="go">' +
+        '<template v-slot:header><m-menu-item-content :menu-item="navMenuItem" active></m-menu-item-content></template>' +
         '<template v-slot:default><m-menu-subscreen-item v-for="(subscreen, ssIndex) in navMenuItem.subscreens" :key="subscreen.name" :menu-index="menuIndex" :subscreen-index="ssIndex"></m-menu-subscreen-item></template>' +
     '</q-expansion-item>' +
     '<q-expansion-item v-else-if="menuIndex < (navMenuLength - 1)" :value="true" :content-inset-level="0.3"' +
-            ' switch-toggle-side dense dense-toggle expanded-icon="expand_more" :to="navMenuItem.pathWithParams">' +
-        '<template v-slot:header><m-menu-item-content :menu-item="navMenuItem" :active="true"></m-menu-item-content></template>' +
+            ' switch-toggle-side dense dense-toggle expanded-icon="arrow_drop_down" :to="navMenuItem.pathWithParams" @input="go">' +
+        '<template v-slot:header><m-menu-item-content :menu-item="navMenuItem" active></m-menu-item-content></template>' +
         '<template v-slot:default><m-menu-nav-item :menu-index="menuIndex + 1"></m-menu-nav-item></template>' +
     '</q-expansion-item>' +
-    '<q-expansion-item v-else-if="navMenuItem" :value="false" switch-toggle-side dense dense-toggle expand-icon="chevron_right" :to="navMenuItem.pathWithParams">' +
-        '<template v-slot:header><m-menu-item-content :menu-item="navMenuItem" :active="true"></m-menu-item-content></template>' +
+    '<q-expansion-item v-else-if="navMenuItem" :value="false" switch-toggle-side dense dense-toggle expand-icon="arrow_right" :to="navMenuItem.pathWithParams" @input="go">' +
+        '<template v-slot:header><m-menu-item-content :menu-item="navMenuItem" active></m-menu-item-content></template>' +
     '</q-expansion-item>',
+    methods: { go: function go() { this.$root.setUrl(this.navMenuItem.pathWithParams); } },
     computed: {
         navMenuItem: function() { return this.$root.navMenuList[this.menuIndex]; },
         navMenuLength: function() { return this.$root.navMenuList.length; }
@@ -1725,12 +1726,11 @@ Vue.component('m-menu-subscreen-item', {
     props: { menuIndex:Number, subscreenIndex:Number },
     template:
     '<m-menu-nav-item v-if="subscreen.active" :menu-index="menuIndex + 1"></m-menu-nav-item>' +
-    '<q-expansion-item v-else :value="false" switch-toggle-side dense dense-toggle expand-icon="chevron_right" :to="subscreen.pathWithParams">' +
+    '<q-expansion-item v-else :value="false" switch-toggle-side dense dense-toggle expand-icon="arrow_right" :to="subscreen.pathWithParams" @input="go">' +
         '<template v-slot:header><m-menu-item-content :menu-item="subscreen"></m-menu-item-content></template>' +
     '</q-expansion-item>',
-    computed: {
-        subscreen: function() { return this.$root.navMenuList[this.menuIndex].subscreens[this.subscreenIndex]; },
-    }
+    methods: { go: function go() { this.$root.setUrl(this.subscreen.pathWithParams); } },
+    computed: { subscreen: function() { return this.$root.navMenuList[this.menuIndex].subscreens[this.subscreenIndex]; } }
 });
 Vue.component('m-menu-item-content', {
     name: "mMenuItemContent",
