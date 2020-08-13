@@ -17,36 +17,6 @@ moqui.getQuasarColor = function(bootstrapColor) {
     if (bootstrapColor === 'success') return 'positive';
     if (bootstrapColor === 'danger') return 'negative';
     return bootstrapColor;
-}
-
-/* ========== script and stylesheet handling methods ========== */
-moqui.loadScript = function(src) {
-    // make sure the script isn't loaded
-    var loaded = false;
-    $('head script').each(function(i, hscript) { if (hscript.src.indexOf(src) !== -1) loaded = true; });
-    if (loaded) return;
-    // add it to the header
-    var script = document.createElement('script'); script.src = src; script.async = false;
-    document.head.appendChild(script);
-};
-moqui.loadStylesheet = function(href, rel, type) {
-    if (!rel) rel = 'stylesheet'; if (!type) type = 'text/css';
-    // make sure the stylesheet isn't loaded
-    var loaded = false;
-    $('head link').each(function(i, hlink) { if (hlink.href.indexOf(href) !== -1) loaded = true; });
-    if (loaded) return;
-    // add it to the header
-    var link = document.createElement('link'); link.href = href; link.rel = rel; link.type = type;
-    document.head.appendChild(link);
-};
-moqui.retryInlineScript = function(src, count) {
-    try { eval(src); } catch(e) {
-        src = src.trim();
-        var retryTime = count <= 5 ? count*count*100 : 'N/A';
-        console.warn('inline script error ' + count + ' retry ' + retryTime + ' script: ' + src.slice(0, 80) + '...');
-        console.warn(e);
-        if (count <= 5) setTimeout(moqui.retryInlineScript, retryTime, src, count+1);
-    }
 };
 
 /* ========== notify and error handling ========== */
@@ -136,6 +106,13 @@ moqui.handleAjaxError = function(jqXHR, textStatus, errorThrown) {
         moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsError, { message:errMsg }));
         moqui.webrootVue.addNotify(errMsg, 'negative');
     }
+};
+/* Override moqui.notifyGrowl */
+moqui.notifyGrowl = function(jsonObj) {
+    if (!jsonObj) return;
+    // TODO: jsonObj.link, jsonObj.icon
+    moqui.webrootVue.$q.notify($.extend({}, moqui.notifyOptsInfo, { type:jsonObj.type, message:jsonObj.title }));
+    moqui.webrootVue.addNotify(jsonObj.title, jsonObj.type);
 };
 
 /* ========== component loading methods ========== */
@@ -1616,6 +1593,91 @@ Vue.component('m-text-line', {
         }
     }
 });
+
+/* Lazy loading CK Editor wrapper component, based on https://github.com/ckeditor/ckeditor4-vue */
+/* see https://ckeditor.com/docs/ckeditor4/latest/api/CKEDITOR_config.html */
+Vue.component('m-ck-editor', {
+    name: 'mCkEditor',
+    template:'<div><textarea ref="area"></textarea></div>',
+    props: { value:{type:String,default:''}, useInline:Boolean, config:Object, readOnly:{type:Boolean,default:null} },
+    data: function() { return { destroyed:false, ckeditor:null } },
+    mounted: function() {
+        const vm = this;
+        moqui.loadScript('https://cdn.ckeditor.com/4.14.1/standard-all/ckeditor.js', function(err) {
+            if (err) return;
+            if (vm.destroyed) return;
+            const config = vm.config || {};
+            if (vm.readOnly !== null) config.readOnly = vm.readOnly;
+
+            CKEDITOR.dtd.$removeEmpty['i'] = false;
+            const method = vm.useInline ? 'inline' : 'replace';
+            const editor = vm.ckeditor = CKEDITOR[method](vm.$refs.area, config);
+            editor.on('instanceReady', function() {
+                const data = vm.value;
+                editor.fire('lockSnapshot');
+                editor.setData(data, { callback: function() {
+                    editor.on('change', function(evt) {
+                        const curData = editor.getData();
+                        if (vm.value !== curData) vm.$emit('input', curData, evt, editor);
+                    });
+                    editor.on('focus', function(evt) { vm.$emit('focus', evt, editor); });
+                    editor.on('blur', function(evt) { vm.$emit('blur', evt, editor); });
+
+                    const newData = editor.getData();
+                    // Locking the snapshot prevents the 'change' event. Trigger it manually to update the bound data.
+                    if (data !== newData) {
+                        vm.$once('input', function() { vm.$emit('ready', editor); });
+                        vm.$emit('input', newData);
+                    } else {
+                        vm.$emit('ready', editor);
+                    }
+                    editor.fire('unlockSnapshot');
+                }});
+            });
+        });
+    },
+    beforeDestroy: function() {
+        if (this.ckeditor) { this.ckeditor.destroy(); }
+        this.destroyed = true;
+    },
+    watch: {
+        value(val) { if (this.ckeditor && this.ckeditor.getData() !== val) this.ckeditor.setData(val); },
+        readOnly(val) { if (this.ckeditor) this.ckeditor.setReadOnly( val ); }
+    }
+});
+Vue.component('m-simple-mde', {
+    name: 'mSimpleMde',
+    template:'<div><textarea ref="area"></textarea></div>',
+    props: { value:{type:String,default:''}, config:Object },
+    data: function() { return { simplemde:null } },
+    mounted: function() {
+        const vm = this;
+        moqui.loadStylesheet('https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.css');
+        moqui.loadScript('https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js', function(err) {
+            if (err) return;
+            // needed? forceSync:true
+            const fullConfig = Object.assign({
+                element: vm.$refs.area,
+                initialValue: vm.value
+            }, vm.config);
+            const editor = vm.simplemde = new SimpleMDE(fullConfig);
+
+            editor.codemirror.on('change', (instance, changeObj) => {
+                if (changeObj.origin === 'setValue') return;
+                const val = editor.value();
+                vm.$emit('input', val);
+            });
+            editor.codemirror.on('blur', () => {
+                const val = editor.value();
+                vm.$emit('blur', val);
+            });
+
+            vm.$nextTick(function() { vm.$emit('initialized', editor); });
+        });
+    },
+    watch: { value(val) { if (this.simplemde && this.simplemde.value() !== val) this.simplemde.value(val); } }
+});
+
 
 /* ========== webrootVue - root Vue component with router ========== */
 Vue.component('m-subscreens-tabs', {
