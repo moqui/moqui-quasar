@@ -156,9 +156,13 @@ ul.float-plain li { display: inline-block; line-height: 18px; margin: 0 8px 8px 
 ul.float-plain.condensed { margin: 0; }
 ul.float-plain.condensed li { margin: 0 4px 0 0; padding: 4px; }
 
-/* misc library styles - simplemde */
+/* misc library styles */
+/* simplemde */
 .editor-toolbar.fullscreen { z-index:100!important; top:50px!important; }
 .CodeMirror-fullscreen, .editor-preview-side { z-index:100!important; top:100px!important; }
+/* jsdiff */
+.compare del { background-color:#f2dede; text-decoration:none; }
+.compare ins { background-color:#dff0d8; text-decoration:none; }
 
 /* ====== print style overrides ====== */
 
