@@ -1036,7 +1036,7 @@ Vue.component('m-date-time', {
     // NOTE: tried :fill-mask="formatVal" but results in all Y, only supports single character for mask placeholder... how to show more helpful date mask?
     // TODO: add back @focus="focusDate" @blur="blurDate" IFF needed given different mask/etc behavior
     '<q-input dense outlined stack-label :label="label" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
-            ' :mask="inputMask" fill-mask :id="id" :name="name" :form="form" :disable="disable">' +
+            ' :mask="inputMask" fill-mask :id="id" :name="name" :form="form" :disable="disable" :size="sizeVal" style="max-width:fit-content;">' +
         '<template v-slot:prepend v-if="type==\'date\' || type==\'date-time\' || !type">' +
             '<q-icon name="event" class="cursor-pointer">' +
                 '<q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">' +
@@ -1077,12 +1077,12 @@ Vue.component('m-date-time', {
         }
     },
     computed: {
-        formatVal: function() { var format = this.format; if (format && format.length > 0) { return format; }
+        formatVal: function() { var format = this.format; if (format && format.length) { return format; }
             return this.type === 'time' ? 'HH:mm' : (this.type === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'); },
         inputMask: function() { var formatMask = this.formatVal; return formatMask.replace(/\w/g, '#') },
         extraFormatsVal: function() { return this.type === 'time' ? ['LT', 'LTS', 'HH:mm'] :
             (this.type === 'date' ? ['l', 'L', 'YYYY-MM-DD'] : ['YYYY-MM-DD HH:mm', 'YYYY-MM-DD HH:mm:ss', 'MM/DD/YYYY HH:mm']); },
-        sizeVal: function() { var size = this.size; if (size && size.length > 0) { return size; }
+        sizeVal: function() { var size = this.size; if (size && size.length) { return size; }
             return this.type === 'time' ? '9' : (this.type === 'date' ? '10' : '16'); },
         timePattern: function() { return '^(?:(?:([01]?\\d|2[0-3]):)?([0-5]?\\d):)?([0-5]?\\d)$'; }
     },
@@ -1147,11 +1147,12 @@ Vue.component('m-date-period', {
         '<m-date-time :name="name+\'_thru\'" :id="id+\'_thru\'" :label="label+\' Thru\'" :form="form" :type="fromThruType" v-model="fields[name+\'_thru\']">' +
             '<template v-slot:after>' +
                 '<q-btn dense flat icon="calendar_view_day" @click="toggleMode"><q-tooltip>Period Select Mode</q-tooltip></q-btn>' +
-                '<q-btn dense flat icon="clear" @click="clearAll"><q-tooltip>Clear All</q-tooltip></q-btn>' +
+                '<q-btn dense flat icon="clear" @click="clearAll"><q-tooltip>Clear</q-tooltip></q-btn>' +
             '</template>' +
         '</m-date-time>' +
     '</div>' +
-    '<q-input v-else dense outlined stack-label :label="label" v-model="fields[name+\'_pdate\']" mask="####-##-##" fill-mask :id="id" :name="name+\'_pdate\'" :form="form">' +
+    '<div v-else class="row"><q-input dense outlined stack-label :label="label" v-model="fields[name+\'_pdate\']"' +
+            ' mask="####-##-##" fill-mask :id="id" :name="name+\'_pdate\'" :form="form" style="max-width:fit-content;">' +
         '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
         '<template v-slot:before>' +
             '<q-select class="q-pr-xs" dense outlined options-dense emit-value map-options v-model="fields[name+\'_poffset\']" :name="name+\'_poffset\'"' +
@@ -1168,9 +1169,9 @@ Vue.component('m-date-period', {
         '</template>' +
         '<template v-slot:after>' +
             '<q-btn dense flat icon="date_range" @click="toggleMode"><q-tooltip>Date Range Mode</q-tooltip></q-btn>' +
-            '<q-btn dense flat icon="clear" @click="clearAll"><q-tooltip>Clear All</q-tooltip></q-btn>' +
+            '<q-btn dense flat icon="clear" @click="clearAll"><q-tooltip>Clear</q-tooltip></q-btn>' +
         '</template>' +
-    '</q-input>',
+    '</q-input></div>',
     methods: {
         toggleMode: function() { this.fromThruMode = !this.fromThruMode; },
         clearAll: function() {
@@ -1295,8 +1296,11 @@ Vue.component('m-drop-down', {
             '<template v-if="multiple" v-slot:prepend><div>' +
                 '<q-chip v-for="valueEntry in value" :key="valueEntry" dense size="md" class="q-my-xs" removable @remove="removeValue(valueEntry)">{{optionLabel(valueEntry)}}</q-chip>' +
             '</div></template>' +
-            '<template v-slot:append><slot name="append"></slot></template><template v-slot:after><slot name="after"></slot></template>' +
-            '<slot></slot>' +
+            '<template v-slot:append><slot name="append"></slot></template>' +
+            '<template v-slot:after>' +
+                '<q-btn dense flat icon="clear" @click="clearAll"><q-tooltip>Clear</q-tooltip></q-btn>' +
+                '<slot name="after"></slot>' +
+            '</template>' +
         '</q-select>',
         // TODO: how to add before slot pass through without the small left margin when nothing in the slot? <template v-slot:before><slot name="before"></slot></template>
     methods: {
@@ -1479,7 +1483,8 @@ Vue.component('m-drop-down', {
                 if (valueEntry !== value) newValueArr.push(valueEntry);
             }
             if (curValueArr.length !== newValueArr.length) this.$emit('input', newValueArr);
-        }
+        },
+        clearAll: function() { this.$emit('input', null); }
     },
     mounted: function() {
         // TODO: handle combo somehow: if (this.combo) { opts.tags = true; opts.tokenSeparators = [',',' ']; }
