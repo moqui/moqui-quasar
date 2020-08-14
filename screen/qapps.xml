@@ -35,21 +35,14 @@ along with this software (see the LICENSE.md file). If not, see
         html_stylesheets.add('/qstatic/WebrootVue.qvt.css')
 
         html_scripts.add('/libs/moment.js/moment-with-locales.min.js')
-        // TODO: can we get away with not using jQuery?
         html_scripts.add('/libs/jquery/jquery.min.js')
-
-        // TODO: use jQuery + jquery-validate (not a good option) or alternative to this in q-form validation?
-        // jquery-validate locale specific scripts
-        // Map validateScriptsOut = ec.service.sync().name("webroot.LocaleServices.get#ValidateLocaleScripts").call()
-        // if (validateScriptsOut.messagesLocation) html_scripts.add(validateScriptsOut.messagesLocation)
-        // if (validateScriptsOut.methodsLocation) html_scripts.add(validateScriptsOut.methodsLocation)
 
         String instancePurpose = System.getProperty("instance_purpose")
         if (!instancePurpose || instancePurpose == 'production') {
             /* ========== Production Mode ========== */
             html_scripts.add('/js/MoquiLib.min.js')
             // Vue JS
-            footer_scripts.add('/libs/vue/vue.js') // TODO change to vue.min.js
+            footer_scripts.add('/libs/vue/vue.min.js')
             // http-vue-loader
             footer_scripts.add('/js/http-vue-loader/httpVueLoader.js')
             // Quasar
@@ -73,6 +66,7 @@ along with this software (see the LICENSE.md file). If not, see
         if (ec.user.getPreference("qz.print.enabled") == "true") {
             footer_scripts.add('/js/qz-tray/sha-256.min.js')
             footer_scripts.add('/js/qz-tray/qz-tray.min.js')
+            // TODO migrate MoquiQzComponent.js to MoquiQzComponent.qvt.js
             footer_scripts.add('/js/qz-tray/MoquiQzComponent.js')
         }
     ]]></script></pre-actions>
