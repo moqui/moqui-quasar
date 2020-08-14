@@ -1279,17 +1279,17 @@ Vue.component('m-display', {
 
 Vue.component('m-drop-down', {
     name: "mDropDown",
-    props: { value:[Array,String], options:{type:Array,'default':[]}, combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
-        serverSearch:{type:Boolean,'default':false}, serverDelay:{type:Number,'default':300}, serverMinLength:{type:Number,'default':1},
+    props: { value:[Array,String], options:{type:Array,'default':()=>[]}, combo:Boolean, allowEmpty:Boolean, multiple:Boolean, optionsUrl:String,
+        serverSearch:Boolean, serverDelay:{type:Number,'default':300}, serverMinLength:{type:Number,'default':1},
         optionsParameters:Object, labelField:{type:String,'default':'label'}, valueField:{type:String,'default':'value'},
         dependsOn:Object, dependsOptional:Boolean, optionsLoadInit:Boolean, form:String, fields:{type:Object},
-        tooltip:String, label:String, name:String, id:String, disable:Boolean },
+        tooltip:String, label:String, name:String, id:String, disable:Boolean, onSelectGoTo:String },
     data: function() { return { curOptions:this.options, allOptions:this.options, lastVal:null, lastSearch:null, loading:false } },
     template:
-        '<q-select ref="qSelect" v-bind:value="value" v-on:input="$emit(\'input\', $event)"' +
+        '<q-select ref="qSelect" v-bind:value="value" v-on:input="handleInput($event)"' +
                 ' dense outlined options-dense use-input :fill-input="!multiple" hide-selected :name="name" :id="id" :form="form"' +
-                ' input-debounce="500" @filter="filterFn" :clearable="allowEmpty" :disable="disable"' +
-                ' :multiple="multiple" emit-value map-options' +
+                ' input-debounce="500" @filter="filterFn" :clearable="allowEmpty||multiple" :disable="disable"' +
+                ' :multiple="multiple" :emit-value="!onSelectGoTo" map-options' +
                 ' stack-label :label="label" :loading="loading" :options="curOptions">' +
             '<q-tooltip v-if="tooltip">{{tooltip}}</q-tooltip>' +
             '<template v-slot:no-option><q-item><q-item-section class="text-grey">No results</q-item-section></q-item></template>' +
@@ -1298,12 +1298,19 @@ Vue.component('m-drop-down', {
             '</div></template>' +
             '<template v-slot:append><slot name="append"></slot></template>' +
             '<template v-slot:after>' +
-                '<q-btn dense flat icon="clear" @click="clearAll"><q-tooltip>Clear</q-tooltip></q-btn>' +
                 '<slot name="after"></slot>' +
             '</template>' +
         '</q-select>',
         // TODO: how to add before slot pass through without the small left margin when nothing in the slot? <template v-slot:before><slot name="before"></slot></template>
     methods: {
+        handleInput: function($event) {
+            // console.warn(this.onSelectGoTo + ": " + JSON.stringify($event));
+            if (this.onSelectGoTo && this.onSelectGoTo.length) {
+                if ($event[this.onSelectGoTo]) this.$root.setUrl($event[this.onSelectGoTo]);
+            } else {
+                this.$emit('input', $event);
+            }
+        },
         filterFn: function(search, doneFn, abortFn) {
             if (this.serverSearch) {
                 if ((this.lastSearch === search) || (this.serverMinLength && ((search ? search.length : 0) < this.serverMinLength))) {
@@ -1343,7 +1350,7 @@ Vue.component('m-drop-down', {
             $.each(list, function(idx, curObj) {
                 var valueVal = curObj[valueField];
                 var labelVal = curObj[labelField];
-                newData.push({ value:valueVal||labelVal, label:labelVal||valueVal });
+                newData.push(Object.assign(curObj, { value:valueVal||labelVal, label:labelVal||valueVal }));
             });
             return newData;
         },
